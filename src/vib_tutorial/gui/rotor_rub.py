@@ -1,10 +1,10 @@
-"""Rub tab of the Jeffcott rotor page: a stator ring round the disc, which the disc rubs once it reaches it.
+"""Rub tab of the Jeffcott rotor page: a stator ring round the disk, which the disk rubs once it reaches it.
 
 The ring's clearance, offset, mount and friction (core/rotor.py's `Stator`), what
-they mean for the rotor at rest (the gap left under its sag, the disc's frequency
-on the ring), and the ring's normal force on the disc over the strip chart's
+they mean for the rotor at rest (the gap left under its sag, the disk's frequency
+on the ring), and the ring's normal force on the disk over the strip chart's
 window. With a thermal gain the rub's heat bows the shaft (the Newkirk effect),
-and a polar plot follows the disc's 1X vector and the thermal bow as they spiral. The rub is in the time response only: the Campbell diagram, the
+and a polar plot follows the disk's 1X vector and the thermal bow as they spiral. The rub is in the time response only: the Campbell diagram, the
 stability map and the steady-state curves are the rotor's without the ring.
 """
 
@@ -29,32 +29,32 @@ from .rotor_bearing import _si
 from .style import colors
 
 NOTE = (
-    "Once the disc's whirl reaches the ring, the ring pushes it back and its friction drags the disc's rim "
-    "against its slip. Brushing the ring on one side (a <i>partial rub</i>, as under the disc's sag) gives "
+    "Once the disk's whirl reaches the ring, the ring pushes it back and its friction drags the disk's rim "
+    "against its slip. Brushing the ring on one side (a <i>partial rub</i>, as under the disk's sag) gives "
     "the orbit harmonics, and above twice the critical speed sub-harmonics: ½X, ⅓X. Held against it all "
     "round (a <i>full rub</i>), friction pulls the rim backward, and enough of it flips the whirl backward at "
-    "the disc's frequency on the ring, far above the speed: the rim then rolls round the ring (dry whirl). "
+    "the disk's frequency on the ring, far above the speed: the rim then rolls round the ring (dry whirl). "
     "The ring is in the time response only: the Campbell diagram, the stability map and the steady-state "
     "curves leave it out. Watch the full spectrum (Stability tab) and the waterfall."
 )
 INPUT_TIPS = {
-    "clearance": "<p>The ring's radial clearance: how far the disc's centre can move off the ring's centre "
+    "clearance": "<p>The ring's radial clearance: how far the disk's center can move off the ring's center "
     "before its rim touches.</p>",
-    "offset": "<p>The ring's centre, off the bearings' line, and the direction it is offset in (fixed axes, "
+    "offset": "<p>The ring's center, off the bearings' line, and the direction it is offset in (fixed axes, "
     "from +x toward +y: −90° is straight down). An offset ring is reached on one side first.</p>",
-    "stiffness": "<p>The ring's mount: how hard the ring pushes back as the disc pushes it out past its "
+    "stiffness": "<p>The ring's mount: how hard the ring pushes back as the disk pushes it out past its "
     "clearance. The rim and the ring are rigid; the mount gives.</p>",
-    "damping": "<p>Damping in the ring's mount, while the disc pushes on it.</p>",
+    "damping": "<p>Damping in the ring's mount, while the disk pushes on it.</p>",
     "friction": "<p>The friction coefficient μ between the rim and the ring: the drag is μ times the ring's "
     "push, against the rim's slip over the ring (Coulomb's, smoothed over 1 cm/s).</p>",
     "thermal_gain": "<p>The Newkirk effect: the drag's heat goes into the shaft where it rubs, and a shaft "
-    "hotter on one side bows toward it. a<sub>T</sub> is the bow at the disc per watt of heat, once it has "
+    "hotter on one side bows toward it. a<sub>T</sub> is the bow at the disk per watt of heat, once it has "
     "settled (0: no thermal bow). A real shaft's is set by its size, material and cooling.</p>",
     "thermal_lag": "<p>How slowly the bow follows the heat: a first-order lag, τ<sub>T</sub>δ̇<sub>T</sub> = a<sub>T</sub>P<sub>h</sub> − δ<sub>T</sub>, with P<sub>h</sub> the rub's heat and δ<sub>T</sub> the bow. Real shafts "
     "take minutes; a few seconds here keeps the spiral watchable.</p>",
 }
 SPIRAL_TIP = (
-    "<p>The Newkirk spiral: the disc's 1X vector (at the probe direction chosen under Run-up and coast-down), "
+    "<p>The Newkirk spiral: the disk's 1X vector (at the probe direction chosen under Run-up and coast-down), "
     "each revolution's since the speed settled, and the thermal bow's, as 1X runout in the same direction. As on "
     "the polar plot, the angle is the phase, counted as a lead: counter-clockwise from the keyphasor mark at 0°, "
     "the way the shaft turns. Below the critical the bow pushes the high spot toward the hot spot, so both grow "
@@ -65,16 +65,16 @@ SPIRAL_POINTS = 4000  # the spiral keeps at most this many points (halving its d
 
 
 class RubPanel(QtWidgets.QWidget):
-    """The stator ring's inputs, what they mean at rest, and its force on the disc."""
+    """The stator ring's inputs, what they mean at rest, and its force on the disk."""
 
     changed = QtCore.Signal()  # the user changed the ring
 
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)
         s = Stator()
-        self.enabled = QtWidgets.QCheckBox("A stator ring round the disc")
+        self.enabled = QtWidgets.QCheckBox("A stator ring round the disk")
         self.enabled.setToolTip(
-            "<p>A seal or casing ring round the disc, which its rim rubs on once it reaches it.</p>"
+            "<p>A seal or casing ring round the disk, which its rim rubs on once it reaches it.</p>"
         )
         self.clearance = spin(1.0, 10_000.0, s.clearance * 1e6, 1, " µm")
         self.offset = spin(0.0, 10_000.0, s.offset * 1e6, 1, " µm")
@@ -121,10 +121,10 @@ class RubPanel(QtWidgets.QWidget):
         self.plot.setMouseEnabled(x=False, y=False)
         self.plot.hideButtons()
         self.plot.showGrid(x=True, y=True, alpha=0.15)
-        self.plot.setLabel("left", "Push on the disc", units="N")
+        self.plot.setLabel("left", "Push on the disk", units="N")
         self.plot.setLabel("bottom", "Time", units="s")
         self.plot.setToolTip(
-            "<p>The ring's push on the disc, normal to the ring, over the strip chart's window "
+            "<p>The ring's push on the disk, normal to the ring, over the strip chart's window "
             "(each point the largest over the samples it stands for).</p>"
         )
         # Its curve holds the strip chart's window at every step (12,000 points over 400 px): drawn as each pixel
@@ -210,7 +210,7 @@ class RubPanel(QtWidgets.QWidget):
         """A turning (asymmetric or cracked) shaft, or the oil films' whole force, can't have a ring."""
         self.enabled.setEnabled(allowed)
         self.enabled.setToolTip(
-            "<p>A seal or casing ring round the disc, which its rim rubs on once it reaches it.</p>"
+            "<p>A seal or casing ring round the disk, which its rim rubs on once it reaches it.</p>"
             + (
                 ""
                 if allowed
@@ -242,7 +242,7 @@ class RubPanel(QtWidgets.QWidget):
             self.changed.emit()
 
     def update_info(self, system: RotorSystem) -> None:
-        """What the ring means for `system` at rest: the gap left, and the disc's frequency on the ring."""
+        """What the ring means for `system` at rest: the gap left, and the disk's frequency on the ring."""
         st = system.stator
         if st is None:
             self.readout.setText(
@@ -255,7 +255,7 @@ class RubPanel(QtWidgets.QWidget):
         gap = st.clearance - math.hypot(rest[0] - cx, rest[1] - cy)
         parts = []
         if system.gravity:
-            parts.append(f"The disc sags {_fmt_um(-rest[1])} under its weight")
+            parts.append(f"The disk sags {_fmt_um(-rest[1])} under its weight")
         if gap >= 0.0:
             where = "" if not (system.gravity or st.offset) else " on its nearer side"
             parts.append(f"{'leaving' if parts else 'At rest it has'} {_fmt_um(gap)} to the ring{where}.")
@@ -266,15 +266,15 @@ class RubPanel(QtWidgets.QWidget):
             )
         text = ", ".join(parts[:2]) if len(parts) == 2 else parts[0]
         try:
-            k = 1.0 / np.linalg.inv(system.stiffness(0.0))[XD, XD]  # the rotor's stiffness at the disc
+            k = 1.0 / np.linalg.inv(system.stiffness(0.0))[XD, XD]  # the rotor's stiffness at the disk
         except np.linalg.LinAlgError:
             k = math.nan
         if k > 0.0:
             f = math.sqrt((k + st.stiffness) / system.disc_mass) / (2.0 * math.pi)
             text += (
-                f" On the ring the disc's whirl is stiffened to about {sig(f)} Hz "
+                f" On the ring the disk's whirl is stiffened to about {sig(f)} Hz "
                 f"(free, {sig(math.sqrt(k / system.disc_mass) / (2.0 * math.pi))} Hz): a dry whirl's "
-                f"frequency. Disc radius R = {sig(system.disc_radius * 1e3)} mm."
+                f"frequency. Disk radius R = {sig(system.disc_radius * 1e3)} mm."
             )
         self.readout.setText(text)
 

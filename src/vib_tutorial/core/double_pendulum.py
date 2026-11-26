@@ -111,7 +111,7 @@ def matrices(p: DoublePendulum, angles: Angles = Angles.ABSOLUTE) -> Linear:
 
 
 def newton(p: DoublePendulum, angles: Angles = Angles.ABSOLUTE) -> Linear:
-    """The free-body diagram's rows, linearized: bob 1 and bob 2 each along its rod's normal (per metre)."""
+    """The free-body diagram's rows, linearized: bob 1 and bob 2 each along its rod's normal (per meter)."""
     m1, m2, L1, L2, g = p.upper, p.lower, p.upper_length, p.lower_length, p.gravity
     M = np.array([[m1 * L1, 0.0], [m2 * L1, m2 * L2]])
     K = np.array([[(m1 + m2) * g, -m2 * g], [0.0, m2 * g]])

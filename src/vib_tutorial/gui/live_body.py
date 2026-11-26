@@ -13,7 +13,7 @@ The motion is drawn magnified (the scale bar under it): the largest recent swing
 scale holds still under the hand, so a pluck doesn't rescale as it's let go.
 
 Working on it: `tests/test_sdof_page.py` drags the grips and plucks with synthetic mouse events and checks the page
-follows. Colours come through `style.role`, so `apply_theme` redraws them.
+follows. Colors come through `style.role`, so `apply_theme` redraws them.
 """
 
 from __future__ import annotations
@@ -29,7 +29,7 @@ from .animation import damper_path, spring_path
 from .drag import Grabbable
 from .style import colors, text_on
 
-REST_X = 1.3  # the mass's centre at rest (display units; the wall at 0)
+REST_X = 1.3  # the mass's center at rest (display units; the wall at 0)
 SIDE = 0.42  # the reference mass's side
 SPRING_Y, DAMPER_Y = 0.13, -0.13
 SWING = 0.35  # display units the largest recent swing is drawn across
@@ -67,10 +67,10 @@ class LiveMassView(Grabbable, pg.PlotWidget):
         self.hideAxis("bottom")
         self.setAspectLocked(True)
         self.setRange(QtCore.QRectF(-0.25, -0.85, 2.95, 1.45), padding=0)  # the largest mass's grip; the scale's text
-        self.gain = PLUCK_GAIN  # display units a metre
+        self.gain = PLUCK_GAIN  # display units a meter
         self.held: object = False  # True while plucked, a grip's name while it's dragged
         self._grip_from: QtCore.QPointF | None = None
-        self._grab_dx = 0.0  # where on the mass it was grabbed, from its centre: the mass moves as the hand does
+        self._grab_dx = 0.0  # where on the mass it was grabbed, from its center: the mass moves as the hand does
         self._centre = REST_X
         self._side = SIDE
         self._values = {"mass": 1.0, "stiffness": 400.0, "damping": 2.0}

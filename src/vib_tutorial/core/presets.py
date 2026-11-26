@@ -116,7 +116,7 @@ def presets() -> list[Preset]:
             absorber=True,
         ),
         Preset(
-            "TMD on a 4-storey building",
+            "TMD on a 4-story building",
             f"The default chain as a building on shaking ground, with a damper on the roof (m5): "
             f"{b_mu:.0%} of mode 1's modal mass there ({b_meff:.3g} kg), tuned to "
             f"{b_ratio:.3f} × {b_fn:.3g} Hz with ζ = {b_zeta:.3f} (relative to {b_fn:.3g} Hz). The ground shakes at mode 1.",

@@ -18,7 +18,7 @@ def test_a_page_exports_with_its_equations_figures_and_links(tmp_path):
     page = (tmp_path / "isolation_page.html").read_text(encoding="utf-8")
     assert not LEFT_BEHIND.search(page)  # nothing only the app can show or follow
     assert page.count('<span class="eq"') > 5 and page.count('<span class="fig"><svg') >= 2
-    assert "Try it" not in page and "Practise it" not in page  # a goal's links set up the running page
+    assert "Try it" not in page and "Practice it" not in page  # a goal's links set up the running page
     pages = set(links.order())
     targets = re.findall(r'href="([a-z_]+)\.html(?:#[^"]*)?"', page)
     assert "sdof_page" in targets and set(targets) <= pages | {"index", "glossary"}
@@ -43,7 +43,7 @@ def test_the_export_draws_without_qt(tmp_path):
     )
     out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, check=True).stdout
     assert out.strip() == "[]"
-    assert (tmp_path / "glossary.html").read_text(encoding="utf-8").count("<svg") == 0  # no maths: just text
+    assert (tmp_path / "glossary.html").read_text(encoding="utf-8").count("<svg") == 0  # no math: just text
 
 
 def test_the_script_exports_every_page(tmp_path):

@@ -11,9 +11,9 @@ be changed afterwards and the arithmetic redone.
 Every angle on the tab counts one way, said on it (`CONVENTION`), in its tooltips and in the notes' *Which way
 phase is counted*: counter-clockwise seen from beyond bearing B, the way the shaft turns. A reading's phase is a
 lead from the keyphasor (arg V, as the solvers count it; a lag is clockwise), and a weight's angle is from the
-keyphasor mark, the same way. The polar plot (`PolarGrid`) is the disc as the mark passes the keyphasor, so read at
+keyphasor mark, the same way. The polar plot (`PolarGrid`) is the disk as the mark passes the keyphasor, so read at
 the x probe a reading points at the high spot, and the weights (squares on its outer ring: the trial T, the
-correction W, the heavy spot H while shown) sit where they are on the disc: below the critical, the correction lands
+correction W, the heavy spot H while shown) sit where they are on the disk: below the critical, the correction lands
 about opposite the reading. Under it, the Bode plot: amplitude and phase against speed, as found and now.
 
 Working on it: `tests/test_rotor_balance.py` checks the arithmetic and that the correction lands opposite the
@@ -49,12 +49,12 @@ BALANCE_RPM = 1200.0
 SLOW_RPM = 100.0
 MYSTERY_RANGE = (10e-6, 60e-6)  # kg·m, the hidden unbalance's size
 MYSTERY_SKEW = (0.05, 0.3)  # degrees, the hidden skew's size (two planes)
-PLANE_SPACING = 40.0  # mm between the planes on the disc
+PLANE_SPACING = 40.0  # mm between the planes on the disk
 SHAFT_PLANES = (200.0, 300.0)  # mm from bearing A, the planes on the shaft
 ILL_CONDITIONED = 20.0  # cond(α) above which the planes are hard to tell apart
-# The ways to balance: one weight on the disc, two in planes on the disc's faces, or two on the shaft.
-MODES = ("One plane: the disc", "Two planes: the disc's faces", "Two planes on the shaft")
-# Each reading: its symbol and the colour it is drawn in (an attribute of colors, or an index into colors.mode).
+# The ways to balance: one weight on the disk, two in planes on the disk's faces, or two on the shaft.
+MODES = ("One plane: the disk", "Two planes: the disk's faces", "Two planes on the shaft")
+# Each reading: its symbol and the color it is drawn in (an attribute of colors, or an index into colors.mode).
 READINGS = (
     ("slow", "Vₛ", "grey"),
     ("found", "V₀", 1),
@@ -62,7 +62,7 @@ READINGS = (
     ("trial2", "V₂", 4),
     ("verify", "V₂", "strong"),
 )
-# The weights drawn on the polar plot's outer ring: label and colour, as READINGS'.
+# The weights drawn on the polar plot's outer ring: label and color, as READINGS'.
 WEIGHT_MARKS: dict[str, tuple[str, str | int]] = {
     "trial": ("T", 3),
     "correction": ("W", "strong"),
@@ -81,8 +81,8 @@ STEPS_TIP = (
     "transient to die away, and averages ten revolutions, at no less than 2× real time.</p>"
 )
 MYSTERY_TIP = (
-    "<p>Give the disc an unbalance of unknown size at an unknown angle, and hide the heavy spot: find it by "
-    "balancing. With two planes the disc is skewed too, by a hidden angle: a couple unbalance. "
+    "<p>Give the disk an unbalance of unknown size at an unknown angle, and hide the heavy spot: find it by "
+    "balancing. With two planes the disk is skewed too, by a hidden angle: a couple unbalance. "
     "<i>Reveal</i> shows them in the panel again.</p>"
 )
 CONVENTION = (
@@ -96,19 +96,19 @@ ANGLE_TIP = (
     "beyond bearing B (the way the shaft turns), as every angle on this tab counts.</p>"
 )
 VECTOR_TIP = (
-    "<p>The readings as vectors on a polar plot: the distance from the centre is the amplitude (the rings), "
-    "the angle the phase, counted as a lead, counter-clockwise from the keyphasor at 0°. The plot is the disc "
+    "<p>The readings as vectors on a polar plot: the distance from the center is the amplitude (the rings), "
+    "the angle the phase, counted as a lead, counter-clockwise from the keyphasor at 0°. The plot is the disk "
     "seen from beyond bearing B as the mark passes the keyphasor, so read at the x probe a vector points at the "
-    "high spot, and the squares on the outer ring are weights where they sit on the disc: <b>T</b> the trial, "
+    "high spot, and the squares on the outer ring are weights where they sit on the disk: <b>T</b> the trial, "
     "<b>W</b> the correction, <b>H</b> the heavy spot as found (while shown). Below the critical the high spot is near "
     "the heavy spot, so the correction lands about opposite the reading; above it, the high spot swings round "
     "toward the far side. A y probe, a quarter turn on, reads 90° less.</p><p>The dashed lines from V₀ are "
     "the trial weights' effects. With two probes the second's readings are dashed, their names primed.</p>"
 )
 MODE_TIP = (
-    "<p><b>One plane</b>: one weight on the disc, read at one probe.<br><b>Two planes on the disc</b>: "
+    "<p><b>One plane</b>: one weight on the disk, read at one probe.<br><b>Two planes on the disk</b>: "
     "weights on its two faces, a set distance apart, read at two probes. Together they make a force and "
-    "a couple, so they can cancel the disc's unbalance and its skew at once, at every speed.<br><b>Two "
+    "a couple, so they can cancel the disk's unbalance and its skew at once, at every speed.<br><b>Two "
     "planes on the shaft</b>: weights clamped to the shaft wherever you choose. They cancel both readings "
     "at the balancing speed, but on a flexible shaft only there, unless the planes are close to the "
     "unbalance.</p>"
@@ -151,7 +151,7 @@ class BalancingPanel(QtWidgets.QWidget):
         self.mode.setToolTip(MODE_TIP)
         self.spacing = spin(1.0, 1000.0, PLANE_SPACING, 0, " mm apart")
         self.spacing.setToolTip(
-            "<p>The distance between the disc's two balancing planes, its faces: "
+            "<p>The distance between the disk's two balancing planes, its faces: "
             "the further apart, the smaller the weights a couple needs.</p>"
         )
         self.plane_z = [spin(0.0, 1e4, z, 0, " mm") for z in SHAFT_PLANES]
@@ -238,7 +238,7 @@ class BalancingPanel(QtWidgets.QWidget):
         self.remove.clicked.connect(self.remove_weights)
         self.show_heavy = QtWidgets.QCheckBox("Show heavy spot")
         self.show_heavy.setChecked(True)
-        self.show_heavy.setToolTip("Draw the heavy spot on the disc and its line on the disc's orbit")
+        self.show_heavy.setToolTip("Draw the heavy spot on the disk and its line on the disk's orbit")
         self.show_heavy.toggled.connect(page.set_heavy_shown)
         extras = FlowLayout()
         extras.add(self.mystery, self.reveal, self.remove, self.show_heavy)
@@ -262,7 +262,7 @@ class BalancingPanel(QtWidgets.QWidget):
                 vp.addItem(self.tips[key, k])
                 vp.addItem(self.labels[key, k])
         self.effects = {(key, k): vp.plot() for key in TRIALS for k in range(2)}
-        # The weights where they sit on the disc, on the outer ring: the trial, the corrections, the heavy spot.
+        # The weights where they sit on the disk, on the outer ring: the trial, the corrections, the heavy spot.
         self.weight_marks = {name: pg.ScatterPlotItem(size=11, symbol="s") for name in WEIGHT_MARKS}
         self.weight_labels = {name: pg.TextItem(text, anchor=(0.5, 0.5)) for name, (text, _) in WEIGHT_MARKS.items()}
         for name in WEIGHT_MARKS:
@@ -413,7 +413,7 @@ class BalancingPanel(QtWidgets.QWidget):
         self.refresh()
 
     def rotor_changed(self) -> None:
-        """The rotor's length or disc moved: keep the shaft planes on the shaft."""
+        """The rotor's length or disk moved: keep the shaft planes on the shaft."""
         self._show_mode()
 
     # ------------------------------------------------------------- readings

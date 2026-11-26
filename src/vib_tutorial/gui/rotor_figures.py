@@ -1,4 +1,4 @@
-"""The rotor Theory's figures: SVG drawn from the theme's colours (see `figures`), named in the notes'
+"""The rotor Theory's figures: SVG drawn from the theme's colors (see `figures`), named in the notes'
 HTML as ``<img src="fig:...">``.
 """
 
@@ -32,10 +32,10 @@ def spots_svg() -> str:
         fig.text(ox - 30, oy + 44, "whirl orbit", muted, "end"),
         fig.circle(cx, cy, radius, shaft, width=2.0),
         fig.circle(cx, cy, 3, fill=shaft),
-        # the spin, round the disc's centre
+        # the spin, round the disk's center
         fig.arc(cx, cy, radius + 16, 150, 200, fg, 1.5, arrow=True),
         fig.text(*fig.point(cx, cy, radius + 32, 175), "Ω", fg),
-        # the angle φ of the mark from +x, at the disc's centre
+        # the angle φ of the mark from +x, at the disk's center
         fig.line(cx, cy, cx + radius + 10, cy, faint, 1.0, "4 3"),
         fig.line(cx, cy, *fig.point(cx, cy, radius, MARK), faint, 1.0, "4 3"),
         fig.arc(cx, cy, 22, 0, MARK, muted, 1.2),
@@ -46,7 +46,7 @@ def spots_svg() -> str:
     a = math.radians(MARK)
     parts.append(fig.head(mx, my, -a + math.pi, fg, 11))
     parts.append(fig.text(*fig.point(cx, cy, radius + 20, MARK - 10), "keyphasor", fg, "start"))
-    # The heavy spot (at the mark here), and the high spot: the rim's point farthest from the bearings' centre.
+    # The heavy spot (at the mark here), and the high spot: the rim's point farthest from the bearings' center.
     hx, hy = fig.point(cx, cy, radius - 12, MARK)
     parts += [
         fig.circle(hx, hy, 7, fill=heavy),
@@ -172,7 +172,7 @@ def campbell_svg() -> str:
 
 
 def gyro_svg() -> str:
-    """The disc's axis seen end on (z toward you): its tip whirling forward round the bearings' line, the
+    """The disk's axis seen end on (z toward you): its tip whirling forward round the bearings' line, the
     sideways part of its angular momentum, I_pΩ times the tilt, and the rate that part turns at."""
     fg, muted, faint = colors.foreground, colors.muted, colors.faint
     tilt, rate = colors.mass[0], colors.force

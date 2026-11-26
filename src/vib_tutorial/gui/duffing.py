@@ -1,6 +1,6 @@
 """Duffing & Mathieu page: a mass on a hardening or softening spring, driven or pumped, swept through its resonances.
 
-Left: the oscillator, the drive and the playback. Centre: the amplitude against the
+Left: the oscillator, the drive and the playback. Center: the amplitude against the
 frequency (harmonic balance's branches, backbone and folds, for the drive's first harmonic
 and the pump's half harmonic, under each drive cycle's measured ones) and the displacement's
 strip chart. Right: the phase plane with its Poincaré section, the Ince–Strutt chart of the
@@ -83,14 +83,14 @@ TIPS = {
 RESPONSE_TIP = (
     "<p>The amplitude of the displacement's first harmonic against the drive's frequency. Solid: harmonic "
     "balance's stable steady states; dashed: its unstable ones (the middle branch); dotted: the backbone, the "
-    "free oscillation's frequency at each amplitude; grey: the spring without its cubic term. The arrows are "
+    "free oscillation's frequency at each amplitude; gray: the spring without its cubic term. The arrows are "
     "the jumps from the folds, where a branch ends. The dots are each drive cycle's measured first harmonic, "
-    "coloured by the sweep's direction.</p><p>Pumped, the second colour is the half harmonic (Ω/2) the pump "
+    "colored by the sweep's direction.</p><p>Pumped, the second color is the half harmonic (Ω/2) the pump "
     "drives, rest included along the axis (dashed inside the tongue, where it is unstable), and the triangles "
     "its measured amplitude.</p>"
 )
 CHART_TIP = (
-    "<p>The Ince–Strutt chart: how fast the pumped linear spring's swing grows (coloured) or dies away "
+    "<p>The Ince–Strutt chart: how fast the pumped linear spring's swing grows (colored) or dies away "
     "(blank), against the pump's frequency over the natural frequency and its depth μ, at this damping. "
     "Rest is unstable inside the tongues, which reach down toward Ω = 2ω<sub>n</sub>/n: half the pump's "
     "frequency, then the pump's own, then a third... Damping lifts their tips off the axis. The dashed line "
@@ -166,7 +166,7 @@ def _pump_frequency(rng: np.random.Generator) -> Question:
     fn = math.sqrt(k / m) / TWO_PI
     return Question(
         f"A {sig(m, 6)} kg mass on a {sig(k, 6)} N/m spring. At what frequency should its stiffness pulse to swing it hardest "
-        "from rest (the first tongue's centre)?",
+        "from rest (the first tongue's center)?",
         2 * fn,
         f"f<sub>n</sub> = √(k/m)/2π = {number(fn)} Hz; the principal parametric resonance pumps at twice it, "
         f"{number(2 * fn)} Hz, and the mass swings at {number(fn)} Hz, half the pump's frequency.",
@@ -396,7 +396,7 @@ def _plot(left: str, left_units: str | None, bottom: str, bottom_units: str | No
 
 
 class DuffingPage(QtWidgets.QWidget):
-    """Controls on the left, the response and the strip chart in the centre, phase plane and notes on the right."""
+    """Controls on the left, the response and the strip chart in the center, phase plane and notes on the right."""
 
     follows_chain = False  # MainWindow: this page has its own model, not the chain
 
@@ -528,7 +528,7 @@ class DuffingPage(QtWidgets.QWidget):
         lv.addStretch(1)
         left_scroll = ColumnScroll(left)
 
-        # --- centre: the response against frequency, the readout, the strip chart
+        # --- center: the response against frequency, the readout, the strip chart
         self.response = _plot("Amplitude (first harmonic)", "m", "Drive frequency", "Hz")
         self.response.setMouseEnabled(x=False, y=False)
         self.response.setToolTip(RESPONSE_TIP)
@@ -975,7 +975,7 @@ class DuffingPage(QtWidgets.QWidget):
             self._show_readout()
 
     def _chart_lut(self) -> np.ndarray:
-        """Blank where the swing dies away, shading up to the force colour as it grows faster."""
+        """Blank where the swing dies away, shading up to the force color as it grows faster."""
         back = np.array(pg.mkColor(colors.background).getRgb()[:3], dtype=float)
         hot = np.array(pg.mkColor(colors.force).getRgb()[:3], dtype=float)
         n = 256

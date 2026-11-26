@@ -7,7 +7,7 @@ other than Qt (a Rust UI, WebAssembly) could take it over. A page joins by addin
   `goal` are code, found again by the problem's key.
 - **Its view model returns plain data:** each panel's function, on the page's opening state and each trial,
   returns only numbers, strings, numeric arrays and dataclasses of them (`plain.impure`): no Qt, no pyqtgraph,
-  colours as theme roles' names.
+  colors as theme roles' names.
 - **Its notes need no Qt** (`qt_free_notes`): `notes_pages.page_html` gathers them in a fresh interpreter without
   loading Qt (so they live in a Qt-free module, not the page's widget's). The glossary is the first; a page joins
   when its rebuild moves its notes out. The static export itself is `test_notes_export`'s.

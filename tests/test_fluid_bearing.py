@@ -65,7 +65,7 @@ def test_closed_form_coefficients_match_the_film_force(rpm):
 
 
 def test_eccentricity_and_attitude_limits():
-    # Fast or light: the journal goes to the centre, 90° from the load line. Slow or heavy: to the bottom.
+    # Fast or light: the journal goes to the center, 90° from the load line. Slow or heavy: to the bottom.
     assert eccentricity(1e4) < 1e-3 and attitude(1e-4) == pytest.approx(math.pi / 2, abs=1e-3)
     assert eccentricity(1e-4) > 0.97 and attitude(0.999) < 0.05
     assert eccentricity(0.0) == 1.0
@@ -231,7 +231,7 @@ def test_whole_force_derivatives_and_dissipation():
 
 
 def test_whole_force_vanishes_at_half_speed_whirl():
-    # A centred-orbit whirl at exactly half the speed leaves the film nothing to squeeze or drag: no force.
+    # A centered-orbit whirl at exactly half the speed leaves the film nothing to squeeze or drag: no force.
     b = BEARING
     w, e = 300.0, 0.6 * b.clearance
     assert np.abs(b.force(e, 0.0, 0.0, 0.5 * w * e, w)).max() < 1e-9 * b.load

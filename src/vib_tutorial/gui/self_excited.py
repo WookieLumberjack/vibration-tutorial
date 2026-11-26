@@ -1,6 +1,6 @@
 """Self-excited vibration page: van der Pol, galloping, vortex-induced vibration and flutter.
 
-Left: the model and its parameters. Centre: its motion from a small start (time history and phase plane), or for
+Left: the model and its parameters. Center: its motion from a small start (time history and phase plane), or for
 flutter the two modes' frequencies and damping against the speed. Right: the Motion tab (the body drawn moving,
 `self_excited_view.SectionView`, played by a `Playback` over the run, or over flutter's least stable mode,
 `Flutter.mode`; a slider for the drive whose linearized poles follow it as it's dragged, the model rerun when
@@ -206,7 +206,7 @@ TRIALS = (
     ),
     SelfTrial(
         "A wing section, speeding up",
-        "A wing section with plunge at 3 Hz and pitch at 6 Hz, its centre of mass behind the elastic axis, in steady "
+        "A wing section with plunge at 3 Hz and pitch at 6 Hz, its center of mass behind the elastic axis, in steady "
         "lift. As the speed rises the lift, a stiffness growing as <m>U</m>², couples the two modes: their "
         "frequencies close in (2.93 and 6.71 Hz at rest, 3.6 and 4.7 Hz at 20 m/s) and at 20.7 m/s, nearly met, "
         "the plunge-like mode's damping falls to zero: the flutter speed, well below the 39 m/s at which the pitch "
@@ -216,7 +216,7 @@ TRIALS = (
         {"f_speed": 20.0},
         predict=Prediction(
             "The wing section's plunge and pitch modes are at 2.9 and 6.7 Hz in still air. As the airspeed rises "
-            "towards flutter, what do their frequencies do?",
+            "toward flutter, what do their frequencies do?",
             (
                 "Both fall to zero",
                 "They stay where they are",
@@ -234,14 +234,14 @@ TRIALS = (
     ),
     SelfTrial(
         "Mass balance",
-        "Move the centre of mass onto the elastic axis, <m>x<sub>cg</sub></m> = 0: the inertia no longer couples plunge "
+        "Move the center of mass onto the elastic axis, <m>x<sub>cg</sub></m> = 0: the inertia no longer couples plunge "
         "and pitch, their frequencies never meet, and the section no longer flutters; it only diverges, at 39 m/s, "
         "where the pitch spring gives out. Mass-balancing control surfaces (lead in the leading edge) does this. "
         "Halfway, at <m>x<sub>cg</sub></m> = 0.1, flutter waits until 22.8 m/s.",
         Kind.FLUTTER,
         {"f_cg": 0.0, "f_speed": 20.0},
         predict=Prediction(
-            "The section's centre of mass moved onto its elastic axis (x<sub>cg</sub> = 0). What happens to its "
+            "The section's center of mass moved onto its elastic axis (x<sub>cg</sub> = 0). What happens to its "
             "flutter?",
             (
                 "Nothing changes",
@@ -250,8 +250,8 @@ TRIALS = (
             ),
             2,
             why=(
-                "The centre of mass's place sets the inertial coupling between plunge and pitch: moved ahead of the axis, it stops the flutter.",
-                "Moved ahead of the elastic axis, the centre of mass couples plunge and pitch the other way, and they no longer feed each other: that's mass balance.",
+                "The center of mass's place sets the inertial coupling between plunge and pitch: moved ahead of the axis, it stops the flutter.",
+                "Moved ahead of the elastic axis, the center of mass couples plunge and pitch the other way, and they no longer feed each other: that's mass balance.",
                 '',
             ),
         ),
@@ -393,7 +393,7 @@ def _divergence(rng: np.random.Generator) -> Question:
     kt = inertia * (TWO_PI * pitch) ** 2
     U = m.divergence_speed()
     return Question(
-        f"A wing section of semichord b = {sig(b, 6)} m, {sig(m.mass, 6)} kg per metre of span, radius of gyration {sig(m.radius, 6)} b, "
+        f"A wing section of semichord b = {sig(b, 6)} m, {sig(m.mass, 6)} kg per meter of span, radius of gyration {sig(m.radius, 6)} b, "
         f"pitches at {sig(pitch, 6)} Hz. Its lift, ½ρU² × 2b × 2π per radian (ρ = 1.225), acts {sig(e, 6)} b ahead of the elastic "
         "axis. At what speed does it diverge?",
         U,
@@ -425,7 +425,7 @@ def _double_eps(rng: np.random.Generator) -> Question:
 
 def _heavier(rng: np.random.Generator) -> Question:
     return Question(
-        "A square section starts to gallop at 3.8 m/s. Its mass per metre is doubled, the frequency and damping kept. "
+        "A square section starts to gallop at 3.8 m/s. Its mass per meter is doubled, the frequency and damping kept. "
         "Where does it start to gallop now?",
         0,
         "At twice the speed, 7.6 m/s: U<sub>g</sub> = 4mζω<sub>n</sub>/(ρDA<sub>1</sub>) is proportional to the mass–damping (Scruton) "
@@ -467,7 +467,7 @@ def _past_lock_in(rng: np.random.Generator) -> Question:
 
 def _coalescence(rng: np.random.Generator) -> Question:
     return Question(
-        "A wing section's plunge and pitch modes are at 2.9 and 6.7 Hz in still air. As the airspeed rises towards "
+        "A wing section's plunge and pitch modes are at 2.9 and 6.7 Hz in still air. As the airspeed rises toward "
         "flutter, what do their frequencies do?",
         0,
         "They close in, 3.6 and 4.7 Hz at 20 m/s, as the steady lift couples them; one mode's damping reaches zero "
@@ -487,8 +487,8 @@ def _coalescence(rng: np.random.Generator) -> Question:
 
 def _mass_balance(rng: np.random.Generator) -> Question:
     return Question(
-        "A wing section in steady lift flutters at 21 m/s with its centre of mass 0.2 semichords behind the elastic "
-        "axis. The centre "
+        "A wing section in steady lift flutters at 21 m/s with its center of mass 0.2 semichords behind the elastic "
+        "axis. The center "
         "of mass is moved to 0.2 semichords ahead of it. What happens?",
         0,
         "It no longer flutters: the inertia now couples plunge and pitch the other way, and only divergence is left, "
@@ -500,9 +500,9 @@ def _mass_balance(rng: np.random.Generator) -> Question:
         ),
         why=(
             "",
-            "Moved ahead of the elastic axis, the centre of mass couples plunge and pitch the other way, and they no "
+            "Moved ahead of the elastic axis, the center of mass couples plunge and pitch the other way, and they no "
             "longer feed each other: that's mass balance.",
-            "The centre of mass's place sets the inertial coupling between plunge and pitch: moved ahead of the "
+            "The center of mass's place sets the inertial coupling between plunge and pitch: moved ahead of the "
             "axis, it stops the flutter.",
         ),
         setup=dict(kind=Kind.FLUTTER, values={"f_cg": -0.2}),
@@ -560,7 +560,7 @@ PROBLEMS = tuple(
         ("double-eps", "Predict: twice ε", "vdp", "Van der Pol", _double_eps),
         ("heavier", "Predict: a heavier section", "galloping", "Galloping", _heavier),
         ("past-lock-in", "Predict: past lock-in", "viv", "Vortex-induced vibration", _past_lock_in),
-        ("coalescence", "Predict: towards flutter", "flutter", "Flutter", _coalescence),
+        ("coalescence", "Predict: toward flutter", "flutter", "Flutter", _coalescence),
         ("mass-balance", "Predict: mass balance", "flutter", "Flutter", _mass_balance),
         ("scruton-spec", "Spec: mass and damping", "galloping", "Galloping", _scruton_spec),
     )
@@ -574,14 +574,14 @@ TIPS = {
     "start": "<p>The start: displaced this far, at rest.</p>",
     "periods": "<p>How long to run, in natural periods.</p>",
     "side": "<p>The square's side D.</p>",
-    "mass": "<p>Mass per metre of length.</p>",
+    "mass": "<p>Mass per meter of length.</p>",
     "fn": "<p>The natural frequency.</p>",
     "zeta": "<p>The structure's damping ratio.</p>",
     "speed": "<p>The wind speed.</p>",
     "reduced": "<p>The current as a reduced velocity U/f<sub>n</sub>D.</p>",
     "plunge": "<p>The plunge (bending) mode's frequency, without wind.</p>",
     "pitch": "<p>The pitch (torsion) mode's frequency, without wind.</p>",
-    "cg": "<p>The centre of mass behind the elastic axis, in semichords.</p>",
+    "cg": "<p>The center of mass behind the elastic axis, in semichords.</p>",
     "e": "<p>The elastic axis behind the quarter chord (where the lift acts), in semichords.</p>",
     "lift": "<p>Steady, L ∝ θ: the lift follows the pitch alone, a stiffness. Quasi-steady, L ∝ θ + ḣ/U: it also "
     "follows the plunge's ḣ/U, the angle the plunging section sees, which acts as a damping.</p>",
@@ -591,8 +591,8 @@ DRIVE_TIP = (
     "for VIV. Drag it and the poles below follow at once; the model is run again when you let go.</p>"
 )
 POLES_TIP = (
-    "<p>The poles of the model at small motion, linearized, at the slider's value (grey: over the slider's "
-    "range). A pole right of Re λ = 0 grows: filled in the force colour.</p>"
+    "<p>The poles of the model at small motion, linearized, at the slider's value (gray: over the slider's "
+    "range). A pole right of Re λ = 0 grows: filled in the force color.</p>"
 )
 SWEEP_TIP = (
     "<p>The settled motion against the parameter that drives it; the dotted line is the value set. For flutter, "
@@ -603,7 +603,7 @@ NOTES_HTML = load_notes("self_excited", figures=self_excited_figures.FIGURES, tr
 
 
 class SelfExcitedPage(QtWidgets.QWidget):
-    """Controls on the left, the motion in the centre, the sweep on the right."""
+    """Controls on the left, the motion in the center, the sweep on the right."""
 
     follows_chain = False  # MainWindow: this page has its own models, not the chain
 
@@ -659,7 +659,7 @@ class SelfExcitedPage(QtWidgets.QWidget):
         self.info = note_label()
         connect_all((self.kind, self.lift, *self.boxes.values()), self._on_inputs)
 
-        # --- centre
+        # --- center
         self.top_plot = plot("x", "m", "Time", "s", height=150)
         self.bottom_plot = plot("Velocity", "m/s", "x", "m", height=150)
         add_legend(self.top_plot.getPlotItem(), offset=(-10, 10))
@@ -1108,7 +1108,7 @@ class SelfExcitedPage(QtWidgets.QWidget):
 
     @coalesce.coalesced
     def _draw_motion(self) -> None:
-        """The body's motion for the Motion tab: the run the centre shows, or flutter's least stable mode."""
+        """The body's motion for the Motion tab: the run the center shows, or flutter's least stable mode."""
         if self.tabs.currentIndex() != TAB_MOTION or not hasattr(self, "current") or self._stale:
             return
         axis = 0.0

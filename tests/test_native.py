@@ -69,7 +69,7 @@ def test_constants_agree():
 
 @needs_native
 def test_pi_film_matches_the_reference():
-    # Anywhere in the clearance and past the wall, centred, at rest and spinning either way.
+    # Anywhere in the clearance and past the wall, centered, at rest and spinning either way.
     rng = np.random.default_rng(7)
     k, c = 2.4e3, 50e-6
     cases = [

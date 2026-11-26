@@ -2,9 +2,9 @@
 
 The *3D rigid body* page. A `Body` is a uniform shape (a cuboid of sides a × b × c, a cylinder of radius a
 and length c along its z, or a sphere of radius a) of mass m, plus a point mass m_p at `offset` from the
-shape's centre, all in the shape's own axes x, y, z (the body's axes). Its centre of mass G is
-m_p·offset/(m + m_p) from the shape's centre, and its inertia tensor about G is the shape's about its centre,
-moved to G by the parallel-axis theorem, I_G = I_C + m(|d|²1 − d dᵀ) (d from G to the shape's centre),
+shape's center, all in the shape's own axes x, y, z (the body's axes). Its center of mass G is
+m_p·offset/(m + m_p) from the shape's center, and its inertia tensor about G is the shape's about its center,
+moved to G by the parallel-axis theorem, I_G = I_C + m(|d|²1 − d dᵀ) (d from G to the shape's center),
 plus the point mass's own m_p(|p|²1 − p pᵀ) (p from G to it). With the point mass off an axis the tensor in the
 shape's axes has products of inertia; its eigenvectors are the principal axes, in which it is diagonal
 (`Body.principal`: the moments ascending, the axes as columns, right-handed).
@@ -67,14 +67,14 @@ class Body:
     b: float = 0.20  # a cuboid's side along y
     c: float = 0.10  # a cuboid's side along z; a cylinder's length
     point: float = 0.0  # the point mass, kg
-    offset: tuple[float, float, float] = (0.0, 0.0, 0.0)  # from the shape's centre
+    offset: tuple[float, float, float] = (0.0, 0.0, 0.0)  # from the shape's center
 
     @property
     def total(self) -> float:
         return self.mass + self.point
 
     def shape_inertia(self) -> np.ndarray:
-        """The shape's inertia tensor about its own centre, in its axes: diagonal."""
+        """The shape's inertia tensor about its own center, in its axes: diagonal."""
         m, a, b, c = self.mass, self.a, self.b, self.c
         if self.shape is Shape.CUBOID:
             return np.diag([m * (b * b + c * c), m * (a * a + c * c), m * (a * a + b * b)]) / 12.0
@@ -84,14 +84,14 @@ class Body:
         return np.eye(3) * 0.4 * m * a * a
 
     def centre(self) -> np.ndarray:
-        """G, the centre of mass, from the shape's centre."""
+        """G, the center of mass, from the shape's center."""
         return self.point * np.asarray(self.offset, dtype=float) / self.total
 
     def inertia(self) -> np.ndarray:
         """The inertia tensor about G in the shape's axes: the shape's moved to G (parallel axes), plus the point
         mass's."""
         G = self.centre()
-        d = -G  # G to the shape's centre
+        d = -G  # G to the shape's center
         p = np.asarray(self.offset, dtype=float) - G  # G to the point mass
         return (
             self.shape_inertia()

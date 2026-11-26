@@ -10,7 +10,7 @@ The pages in the order the app's tabs take them.
 - [Energy methods](#energy-methods): Rayleigh, Dunkerley, Rayleigh–Ritz and Holzer: frequencies from the energies, and how good they are
 - [FRF matrix](#frf-matrix): every receptance H<sub>jk</sub>, and how the modes add up to it
 - [Complex modes](#complex-modes): when damping makes the modes complex, and what the usual approximation misses
-- [Rigid body on mounts](#rigid-body-on-mounts): a machine on four mounts in 3D: six coupled modes, the elastic centre, and decoupling by tilting them
+- [Rigid body on mounts](#rigid-body-on-mounts): a machine on four mounts in 3D: six coupled modes, the elastic center, and decoupling by tilting them
 
 ## Simulation & modal analysis
 
@@ -53,7 +53,7 @@ The pages in the order the app's tabs take them.
   the springs, the dampers, or both together (below).
 - **Load a preset** (*System parameters → Preset*): the plain chain, an undamped
   vibration absorber, a tuned mass damper with Den Hartog's tuning, or a damper on the roof
-  of a 4-storey building shaken by the ground, each with the excitation that shows it off
+  of a 4-story building shaken by the ground, each with the excitation that shows it off
   (below).
 - **Slow motion** (0.05× to 2×) for the higher modes, and auto-scaled animation and plots
   so small motions stay visible.
@@ -112,7 +112,7 @@ chain without its last mass*).
   1/(1 + μ) with ζ<sub>a</sub> = √(3μ/8(1 + μ)³) (relative to f<sub>1</sub>, as Den Hartog defined it). The resonance at 40 times the static
   deflection becomes two flat peaks under 6. Set c2 to 0 or to 5 to see why the damping
   has an optimum.
-- **TMD on a 4-storey building**: the default chain shaken by the ground at its first
+- **TMD on a 4-story building**: the default chain shaken by the ground at its first
   mode, with a damper on the roof sized from mode 1's *modal mass* there
   (1/φ<sub>roof</sub>², φ mass-normalized).
 
@@ -180,7 +180,7 @@ The panel beside the animation has two views:
 given by releases and edits E<sub>0</sub>, the work done by the force W, and the energy
 dissipated by the dampers D and by friction D<sub>f</sub>. At every sample
 E<sub>0</sub> + W = T + V + D + D<sub>f</sub>. Release a mode and T and V
-swap twice per cycle while T + V decays and D rises towards E<sub>0</sub>. Drive the
+swap twice per cycle while T + V decays and D rises toward E<sub>0</sub>. Drive the
 chain just below a natural frequency and the stored energy beats. W falls whenever the
 force pushes against the motion, and D keeps rising.
 
@@ -188,7 +188,7 @@ force pushes against the motion, and D keeps rising.
 
 ### Element forces
 
-*Plot coordinates → Element forces* plots the tension in each element, in the colour of
+*Plot coordinates → Element forces* plots the tension in each element, in the color of
 its row under *System parameters*. Element i joins mass i−1 to mass i, and element 1 joins
 mass 1 to the ground. A second menu picks what to plot:
 
@@ -233,12 +233,12 @@ plots (row: response, column: force), on shared axes so their sizes compare dire
   shows the selected term as magnitude with phase, or real with imaginary part.
 - **Modes included in the sum**: each term is a sum of one term per mode. Untick modes to see
   the truncated modal sum (dashed red) against the full solution (black), and each mode's term
-  in its own colour. The real part shows best how the terms add. The large plot shades the
+  in its own color. The real part shows best how the terms add. The large plot shades the
   frequency band where the sum differs most from the full solution, and lists the **static
   compliance** (ω = 0): the ticked modes' sum against K⁻¹, and each mode's share of it.
 - **Build H mode by mode**: the *First* slider ticks the first r terms and leaves the rest out, and
   *Start* on the run bar steps it from one term to all of them: each term adds its peak, and the dips
-  appear where neighbouring terms cancel. Reset sums them all again.
+  appear where neighboring terms cancel. Reset sums them all again.
 - **Exact or classical terms**: the exact expansion uses the complex (state-space) modes and
   always sums to the full solution. The classical one uses the real modes with ζ modal, and
   misses even with every mode when damping is non-proportional.
@@ -285,7 +285,7 @@ With one damper at the base, mode 3 is the most complex: its masses' phases spre
 best-fit line. The approximation puts mode 4's damping at twice the exact value, and a release in
 mode 3's undamped shape passes half of it to mode 2.
 
-![Complex modes page, the Sweep tab for that damper: the root locus as c1 goes from 0.2 to 2000 N·s/m, mode 2's pair leaving for the real axis and the others turning back towards the locked chain's 1.42, 3.97 and 5.74 Hz; each mode's ζ peaks (mode 1 0.147 at 59.7 N·s/m) while the approximation's grows for ever; the MPD peaks near 20–30 N·s/m](images/complex_sweep.png)
+![Complex modes page, the Sweep tab for that damper: the root locus as c1 goes from 0.2 to 2000 N·s/m, mode 2's pair leaving for the real axis and the others turning back toward the locked chain's 1.42, 3.97 and 5.74 Hz; each mode's ζ peaks (mode 1 0.147 at 59.7 N·s/m) while the approximation's grows for ever; the MPD peaks near 20–30 N·s/m](images/complex_sweep.png)
 
 Swept, the same damper gives mode 1 at most ζ = 0.147, at 60 N·s/m; stiffer, it locks m1 to the base and
 the modes become those of the three masses above it. Fitted with real modes, this chain's FRF misses by
@@ -296,10 +296,10 @@ the noise's share.
 
 A machine (a uniform box) on four mounts, each stiff along its axis and softer across it, moving in all
 six ways: K = Σ Tᵀ K<sub>m</sub> T against M, the six modes swinging in 3D, and each one's kinetic energy
-split among x, y, z, roll, pitch and yaw. Mounts below the centre of mass couple sway with roll; an
-off-centre centre of mass couples bounce with pitch. The elastic centre (where a force moves the body
+split among x, y, z, roll, pitch and yaw. Mounts below the center of mass couple sway with roll; an
+off-center center of mass couples bounce with pitch. The elastic center (where a force moves the body
 without turning it), each plane's beside the mounts' lines of action, and focalizing: tilting the mounts
-toward the middle lifts the roll plane's centre to the centre of mass, and sway and roll are pure again.
+toward the middle lifts the roll plane's center to the center of mass, and sway and roll are pure again.
 Driven by a turning unbalance or a firing torque, (K(1 + iη) − ω²M)q = Q with rubber's loss factor: the
 force through each mount and the floor's total against the speed (isolated above √2 times the highest mode,
 amplified about 1/η at each), which modes the load drives, and the torque roll axis I⁻¹n that engine mounts
@@ -307,7 +307,7 @@ are aimed at.
 
 ![Rigid body on mounts page, driven: 2 kg·mm of unbalance at 955 rpm, where it turns at the bounce mode's 15.9 Hz, puts 201 N through the floor, ten times its own 20 N; the Response tab shows the floor's force against the speed, falling below the load's own above about 1350 rpm](images/rigid_mounts_response.png)
 
-![Rigid body on mounts page: a 20 kg box on four mounts 80 mm below its centre of mass, swinging in its 6.90 Hz mode, 67 % sway and 33 % roll; the elastic centre has dropped to the mounts' plane, and the sweep shows sway and roll veering apart as the mounts go lower](images/rigid_mounts.png)
+![Rigid body on mounts page: a 20 kg box on four mounts 80 mm below its center of mass, swinging in its 6.90 Hz mode, 67 % sway and 33 % roll; the elastic center has dropped to the mounts' plane, and the sweep shows sway and roll veering apart as the mounts go lower](images/rigid_mounts.png)
 
 ---
 

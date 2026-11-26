@@ -1,12 +1,12 @@
 """A polar plot's grid, and a key to which way its angles count, for the rotor page's 1X vectors.
 
-The plot is the disc seen from beyond bearing B (z toward you: x right, y up) as the keyphasor mark passes
-+x. Rings of amplitude (labelled toward the bottom), spokes every 30° labelled 0° to 330°
+The plot is the disk seen from beyond bearing B (z toward you: x right, y up) as the keyphasor mark passes
++x. Rings of amplitude (labeled toward the bottom), spokes every 30° labeled 0° to 330°
 counter-clockwise from the mark, and outside them the key: the keyphasor mark at 0°, an arrow for the
 rotation and one for a positive phase (both counter-clockwise: the page counts phase as a lead, in the
 direction of spin, as it counts every angle on the rotor), and the x and y probes at 0° and 90°. A 1X
 vector V is drawn at its complex value, angle arg V. Read at the x probe, beside the keyphasor, it then
-points at the high spot on the disc as drawn, and a weight at θ from the mark sits at θ on the grid
+points at the high spot on the disk as drawn, and a weight at θ from the mark sits at θ on the grid
 (`ring_point`). A y probe, a quarter turn on, reads 90° less.
 
 With no axes, the plot needs a name for a screen reader: give it one where it's made. `fit(r)` sizes the rings to hold radius r, redrawing them only when the ring step changes (a run-up moves

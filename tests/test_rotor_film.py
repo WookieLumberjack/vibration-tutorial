@@ -47,7 +47,7 @@ def test_bearing_loads_are_the_weights_shares():
     m = s.disc_mass + s.bearing_a.mass + s.bearing_b.mass
     assert sum(s.bearing_loads) == pytest.approx(m * 9.81)
     assert s.bearing_loads[0] == pytest.approx(s.bearing_loads[1])
-    # Overhung past B: A is pulled down (negative), B carries more than the whole disc.
+    # Overhung past B: A is pulled down (negative), B carries more than the whole disk.
     o = s.with_(position=1.2)
     a, b = o.bearing_loads
     L, z = o.length, 1.2 * o.length
@@ -141,7 +141,7 @@ def test_journal_bearing_preset():
     ) == pytest.approx(quoted("rotor_notes", "0.85"), abs=0.01)
     q = p.system.static_deflection(2500.0 / RPM)
     assert q[XA] * 1e6 == pytest.approx(3.98, abs=0.005) and q[YA] * 1e6 == pytest.approx(-1.50, abs=0.005)
-    assert q[YD] < q[YA]  # the disc sags below the journals
+    assert q[YD] < q[YA]  # the disk sags below the journals
 
 
 def test_journal_bearing_preset_splits_its_critical():

@@ -66,8 +66,8 @@
   the complex modes paired with the undamped ones, FRFs, and the exact response to a harmonic force, an
   impulse or a step from rest.
 - `core/rotor.py`: the Jeffcott rotor's model: shaft (beam elements: massless and condensed to the
-  stations, or with mass and reduced to the stations and its fixed-interface modes), disc,
-  bearings and the gyroscopic matrix, the 1X loads (unbalance, the disc's skew, the shaft's bow), an
+  stations, or with mass and reduced to the stations and its fixed-interface modes), disk,
+  bearings and the gyroscopic matrix, the 1X loads (unbalance, the disk's skew, the shaft's bow), an
   asymmetric shaft's turning stiffness, a cracked shaft (`Crack`: a hinge at the crack, breathing open
   under the weight), oil films linearized about each journal's equilibrium, and magnetic bearings with
   their controllers' states in the state vector.
@@ -111,9 +111,9 @@
   concentric wall, their potential flow, and a baffled plate's modal added mass (its AVMI factor)
   from the wavenumber integral of its mode shape.
 - `core/sloshing.py`: sloshing in a rectangular tank: its modes' frequencies and flow, the
-  spring–mass analogue's rigid and sloshing masses, and a tuned liquid damper on a structure (its
+  spring–mass analog's rigid and sloshing masses, and a tuned liquid damper on a structure (its
   response with the sloshing masses eliminated, Den Hartog's tuning, the peak against depth).
-- `core/torsional.py`: torsional drive trains: discs, shafts and gear meshes (with transmission
+- `core/torsional.py`: torsional drive trains: disks, shafts and gear meshes (with transmission
   error), the modes and their twist, the train referred to one shaft and with rigid gears, the
   orders and torsional critical speeds, the steady forced response, and the page's presets.
 - `core/torsional_startup.py`: a motor starting the train: the induction motor's curve and
@@ -127,7 +127,7 @@
 - `core/continuum_waves.py`: a pulse on the continuum (a digital waveguide carrying d'Alembert's
   waves, with the ends, a dashpot and a step scattering them in closed form, or a beam's exact
   modes) and on the mesh (stepped by its exact matrix exponential), and the wave presets.
-- `core/pendulum.py`: pendulums (simple, a rod, a torsion disc, inverted): the exact period by
+- `core/pendulum.py`: pendulums (simple, a rod, a torsion disk, inverted): the exact period by
   quadrature, Duffing's estimate, the swing by `solve_ivp`, the phase plane's orbits, and a rod's
   best pivot.
 - `core/periodic.py`: periodic forces as Fourier series in closed form, each harmonic's response, and
@@ -150,7 +150,7 @@
 - `core/quarter_car.py`: a quarter-car on an ISO 8608 road: the transfer functions, the outputs' PSDs
   and RMS, the comfort–grip trade-off, and a drive stepped exactly.
 - `core/rigid_mounts.py`: a box on mounts with six degrees of freedom: K = Σ Tᵀ K<sub>m</sub> T, the
-  modes and their kinetic-energy split, the elastic centre (overall and each plane's), the focal tilt, and
+  modes and their kinetic-energy split, the elastic center (overall and each plane's), the focal tilt, and
   the forced response to an unbalance or a torque (each mount's force, modal forces, the torque roll axis).
 - `core/seismic.py`: a design spectrum, the building's modal masses and peaks, ABS/SRSS/NRL/CQC, and
   synthesized records stepped mode by mode.
@@ -169,8 +169,8 @@
 - `core/diagnostics.py`: a gearbox's synthesized vibration (mesh, gear and bearing faults), a run-up
   with order tracking by angular resampling, envelope analysis and the cepstrum.
 - `gui/`: the PySide6 and pyqtgraph interface. It runs on a ~60 fps timer that advances
-  the simulator by wall-clock time × speed. `gui/style.py` holds the colour themes; every
-  widget reads its colours from the current one (`colors.mass[i]`, `colors.force`) and
+  the simulator by wall-clock time × speed. `gui/style.py` holds the color themes; every
+  widget reads its colors from the current one (`colors.mass[i]`, `colors.force`) and
   redraws in a new one through its `apply_theme()`. Log axes use `gui/axes.py`, which labels
   only as many ticks as fit. What the reader drags on a plot is `gui/drag.py`'s: a `DragLine` (a value,
   with a grip) a `DragDot` (a point sliding along a curve) or a `DragPoint` (a point dragged anywhere, a pole), each a signal the page binds to its box.
@@ -192,9 +192,9 @@
   record there too), and `tests/test_view_models.py` checks them.
 - The Theory notes are HTML files in `theory/`, read by `gui/links.py`'s `load_notes`. Their display
   equations are written in LaTeX and typeset by [ziamath](https://github.com/cdelker/ziamath)
-  (`gui/maths.py`); the app's text is set in the bundled IBM Plex Sans and inline maths in the bundled STIX Two Text font (`fonts/`, both under the SIL Open
-  Font Licence). Each page's table of symbols and the glossary come from one list, `gui/notation.py`, and
-  its *Further reading* from `gui/references.py`. The figures are SVG drawn in the theme's colours
+  (`gui/maths.py`); the app's text is set in the bundled IBM Plex Sans and inline math in the bundled STIX Two Text font (`fonts/`, both under the SIL Open
+  Font License). Each page's table of symbols and the glossary come from one list, `gui/notation.py`, and
+  its *Further reading* from `gui/references.py`. The figures are SVG drawn in the theme's colors
   (`gui/figures.py`), and `gui/notes_view.py`'s browser draws the equations and figures.
 
 To measure the frame rate on your own display, start the app with `VIB_FRAME_STATS=1`
@@ -391,7 +391,7 @@ balanced = skewed.with_(plane_weights=tuple(p._replace(weight=w) for p, w in zip
 
 ## Running in a browser (Pyodide)
 
-The numerics (`core/`), the course's data, the view models and the notes' figures and maths load without Qt
+The numerics (`core/`), the course's data, the view models and the notes' figures and math load without Qt
 (`tests/test_qt_free.py`), so a browser front end could run them under [Pyodide](https://pyodide.org). Recorded
 2026-11-16 (#316 D9), what stands in the way, each with the change it would take:
 
@@ -402,7 +402,7 @@ The numerics (`core/`), the course's data, the view models and the notes' figure
   `_native` (below) it steps inline already. A `Recompute` would run its job inline as its `now(job)` does (the
   job is a pure function of the controls' values), the page waiting for it.
 - **A second process.** The rotor's background analysis (`core/rotor_analysis.py`) runs in a spawned process, so a
-  cancelled analysis can be stopped mid-way. A browser has no processes: it would run in the page's own thread
+  canceled analysis can be stopped mid-way. A browser has no processes: it would run in the page's own thread
   (or a Web Worker from the front end), losing only the mid-way stop.
 - **Version floors.** `pyproject.toml` asks for numpy ≥ 2.5.3 and scipy ≥ 1.18.1, the versions it's tested on.
   Pyodide ships its own builds, often a release or two behind: check its package list, and run the suite on its

@@ -176,7 +176,7 @@ def test_scrubbed_back_the_body_is_drawn_to_that_times_scale(page):
     page.load_trial(trial("Ringing down"))
     page.step(12.0)  # rung down to a few µm: the drawing magnified to match
     page._on_run(False)
-    page._on_scrubbed(page.live.t - 11.5)  # back to a swing of millimetres
+    page._on_scrubbed(page.live.t - 11.5)  # back to a swing of millimeters
     assert abs(page.body._centre - live_body.REST_X) <= live_body.SWING * 1.01  # on the page, not off it
 
 
@@ -365,7 +365,7 @@ def test_friction_sticks_off_centre_beside_the_ringing_ghost(page):
     page.step(4.0)
     text = page.readout.text()
     assert f"Each peak is {quoted('sdof', '3.14')} mm lower" in text
-    assert "Stuck 575 µm off centre" in text  # the worked example's 575 µm
+    assert "Stuck 575 µm off center" in text  # the worked example's 575 µm
     assert page.live.v == 0.0 and page.ghost.v != 0.0  # the viscous ghost rings on
     assert page.ghost_item.isVisible() and len(page.ghost_item.getData()[0])
     assert page.body.ghost.isVisible() and not page.ghost_on.isHidden()

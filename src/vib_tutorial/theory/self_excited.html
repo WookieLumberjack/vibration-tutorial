@@ -25,7 +25,7 @@ jump.</p>
 <p>The <b>Motion</b> tab plays each model's body: van der Pol's mass on its spring, the galloping square and the
 cylinder to scale in their own size, and the wing plunging and pitching in its least stable mode. Its slider
 sets what drives the model (<m>ε</m>, the wind speed, the reduced velocity) and moves the linearized poles under
-it as you drag: watch the pair cross Re <m>λ</m> = 0 where the body turns the force colour.</p>
+it as you drag: watch the pair cross Re <m>λ</m> = 0 where the body turns the force color.</p>
 
 <h3><a name="vdp"></a>Van der Pol</h3>
 <p>Van der Pol's oscillator <cite>van-der-pol-1926</cite> is the simplest:</p>
@@ -82,7 +82,7 @@ break up the shedding.</p>
 <h3><a name="flutter"></a>Flutter</h3>
 <p>A wing section of semichord <m>b</m>, in plunge <m>h</m> (down) and pitch <m>θ</m> (nose up) on springs
 <m>k<sub>h</sub></m> and <m>k<sub>θ</sub></m> at its elastic axis. The lift acts at the quarter chord,
-<m>eb</m> ahead of the axis, and the centre of mass sits <m>x<sub>cg</sub>b</m> behind it.</p>
+<m>eb</m> ahead of the axis, and the center of mass sits <m>x<sub>cg</sub>b</m> behind it.</p>
 <p><img src="fig:section"></p>
 <p>With <m>S</m> = <m>mx<sub>cg</sub>b</m> the static unbalance and <m>I</m> = <m>mr</m>²<m>b</m>² the inertia about
 the axis (<m>r</m> the radius of gyration in semichords),</p>
@@ -93,7 +93,7 @@ proportional to <m>θ</m> and to the dynamic pressure, is a stiffness that coupl
 their frequencies approach, and at the <b>flutter speed</b> <m>U<sub>F</sub></m>, where they nearly meet, one
 mode's damping crosses zero: the wind feeds a combined bending–torsion motion with the right phase between them
 (<b>coalescence flutter</b>; with no structural damping the two frequencies merge exactly there, into a pair whose
-damping is equal and opposite). Moving the centre of mass forward onto the elastic axis (<b>mass balance</b>)
+damping is equal and opposite). Moving the center of mass forward onto the elastic axis (<b>mass balance</b>)
 removes the inertial coupling <m>S</m> and raises the flutter speed, here past divergence, so the section no longer
 flutters at all. Separately, the lift's moment <m>eb</m>·d<m>L</m>/d<m>θ</m> uses up the pitch spring at the
 <b>divergence</b> speed, a static instability:</p>
@@ -105,7 +105,7 @@ flutters at all. Separately, the lift's moment <m>eb</m>·d<m>L</m>/d<m>θ</m> u
 velocity. That one-way term can make the pitch mode unstable on its own, its frequency still well apart from the
 plunge's, and mass balance no longer saves it. This lift leaves out two things real aerodynamics have: the lift
 lags the motion, and the pitch's own rate adds lift and a damping moment. Unsteady (Theodorsen
-<cite>theodorsen</cite>) aerodynamics keeps both. How the lift is modelled decides how, and how fast, a wing
+<cite>theodorsen</cite>) aerodynamics keeps both. How the lift is modeled decides how, and how fast, a wing
 flutters, so design checks use the unsteady model.</p>
 
 <h3><a name="worked-example"></a>Worked example</h3>
@@ -114,7 +114,7 @@ flutters, so design checks use the unsteady model.</p>
 <li><b>Van der Pol</b> (1 Hz, <m>ε</m> = 0.2, <m>x<sub>r</sub></m> = 10 mm). At rest <m>ζ</m> = −0.1, so a start
 grows; it settles at 2 × 10 × √0.2 = 8.94 mm.</li>
 <li><b>Galloping</b> (a 100 mm square, 5 kg/m, 2 Hz, <m>ζ</m> = 0.5 %, air at 1.225 kg/m³). The structure's
-damping is 2 × 5 × 0.005 × 4π = 0.628 N·s/m per metre, so <m>U<sub>g</sub></m> = 4 × 5 × 0.005 × 12.57/(1.225
+damping is 2 × 5 × 0.005 × 4π = 0.628 N·s/m per meter, so <m>U<sub>g</sub></m> = 4 × 5 × 0.005 × 12.57/(1.225
 × 0.1 × 2.69) = 3.81 m/s. At the default 6 m/s the wind's ½ × 1.225 × 6 × 0.1 × 2.69 = 0.989 beats it, and
 averaging finds three amplitudes: 0.51 <m>D</m> and 1.28 <m>D</m>, stable, with 0.91 <m>D</m> unstable
 between.</li>
@@ -129,9 +129,9 @@ near 1/St = 5.</li>
 0.4725<m>ω<sub>r</sub></m>⁴ − 999.3<m>ω<sub>r</sub></m>² + 284 000 = 0, so 2.93 and 6.71 Hz.</li>
 <li><b>Flutter and divergence.</b> <m>U<sub>D</sub></m> = √(79.94/(2π × 1.225 × 0.15² × 0.3)) = 39.2 m/s; in
 steady lift the page finds flutter far sooner, at 20.7 m/s, the two modes at 3.8 and 4.4 Hz (with <m>ζ</m> = 0
-they meet at 4.07 Hz, at 20.9 m/s), and none before divergence with the centre of mass on the axis. In
+they meet at 4.07 Hz, at 20.9 m/s), and none before divergence with the center of mass on the axis. In
 quasi-steady lift the pitch-like mode goes at 19.1 m/s, the modes still at 3.4 and 5.0 Hz, and at 17.7 m/s with
-the centre of mass on the axis.</li>
+the center of mass on the axis.</li>
 </ol>
 
 <h3><a name="try-it"></a>Things to try</h3>

@@ -2,7 +2,7 @@
 
 Left: the preset, the medium (its kind, size, material and ends), the mesh (how many
 elements, which ways of sharing out the mass to show, the mode to look at) and the waves
-(the pulse, the mesh's mass, a dashpot on the far end, a step in the section). Centre,
+(the pulse, the mesh's mass, a dashpot on the far end, a step in the section). Center,
 three tabs: the dispersion curves, the continuum's and each mesh's, with the modes on them;
 the frequency errors, against the mode number and, for the chosen mode, against the number
 of elements; and a pulse running along the continuum and the mesh. Right: the chosen mode's
@@ -77,8 +77,8 @@ TIPS = {
     "length": "<p>The length between the ends.</p>",
     "tension": "<p>The string's tension T.</p>",
     "line_density": "<p>The string's mass per unit length μ.</p>",
-    "modulus": "<p>Young's modulus E: steel 210 GPa, aluminium 69, wood about 10 along the grain.</p>",
-    "density": "<p>The material's density ρ: steel 7850 kg/m³, aluminium 2700.</p>",
+    "modulus": "<p>Young's modulus E: steel 210 GPa, aluminum 69, wood about 10 along the grain.</p>",
+    "density": "<p>The material's density ρ: steel 7850 kg/m³, aluminum 2700.</p>",
     "section": "<p>The rectangular section, width × depth. A beam bends across its depth (I = b d³/12), so its "
     "frequencies go as the depth and don't depend on the width; nor do a bar's on either.</p>",
     "ends": "<p>How each end is held. String and bar: <b>fixed</b> (held still) or <b>free</b> (a string's end "
@@ -103,7 +103,7 @@ DISPERSION_TIP = (
 )
 ERROR_TIP = (
     "<p>Each mode's frequency on the mesh against the exact one, (f<sub>mesh</sub> − f) / f. The low modes "
-    "span many elements and come out nearly right; the high ones are wrong by tens of per cent. Click a "
+    "span many elements and come out nearly right; the high ones are wrong by tens of percent. Click a "
     "mode to choose it.</p>"
 )
 CONVERGENCE_TIP = (
@@ -194,7 +194,7 @@ def _lumped_mode(rng: np.random.Generator) -> Question:
     f = float(flexible_hz(FEModel(c, n_el, Scheme.LUMPED))[n - 1])
     exact = float(c.exact_hz(n)[-1])
     return Question(
-        f"A string fixed at both ends (c = 100 m/s, 1 m long) is modelled as {n_el} lumped elements (beads on "
+        f"A string fixed at both ends (c = 100 m/s, 1 m long) is modeled as {n_el} lumped elements (beads on "
         f"springs). Where does the model put mode {n}?",
         f,
         f"The mesh's modes sit on its dispersion curve at the exact κ<sub>n</sub> = nπ/L: ω = (2c/h) sin(κh/2) with "
@@ -385,7 +385,7 @@ def scheme_color(scheme: Scheme) -> str:
 
 
 class ContinuumPage(QtWidgets.QWidget):
-    """Controls on the left, dispersion and errors in the centre, the mode's shape, the table and the notes on the right."""
+    """Controls on the left, dispersion and errors in the center, the mode's shape, the table and the notes on the right."""
 
     follows_chain = False  # MainWindow: this page has its own model, not the chain
 
@@ -483,7 +483,7 @@ class ContinuumPage(QtWidgets.QWidget):
         lv.addStretch(1)
         left_scroll = ColumnScroll(left)
 
-        # --- centre: dispersion, errors
+        # --- center: dispersion, errors
         self.dispersion = plot("Frequency", "Hz", "Wavenumber κ", "rad/m")
         self.dispersion.setToolTip(DISPERSION_TIP)
         plot_height(self.dispersion, 260)

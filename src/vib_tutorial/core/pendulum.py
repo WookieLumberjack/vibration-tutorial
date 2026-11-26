@@ -41,7 +41,7 @@ G = 9.81
 class Kind(enum.Enum):
     SIMPLE = "Simple pendulum"
     ROD = "Rod on a pivot"
-    TORSION = "Disc on a wire"
+    TORSION = "Disk on a wire"
     INVERTED = "Inverted, on a spring"
 
 
@@ -50,9 +50,9 @@ KINDS = tuple(Kind)
 
 @dataclass(frozen=True)
 class Pendulum:
-    """`length` is the string (simple), the rod (rod), the disc's radius (torsion) or the arm to the mass
-    (inverted); `pivot` is the rod's pivot's distance from its centre; `spring` k_t (N·m/rad) acts on the
-    disc and the inverted pendulum; `zeta` is the linearized oscillator's damping ratio."""
+    """`length` is the string (simple), the rod (rod), the disk's radius (torsion) or the arm to the mass
+    (inverted); `pivot` is the rod's pivot's distance from its center; `spring` k_t (N·m/rad) acts on the
+    disk and the inverted pendulum; `zeta` is the linearized oscillator's damping ratio."""
 
     kind: Kind = Kind.SIMPLE
     mass: float = 1.0
@@ -74,7 +74,7 @@ class Pendulum:
 
     @property
     def arm(self) -> float:
-        """d: from the pivot to the centre of mass."""
+        """d: from the pivot to the center of mass."""
         if self.kind is Kind.ROD:
             return self.pivot
         if self.kind is Kind.TORSION:
@@ -251,7 +251,7 @@ def orbit(p: Pendulum, energy: float, theta: np.ndarray) -> tuple[np.ndarray, np
 
 
 def rod_period(length: float, pivot: float | np.ndarray, gravity: float = G) -> np.ndarray:
-    """A uniform rod's linear period against the pivot's distance d from its centre: 2π √((L²/12 + d²)/(g d))."""
+    """A uniform rod's linear period against the pivot's distance d from its center: 2π √((L²/12 + d²)/(g d))."""
     d = np.asarray(pivot, dtype=float)
     with np.errstate(divide="ignore"):
         return TWO_PI * np.sqrt((length**2 / 12 + d * d) / (gravity * d))

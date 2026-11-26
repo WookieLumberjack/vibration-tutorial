@@ -378,7 +378,7 @@ def _fixed_steps(model: CMSModel) -> list[str]:
             for r, f in enumerate(sub.omegas / TWO_PI)
         )
         parts.append(
-            f"<p><b>{sub.name}</b>: f = {freqs} Hz (<b>bold</b>: kept, {sub.n_kept} of {sub.ni}; grey: discarded).</p>"
+            f"<p><b>{sub.name}</b>: f = {freqs} Hz (<b>bold</b>: kept, {sub.n_kept} of {sub.ni}; gray: discarded).</p>"
         )
         cols = [f"φ<sub>{r + 1}</sub>" for r in range(sub.ni)]
         parts.append(
@@ -491,7 +491,7 @@ def _free_steps(model: CMSModel) -> list[str]:
         rigid = f" {sub.n_rigid} rigid-body mode{'s' if sub.n_rigid > 1 else ''} at 0 Hz." if sub.n_rigid else ""
         parts.append(
             f"<p><b>{sub.name}</b>: f = {freqs} Hz (<b>bold</b>: kept, {sub.n_kept} of "
-            f"{sub.omegas.size}; grey: discarded).{rigid}</p>"
+            f"{sub.omegas.size}; gray: discarded).{rigid}</p>"
         )
         cols = [f"φ<sub>{r + 1}</sub>" for r in range(sub.omegas.size)]
         parts.append(

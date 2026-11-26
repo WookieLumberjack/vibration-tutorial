@@ -1,7 +1,7 @@
 """The Qt parts #478's live pages share (the Single oscillator, Pendulums): drawn from a live run's record.
 
 - `EnergyTab`: the energy balance over the last minute (put in, taken out, the live changes' terms, stored) and the
-  ledger now, by `live_mass.energy_view` (or the page's own, `live_pendulum.energy_view`), its rows in their theme roles' colours; redrawn as the run goes at most
+  ledger now, by `live_mass.energy_view` (or the page's own, `live_pendulum.energy_view`), its rows in their theme roles' colors; redrawn as the run goes at most
   every `ENERGY_EVERY` s (its curves move about a pixel in that).
 - `LoopTab`: the damping laws' Loop & loss tab: the hysteresis loop the run draws over its last cycle beside each
   law's (`damping.loop_view`), an arrowhead at its moving end, and their loss factors against frequency (`damping.loss_view`).

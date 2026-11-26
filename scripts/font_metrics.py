@@ -3,7 +3,7 @@ figure's labels can be placed without Qt (#316 D7).
 
     uv run python scripts/font_metrics.py
 
-It measures with Qt, offscreen, at 1000 px: the UI's sans-serif (Qt's default font here) and the notes' maths font
+It measures with Qt, offscreen, at 1000 px: the UI's sans-serif (Qt's default font here) and the notes' math font
 (STIX Two Text, bundled) in italic, over printable ASCII, Greek and every character a figure's labels use. Rerun it
 when a figure brings in a new character (`tests/test_figures.py` checks the tables cover them) or the UI font
 changes (#316 D10).

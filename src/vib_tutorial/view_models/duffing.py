@@ -55,7 +55,7 @@ HELD_POINTS = 200  # the held frequency's latest cycles drawn (a sweep's are all
 CHART_RATIOS = np.linspace(0.3, 4.0, 186)  # Omega / omega_n across the Ince–Strutt chart
 CHART_DEPTHS = np.linspace(0.0, 1.0, 61)  # mu up it
 CHART_STEPS = 300  # RK4 steps per pump period for its Floquet multipliers
-GROWTH_TOP = 0.15  # sigma / omega_n where the chart's colour saturates
+GROWTH_TOP = 0.15  # sigma / omega_n where the chart's color saturates
 JUMP_FLOOR = 0.05  # of the curve's peak: a swing smaller than this is rest, to the jump detector
 LEGS = ("up", "down", "hold")
 
@@ -106,7 +106,7 @@ def sig3(value: float) -> str:
 
 
 def fmt_length(a: float) -> str:
-    """A length in mm below a metre, in km from one, else in m (three significant figures, zeros kept)."""
+    """A length in mm below a meter, in km from one, else in m (three significant figures, zeros kept)."""
     return fmt(a, "m", largest="k", smallest="m", zeros=True)
 
 

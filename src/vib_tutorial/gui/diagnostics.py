@@ -2,7 +2,7 @@
 analysis, and the cepstrum.
 
 Left: the machine (speed, gear and its fault, bearing and its fault, the casing's resonance, noise), the bearing's
-geometry, and the run-up. Centre: the casing's acceleration and its spectrum. Right: the run-up's frequency and
+geometry, and the run-up. Center: the casing's acceleration and its spectrum. Right: the run-up's frequency and
 order maps, the orders tracked against their steady state, the spectrum round the mesh, the envelope spectrum,
 the cepstrum, and the Theory. The page has its own model (core/diagnostics.py).
 """
@@ -68,7 +68,7 @@ BEARING_FAULTS = tuple(BearingFault)
 SHOW_S = 0.1  # s of the record drawn
 SIDEBANDS = 6  # each side of the mesh
 TOP_HZ = 5000.0  # the spectrum's range
-MAP_DB = 50.0  # the maps' colour range below their peak
+MAP_DB = 50.0  # the maps' color range below their peak
 MAP_TOP_HZ = 300.0  # the frequency map's
 MAP_TOP_ORDER = 6.0  # the order map's
 ENVELOPE_TOP_HZ = 500.0
@@ -529,7 +529,7 @@ TIPS = {
     "noise": "<p>White noise at the accelerometer, RMS.</p>",
     "balls": "<p>The number of balls.</p>",
     "ball": "<p>The balls' diameter.</p>",
-    "pitch": "<p>The pitch circle's diameter: through the balls' centres.</p>",
+    "pitch": "<p>The pitch circle's diameter: through the balls' centers.</p>",
     "contact": "<p>The contact angle: 0 for a deep-groove bearing under a radial load.</p>",
     "band": "<p>The band the envelope is taken in: round a resonance the strikes ring, clear of the mesh.</p>",
     "run_from": "<p>The run-up's starting speed.</p>",
@@ -543,7 +543,7 @@ SPECTRUM_TIP = (
     "mesh's harmonics.</p>"
 )
 SPEED_LINE_TIP = (
-    "<p>The shaft's speed now: the record in the centre is the machine running steadily at it. Drag it along the "
+    "<p>The shaft's speed now: the record in the center is the machine running steadily at it. Drag it along the "
     "run-up to run the machine there: the Shaft speed box, the spectrum and the readout follow, and the mesh's "
     "lines move with it.</p>"
 )
@@ -566,7 +566,7 @@ NOTES_HTML = load_notes("diagnostics", trials=trials_html(TRIALS), figures=diagn
 
 
 class DiagnosticsPage(QtWidgets.QWidget):
-    """Controls on the left, the record and its spectrum in the centre, the analyses on the right."""
+    """Controls on the left, the record and its spectrum in the center, the analyses on the right."""
 
     follows_chain = False  # MainWindow: this page has its own model, not the chain
 
@@ -628,7 +628,7 @@ class DiagnosticsPage(QtWidgets.QWidget):
         )
         connect_all((self.run_from, self.run_to, self.run_s, self.mode), self._on_run)
 
-        # --- centre
+        # --- center
         self.time_plot = plot("Acceleration", "m/s²", "Time", "s", height=130)
         self.time_plot.setToolTip(TIME_TIP)
         self.time_item = pg.PlotDataItem()
@@ -653,7 +653,7 @@ class DiagnosticsPage(QtWidgets.QWidget):
             p.setMouseEnabled(x=False, y=False)
             p.addItem(image)
             bar = pg.ColorBarItem(values=(-MAP_DB, 0.0), label="dB below the peak", interactive=False, width=12)
-            bar.setImageItem(image, insert_in=p.getPlotItem())  # the colour's key, beside the map
+            bar.setImageItem(image, insert_in=p.getPlotItem())  # the color's key, beside the map
             self.map_bars.append(bar)
         self.mode_line = pg.InfiniteLine(angle=0)
         self.freq_map.addItem(self.mode_line)
@@ -946,7 +946,7 @@ class DiagnosticsPage(QtWidgets.QWidget):
             self.order_map_plot.setYRange(0.0, MAP_TOP_ORDER, padding=0)
             self.map_note.setText(
                 f"{60 * run.start:.0f} to {60 * run.end:.0f} rpm in {sig(run.duration)} s; the casing's mode at "
-                f"{sig(run.mode)} Hz (dotted). Colour: dB below the peak (the bar beside each map)."
+                f"{sig(run.mode)} Hz (dotted). Color: dB below the peak (the bar beside each map)."
             )
             return
         fine = np.linspace(run.start, run.end, 2000)

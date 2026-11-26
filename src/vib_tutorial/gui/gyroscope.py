@@ -1,9 +1,9 @@
 """Gyroscope page: a spinning top, from Euler's equations to precession and nutation, and on a table.
 
-Left: the setting (a disc on a light stem with its tip in a cup, the same disc on a round tip on a table, or a
+Left: the setting (a disk on a light stem with its tip in a cup, the same disk on a round tip on a table, or a
 tippe top on a table), the top (its mass and size, the round tip and the friction on a table, and gravity), how it
 is let go (the spin, the tilt, and in the cup the precession: at rest, at either steady rate, or set), and the
-playback. Centre: the top in 3D (drag to turn it), with its axis's path and the vectors ω, L and the moment (on a
+playback. Center: the top in 3D (drag to turn it), with its axis's path and the vectors ω, L and the moment (on a
 table the friction), then its tilt against time, beside the turning points worked out in closed form in the cup.
 Right: the effective potential the tilt moves in (on a table, the least energy Jellett's constant allows), the
 steady precession rates against the spin, the axis's path from above (on a table, the tip's track), the
@@ -133,16 +133,16 @@ TIPS = {
     "the axis, turning with the top, spin and all. <b>Axis frame</b>: e₃ the axis, e₁ horizontal across it; it "
     "follows the axis as it precesses and nods, but not the spin about it.</p>",
     "comp_span": "<p>How much of the run to plot.</p>",
-    "mass": "<p>The disc's mass (the stem's is left out).</p>",
-    "radius": "<p>The disc's radius: I₃ = mr²/2.</p>",
-    "side": "<p>The square's side: I₃ = ms²/6, the same as a disc of radius s/√3.</p>",
-    "shape": "<p>A disc, or a square plate: a quarter turn leaves the square as it was, so its moment is the same "
+    "mass": "<p>The disk's mass (the stem's is left out).</p>",
+    "radius": "<p>The disk's radius: I₃ = mr²/2.</p>",
+    "side": "<p>The square's side: I₃ = ms²/6, the same as a disk of radius s/√3.</p>",
+    "shape": "<p>A disk, or a square plate: a quarter turn leaves the square as it was, so its moment is the same "
     "about every line across its axis, and it is a symmetric top too. A rectangle isn't (I₁ ≠ I₂): an asymmetric top, "
     "in the cup only.</p>",
     "breadth": "<p>The rectangle's other side b, across its mark: I₁ = m(b²/12 + l²), I₂ = m(w²/12 + l²), "
     "I₃ = m(w² + b²)/12.</p>",
     "side_a": "<p>The rectangle's side w, along its mark (the thick line on it).</p>",
-    "height": "<p>From the tip to the disc's centre, l: gravity's arm, and I₁ = m(r²/4 + l²) about the tip.</p>",
+    "height": "<p>From the tip to the disk's center, l: gravity's arm, and I₁ = m(r²/4 + l²) about the tip.</p>",
     "gravity": "<p>g: 9.81 m/s² on Earth; 0 for a free top.</p>",
     "spin": "<p>ω₃, the spin about the axis (ψ̇ + φ̇ cos θ), which stays constant. Negative spins it the other way.</p>",
     "tilt": "<p>The axis's angle from the vertical when it is let go, its tilt not changing then (a turning "
@@ -151,18 +151,18 @@ TIPS = {
     "one), or at the rate set below.</p>",
     "precession": "<p>φ̇, the axis's rate round the vertical when it is let go (with <i>Set φ̇ below</i>).</p>",
     "playback": "<p>Simulated time per real second. The top spins far too fast to see: slow it down.</p>",
-    "axes": "<p>Draw a frame's axes on the top, at the disc's centre. The <b>body's</b> e₁ (the mark) and e₂ turn "
+    "axes": "<p>Draw a frame's axes on the top, at the disk's center. The <b>body's</b> e₁ (the mark) and e₂ turn "
     "with the top, spin and all; the <b>axis frame's</b> e₁′ (kept horizontal) and e₂′ follow the axis as it "
     "precesses and nods, but not the spin. Both share e₃, the axis, and differ by the spin angle ψ about it. Slow "
     "the playback (0.02×) to see the body's whirl round while the axis frame's only lean and swing.</p>",
-    "setting": "<p>The disc (or square) with its tip held in a cup (it can turn there but not slide), the same on a "
+    "setting": "<p>The disk (or square) with its tip held in a cup (it can turn there but not slide), the same on a "
     "round tip that slides and rolls on a table, or a tippe top (a ball weighted low) on a table.</p>",
-    "tip_radius": "<p>The round tip's radius R: its centre is R up the axis from the end of the stem, and the disc's "
-    "centre a = l − R above that.</p>",
+    "tip_radius": "<p>The round tip's radius R: its center is R up the axis from the end of the stem, and the disk's "
+    "center a = l − R above that.</p>",
     "friction": "<p>μ, Coulomb's friction between the tip and the table: μN against the slip (smoothed below "
     "5 mm/s). 0.01 is a polished, oiled surface; 0.3 is wood.</p>",
-    "low": "<p>How far the tippe top's centre of mass sits below the ball's centre, −a (a &lt; 0): α = −a/R.</p>",
-    "ratio": "<p>I₁/I₃ about the centre of mass (I₃ = 0.4mR², a ball's). It turns over if 1 − α &lt; I₁/I₃ &lt; "
+    "low": "<p>How far the tippe top's center of mass sits below the ball's center, −a (a &lt; 0): α = −a/R.</p>",
+    "ratio": "<p>I₁/I₃ about the center of mass (I₃ = 0.4mR², a ball's). It turns over if 1 − α &lt; I₁/I₃ &lt; "
     "1 + α.</p>",
     "ball": "<p>The tippe top's ball's radius R (its stem left out).</p>",
 }
@@ -186,7 +186,7 @@ ENERGY_TIP = (
     "out, so it sinks onto the curve, toward its lowest point.</p>"
 )
 TRACK_TIP = (
-    "<p>The tip's track on the table (solid, mm) and its centre of mass's (dotted), seen from above, the last 10 s.</p>"
+    "<p>The tip's track on the table (solid, mm) and its center of mass's (dotted), seen from above, the last 10 s.</p>"
 )
 LEDGER_TIP = (
     "<p>The energy and the work friction has done, together (constant but for the step's error), and Jellett's J "
@@ -235,7 +235,7 @@ def _columns(s: SlideSamples) -> np.ndarray:
 
 
 class GyroscopePage(QtWidgets.QWidget):
-    """Controls on the left, the top and its tilt in the centre, the closed forms and the check on the right."""
+    """Controls on the left, the top and its tilt in the center, the closed forms and the check on the right."""
 
     follows_chain = False  # MainWindow: this page has its own model, not the chain
 
@@ -273,12 +273,12 @@ class GyroscopePage(QtWidgets.QWidget):
         self.shape = combo([shape.value for shape in SHAPES], TIPS["shape"])
         body.add("Shape:", self.shape, TIPS["shape"])
         self.mass = body.number("Mass m:", 0.001, 100.0, 0.5, 3, " kg", TIPS["mass"])
-        self.radius = body.number("Disc radius r:", 1.0, 500.0, 40.0, 2, " mm", TIPS["radius"])
+        self.radius = body.number("Disk radius r:", 1.0, 500.0, 40.0, 2, " mm", TIPS["radius"])
         self.radius_label = body.label(self.radius)
         self.breadth = body.number("Breadth b:", 1.0, 500.0, 40.0, 2, " mm", TIPS["breadth"])
         self.top_height = body.number("Height l:", 1.0, 500.0, 30.0, 1, " mm", TIPS["height"])
         self.tip_radius = body.number("Tip radius R:", 0.5, 100.0, 10.0, 1, " mm", TIPS["tip_radius"])
-        self.low = body.number("Weight below centre:", 0.0, 100.0, 4.5, 2, " mm", TIPS["low"])
+        self.low = body.number("Weight below center:", 0.0, 100.0, 4.5, 2, " mm", TIPS["low"])
         self.ratio = body.number("I₁/I₃:", 0.1, 3.0, 0.8, 2, "", TIPS["ratio"])
         self.friction = body.number("Friction μ:", 0.0, 2.0, 0.3, 3, "", TIPS["friction"])
         self.gravity = body.number("Gravity g:", 0.0, 100.0, 9.81, 2, " m/s²", TIPS["gravity"])
@@ -337,7 +337,7 @@ class GyroscopePage(QtWidgets.QWidget):
             self._on_inputs,
         )
 
-        # --- centre
+        # --- center
         self.view = TopView()
         self.tilt_plot = plot("Tilt θ", None, "Time", "s", height=130)
         self.tilt_plot.setToolTip(TILT_TIP)
@@ -538,7 +538,7 @@ class GyroscopePage(QtWidgets.QWidget):
                 else f"I₁ = {sig(top.transverse * 1e4, 4)} kg·cm², I₃ = {sig(top.polar * 1e4, 4)} kg·cm²; no gravity: a free top."
             )
             + (
-                f" A disc of radius s/√3 = {sig(top.radius * 1000 / math.sqrt(3), 4)} mm would move the same."
+                f" A disk of radius s/√3 = {sig(top.radius * 1000 / math.sqrt(3), 4)} mm would move the same."
                 if top.shape is Shape.SQUARE
                 else ""
             )
@@ -582,7 +582,7 @@ class GyroscopePage(QtWidgets.QWidget):
         label = self.radius_label
         square = shape is Shape.SQUARE and not ball
         label.setText(
-            "Ball radius R:" if ball else "Side s:" if square else "Side w:" if rectangle else "Disc radius r:"
+            "Ball radius R:" if ball else "Side s:" if square else "Side w:" if rectangle else "Disk radius r:"
         )
         self.radius.setToolTip(
             TIPS["ball"] if ball else TIPS["side"] if square else TIPS["side_a"] if rectangle else TIPS["radius"]
@@ -631,11 +631,11 @@ class GyroscopePage(QtWidgets.QWidget):
         rt = self.round
         assert rt is not None  # only called on a table
         self.info.setText(
-            f"I₁ = {sig(rt.central * 1e4, 4)} kg·cm² (about G), I₃ = {sig(rt.polar * 1e4, 4)} kg·cm²; its centre of mass "
+            f"I₁ = {sig(rt.central * 1e4, 4)} kg·cm² (about G), I₃ = {sig(rt.polar * 1e4, 4)} kg·cm²; its center of mass "
             + (
-                f"{sig(rt.offset * 1000)} mm above the round tip's centre."
+                f"{sig(rt.offset * 1000)} mm above the round tip's center."
                 if rt.offset >= 0
-                else f"{sig(-rt.offset * 1000)} mm below the ball's centre: α = {sig(rt.alpha)}."
+                else f"{sig(-rt.offset * 1000)} mm below the ball's center: α = {sig(rt.alpha)}."
             )
         )
 
@@ -1195,7 +1195,7 @@ class GyroscopePage(QtWidgets.QWidget):
         self._track_span = None
         self.path_note.setText(
             f"From above, in mm, the last {sig(TRACK_SPAN, 6)} s: where the tip has touched the table (solid) and where its "
-            "centre of mass has been (dotted). Sliding, the tip scrawls; rolling, it runs round smooth curves."
+            "center of mass has been (dotted). Sliding, the tip scrawls; rolling, it runs round smooth curves."
         )
         self._track_trace()
 

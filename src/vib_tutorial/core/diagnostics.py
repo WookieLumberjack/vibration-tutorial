@@ -228,7 +228,7 @@ def line_amplitude(freqs: np.ndarray, amplitude: np.ndarray, f: float) -> float:
 def sidebands(
     freqs: np.ndarray, amplitude: np.ndarray, centre: float, spacing: float, count: int
 ) -> tuple[np.ndarray, np.ndarray]:
-    """(the orders −count … count, each line's amplitude at centre + k spacing)."""
+    """(the orders −count … count, each line's amplitude at center + k spacing)."""
     k = np.arange(-count, count + 1)
     return k, np.array([line_amplitude(freqs, amplitude, centre + j * spacing) for j in k])
 

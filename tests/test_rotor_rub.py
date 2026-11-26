@@ -1,4 +1,4 @@
-"""Rub on a stator ring round the disc: the contact force, the time step, and the presets' notes."""
+"""Rub on a stator ring round the disk: the contact force, the time step, and the presets' notes."""
 
 import cmath
 import math
@@ -70,7 +70,7 @@ def test_contact_force_derivatives_match_finite_differences():
 
 def test_no_force_inside_the_clearance_or_pulling_away():
     stator = Stator(clearance=1e-4, offset=2e-5, offset_angle=0.0)
-    assert stator_force(stator, 0.05, 1.1e-4, 0.0, 0.0, 0.0, 100.0)[2] == 0.0  # 90 µm from the centre
+    assert stator_force(stator, 0.05, 1.1e-4, 0.0, 0.0, 0.0, 100.0)[2] == 0.0  # 90 µm from the center
     assert stator_force(stator, 0.05, 1.3e-4, 0.0, 0.0, 0.0, 100.0)[2] == pytest.approx(stator.stiffness * 1e-5)
     # Leaving faster than the ring springs back (c δ' < -k δ): the ring cannot pull.
     assert stator_force(stator, 0.05, 1.21e-4, 0.0, -10.0, 0.0, 100.0)[2] == 0.0
@@ -85,14 +85,14 @@ def test_a_ring_never_reached_changes_nothing():
             r = sim.advance(0.5)
     assert ringed.step_size() <= plain.step_size()
     assert np.all(r.rub[:, 2] == 0.0)
-    # The same motion, on a step that also resolves the disc bouncing on the ring.
+    # The same motion, on a step that also resolves the disk bouncing on the ring.
     assert ringed.q[[XD, YD]] == pytest.approx(plain.q[[XD, YD]], rel=1e-3, abs=1e-9)
 
 
 @pytest.mark.parametrize(("friction", "rpm"), [(0.0, 1500.0), (0.0, 2500.0), (0.1, 2000.0)])
 def test_full_rub_settles_on_the_contact_steady_state(friction, rpm):
     """A forward synchronous full rub is a circle round the ring: the ring is then a spring
-    κ = k (1 - δ/ρ) at the disc, its friction cross-coupled, μ κ, so the orbit's radius ρ solves
+    κ = k (1 - δ/ρ) at the disk, its friction cross-coupled, μ κ, so the orbit's radius ρ solves
     a linear steady state at that κ."""
     system = RotorSystem(stator=Stator(clearance=30e-6, friction=friction))
     w = rpm / RPM
@@ -202,7 +202,7 @@ def test_things_to_try():
 
 
 def one_x(sim: RotorSimulator, r) -> complex:
-    """The disc's 1X vector (x probe) over the last revolution of the samples r."""
+    """The disk's 1X vector (x probe) over the last revolution of the samples r."""
     last = r.phase > r.phase[-1] - 2 * math.pi
     return complex(2 * np.mean(r.q[last, XD] * np.exp(-1j * r.phase[last])))
 

@@ -2,7 +2,7 @@
 
 `FreeBody` is what a page draws (`gui/free_body_view.py`, beside the moving body): each force an `Arrow` (its
 name, its label with its size, its symbol alone, its value in newtons, + along the body's positive direction, and
-its colour as a theme role's name), and the net force, which is the mass times its acceleration. A force of nought is still listed (its arrow drawn at no length), so the arrows
+its color as a theme role's name), and the net force, which is the mass times its acceleration. A force of zero is still listed (its arrow drawn at no length), so the arrows
 keep their places while one comes and goes. A turning body's diagram is the same in moments about its pivot (N·m,
 the net J θ''), with `aside` rows that aren't in the sum (a pendulum's tension, through the pivot: no moment) on a
 scale of their own (`aside_scale`).
@@ -17,7 +17,7 @@ Single oscillator); a page with another body builds its own `FreeBody` from its 
 way (`view_models/pendulum.py`'s `free_body`, in moments; Isolation's later).
 
 Working on it: Qt-free (the package's docstring); `tests/test_live_parts.py` checks the forces add up to m·a, the
-roles name theme colours and the scale's growing and shrinking.
+roles name theme colors and the scale's growing and shrinking.
 """
 
 from __future__ import annotations
@@ -37,7 +37,7 @@ class Arrow:
     name: str  # what pushes: "spring", "damper", "friction", "drive", "hand", "net"
     label: str  # what's printed by it, as plain text (no markup): its symbol and size
     value: float  # N, + along the body's positive direction
-    role: str  # its colour, as a theme role's name (`style.role`)
+    role: str  # its color, as a theme role's name (`style.role`)
     symbol: str = ""  # its symbol alone, short enough to write on the body ("arm" for the Zener arm's k₁(x − y))
     unit: str = "N"  # its size's ("N·m" for a moment)
 
@@ -46,7 +46,7 @@ class Arrow:
 class FreeBody:
     arrows: tuple[Arrow, ...]
     net: Arrow  # the sum of the forces: the mass times its acceleration
-    scale: float  # display units a newton (a newton-metre, in moments)
+    scale: float  # display units a newton (a newton-meter, in moments)
     aside: tuple[Arrow, ...] = ()  # rows drawn under the net, not in its sum (a pendulum's tension)
     aside_scale: float = 0.0  # their display units a newton
 

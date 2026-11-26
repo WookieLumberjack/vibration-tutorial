@@ -24,7 +24,7 @@ def harmonics_svg() -> str:
     t = np.linspace(0.0, 1.0, 241)
     xs = left + span * t
     parts = []
-    # top: the three harmonics, each in its own colour
+    # top: the three harmonics, each in its own color
     top_y, top_h = 62.0, 34.0
     parts.append(_axes(left, right, top_y, muted))
     for i, j in enumerate((1, 3, 5)):
@@ -32,7 +32,7 @@ def harmonics_svg() -> str:
         parts.append(fig.curve(list(zip(xs, wave)), colors.mass[i], 1.8))
     for i, (j, x, y) in enumerate(((1, 250, 18), (3, 298, 18), (5, 346, 18))):
         parts.append(fig.math_label(x, y, f"j = {j}", colors.mass[i]))
-    # bottom: the square wave (grey) and the sum of the three (the force's colour, as on the page)
+    # bottom: the square wave (gray) and the sum of the three (the force's color, as on the page)
     bot_y, bot_h = 168.0, 42.0
     parts.append(_axes(left, right, bot_y, muted))
     parts.append(

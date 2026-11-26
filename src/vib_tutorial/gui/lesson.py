@@ -6,7 +6,7 @@
   their Theory list is `trials_text.trials_html`, without Qt.
 - Controls: `Form` (a titled form whose boxes name themselves), `combo`, `set_quietly`, `connect_all`, and
   `RunButton` (Start / Pause / Resume; a motion's Reset is `layouts.ResetButton`), `ActionToggle` (an action
-  that stays on, a drive or a sweep: lit in the force's colour while it is, as the Simulation page's force).
+  that stays on, a drive or a sweep: lit in the force's color while it is, as the Simulation page's force).
 - Layout: `three_panes` (the page's controls, plots and tabs, folded by Present mode), `column`, `stack`,
   `TabRoom` (room for the right-hand tabs and the notes), `theory` (the Theory tab's `NotesBrowser`).
 - Re-exported for the pages: `fmt` and `db` (`view_models/text.py`), `LiveLabel`.
@@ -203,8 +203,8 @@ class TrialCombo(QtWidgets.QComboBox):
 
 class ActionToggle(QtWidgets.QPushButton):
     """An action that stays on until pressed again (a drive, a sweep): `off` names it, in bold in the force's
-    colour (set apart from a plain button: Clear points), and on it says so and how to stop, filled in the
-    force's colour, as the Simulation page's *Apply force*. Checkable, so it binds
+    color (set apart from a plain button: Clear points), and on it says so and how to stop, filled in the
+    force's color, as the Simulation page's *Apply force*. Checkable, so it binds
     as a checkbox does; `set_texts` when what it does changes (a force or an unbalance); `apply_theme` from the
     page's."""
 
@@ -227,7 +227,7 @@ class ActionToggle(QtWidgets.QPushButton):
 
     def _show(self, on: bool) -> None:
         self.setText(self._texts[on])
-        self.setStyleSheet(  # off, its text in the force's colour: an action to take, not a plain button
+        self.setStyleSheet(  # off, its text in the force's color: an action to take, not a plain button
             f"background-color: {colors.force}; color: {text_on(colors.force)}; font-weight: bold;"
             if on
             else f"color: {colors.force}; font-weight: bold;"
@@ -652,7 +652,7 @@ def marker(size: int = 11, symbol: str = "o", name: str | None = None) -> pg.Plo
 
 
 def mark(item: pg.PlotDataItem, color: str, filled: bool = False, width: float = 2.0) -> None:
-    """Colour a `marker`: an outline, or a filled dot."""
+    """Color a `marker`: an outline, or a filled dot."""
     item.setSymbolPen(pg.mkPen(color, width=width) if not filled else None)
     item.setSymbolBrush(pg.mkBrush(color) if filled else None)
 
@@ -679,7 +679,7 @@ def column(*widgets: QtWidgets.QWidget, stretch: bool = True) -> QtWidgets.QWidg
 
 
 def stack(*items: tuple[QtWidgets.QWidget, int]) -> QtWidgets.QWidget:
-    """Widgets stacked with stretch factors, no margins (a page's centre)."""
+    """Widgets stacked with stretch factors, no margins (a page's center)."""
     w = QtWidgets.QWidget()
     v = QtWidgets.QVBoxLayout(w)
     v.setContentsMargins(0, 0, 0, 0)
@@ -713,7 +713,7 @@ def three_panes(
 
 
 class StartHint(QtWidgets.QLabel):
-    """A quiet line centred over a plot that waits for Start ("Start (Space) runs it from rest"), so its empty axes
+    """A quiet line centered over a plot that waits for Start ("Start (Space) runs it from rest"), so its empty axes
     read as waiting rather than broken (#409 U-22). The page shows it while it has nothing to draw: `waiting(bool)`.
     A plot under ~60 px (the rotor's strip chart at 1280 × 800) has no room for one: its ranges at rest say enough."""
 

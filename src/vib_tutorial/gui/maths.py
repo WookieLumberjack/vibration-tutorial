@@ -1,15 +1,15 @@
-"""The notes' maths: display equations typeset from LaTeX, inline maths set in a maths text font.
+"""The notes' math: display equations typeset from LaTeX, inline math set in a math text font.
 
 A notes file writes a display equation as ``<eq>LaTeX</eq>`` (raw LaTeX: ``&`` and ``<`` as they are) and
 inline maths as ``<m>…</m>`` (the notes' usual Unicode and HTML: ``ω<sub>n</sub> = √(k/m)``).
 `links.load_notes` turns them into HTML with `display` and `inline`:
 
-- A display equation becomes ``<img src="eq:<key>" alt="<plain text>">`` in a centred paragraph, its
+- A display equation becomes ``<img src="eq:<key>" alt="<plain text>">`` in a centered paragraph, its
   LaTeX kept in `EQUATIONS`. `notes_view.NotesBrowser` draws it with `notes_render.equation` (ziamath's SVG, in STIX Two Math)
-  at the size of the browser's text, in its text colour, so it follows the theme. The alt text
+  at the size of the browser's text, in its text color, so it follows the theme. The alt text
   (`plain`) is what the Theory window's search reads.
-- Inline maths stays text, kept on one line, set in STIX Two Text (`FONT`, bundled in ``vib_tutorial/fonts`` with its
-  licence, registered by `notes_render.install` from `make_app`): letters italic as variables, upper-case Greek,
+- Inline math stays text, kept on one line, set in STIX Two Text (`FONT`, bundled in ``vib_tutorial/fonts`` with its
+  license, registered by `notes_render.install` from `make_app`): letters italic as variables, upper-case Greek,
   digits, the functions and units in `UPRIGHT` and a word of two or more letters in a sub- or superscript
   (a label, ``F<sub>floor</sub>``) upright, and so is an ``e`` raised to a power: Euler's number, as ISO 80000-2
   writes it, apart from a variable e (an eccentricity). In ``<eq>`` write it ``\\mathrm{e}``. ``<rm>…</rm>``
@@ -17,7 +17,7 @@ inline maths as ``<m>…</m>`` (the notes' usual Unicode and HTML: ``ω<sub>n</s
 
 Typesetting is ~27 ms an equation (the Jeffcott rotor's notes: 1.4 s the first time their tab showed), so
 `equation_svg` keeps each one's SVG on disk (`cache_dir`: the platform's cache folder, or `VIB_CACHE`), typeset in a
-placeholder colour that's swapped for the theme's, keyed by the LaTeX, the size and ziamath's version: once
+placeholder color that's swapped for the theme's, keyed by the LaTeX, the size and ziamath's version: once
 typeset, any session and any theme reads it back (#409 P-18). A cache that can't be read or written is skipped.
 
 Working on it: `tests/test_notes_markup.py` renders every equation in the notes, checks no LaTeX command is left
@@ -41,7 +41,7 @@ from pathlib import Path
 FONT = "STIX Two Text"
 FONTS = resources.files("vib_tutorial") / "fonts"
 EQ_SIZE = 1.15  # an equation's size over the text's (STIX's x-height is smaller than most UI fonts')
-INLINE_SIZE = 1.1  # inline maths' size over the text's, for the same reason
+INLINE_SIZE = 1.1  # inline math' size over the text's, for the same reason
 
 # LaTeX of every display equation loaded, by its key (`eq:<key>` in the notes' HTML).
 EQUATIONS: dict[str, str] = {}
@@ -56,8 +56,8 @@ LETTER = (
 )
 WORD = re.compile(rf"&#?\w+;|[\u0391-\u03a9]+|{LETTER}(?:{LETTER}|[\u0300-\u036f])*")
 TAG = re.compile(r"(<[^>]+>)")
-MATH = re.compile(r"<m>(.*?)</m>", re.S)  # inline maths in the notes, and in the trials' notes
-# Qt breaks a line after | and / even in a nowrap span: a word joiner after each keeps the maths in one piece.
+MATH = re.compile(r"<m>(.*?)</m>", re.S)  # inline math in the notes, and in the trials' notes
+# Qt breaks a line after | and / even in a nowrap span: a word joiner after each keeps the math in one piece.
 JOINER = "\u2060"
 JOIN = str.maketrans({"|": "|" + JOINER, "/": "/" + JOINER})
 # A minus that starts an operand (after =, a bracket, a comma or a relation) is a sign: TeX spaces it as one
@@ -65,15 +65,15 @@ JOIN = str.maketrans({"|": "|" + JOINER, "/": "/" + JOINER})
 SIGN = re.compile(r"(^|[=(\[,<>]|\\(?:pm|mp|approx|le|ge|lt|gt|quad|qquad|left\(|left\[)\s?)\s*-")
 
 
-# ------------------------------------------------------------------ inline maths
+# ------------------------------------------------------------------ inline math
 def markup(text: str) -> str:
-    """`text` with each `<m>…</m>` set as inline maths: the notes do it as they load, and the trials' notes
+    """`text` with each `<m>…</m>` set as inline math: the notes do it as they load, and the trials' notes
     (Python strings, shown both in the Theory and under a page's Things to try) as they're shown."""
     return MATH.sub(lambda m: inline(m.group(1)), text)
 
 
 def inline(fragment: str) -> str:
-    """`<m>` maths as HTML: its variables in italic, the whole set in the maths text font."""
+    """`<m>` math as HTML: its variables in italic, the whole set in the math text font."""
     out = []
     script = 0  # depth inside <sub>/<sup>
     upright = 0  # depth inside <rm> or an author's own <i>/<b>
@@ -111,7 +111,7 @@ def _word(match: re.Match[str], in_script: bool) -> str:
 
 # ------------------------------------------------------------------ display equations
 def display(latex: str) -> str:
-    """An `<eq>`'s HTML: the image the browser draws, centred, with the equation's plain text as its alt."""
+    """An `<eq>`'s HTML: the image the browser draws, centered, with the equation's plain text as its alt."""
     latex = SIGN.sub(lambda m: m.group(1) + " {-}", " ".join(latex.split()))
     key = hashlib.sha1(latex.encode()).hexdigest()[:12]
     EQUATIONS[key] = latex
@@ -120,7 +120,7 @@ def display(latex: str) -> str:
 
 
 CACHE_ENV = "VIB_CACHE"  # a folder for the typeset equations instead of the platform's cache folder
-PLACEHOLDER = "#010203"  # the colour equations are typeset and kept in, swapped for the theme's
+PLACEHOLDER = "#010203"  # the color equations are typeset and kept in, swapped for the theme's
 
 
 def cache_dir() -> Path:

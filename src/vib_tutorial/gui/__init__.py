@@ -9,7 +9,7 @@ import time
 
 
 def make_app(theme: str | None = None):
-    """Create (or reuse) the QApplication in a colour theme (default: the one last picked).
+    """Create (or reuse) the QApplication in a color theme (default: the one last picked).
 
     `theme` is a name from theming.names(): "System" follows the desktop's light
     or dark scheme.

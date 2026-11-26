@@ -31,7 +31,7 @@ def whirl_ratio(system: RotorSystem, Q: np.ndarray) -> np.ndarray:
 
     +1 is a circular forward whirl (with the spin, x toward y), -1 a circular
     backward whirl, 0 a straight line. The motion is weighted by one plane's mass
-    matrix, i.e. by kinetic energy: the stations (journals, disc, disc tilt) and,
+    matrix, i.e. by kinetic energy: the stations (journals, disk, disk tilt) and,
     with a shaft of some mass, the shaft between them.
     """
     mp = system.plane_mass()
@@ -212,7 +212,7 @@ def _hill_modes(system: RotorSystem, omega: float) -> tuple[np.ndarray, np.ndarr
     e^{ijpΩt} has λ c_j = (A_0 - ijpΩ) c_j + Σ_k A_k c_{j-k/p}, an eigenproblem in
     the c_j, |j| ≤ HILL_ORDER. Each
     mode turns up once for every j, shifted by ipΩ (and so does its conjugate);
-    the copies kept are those whose kinetic energy is centred on c_0, within half
+    the copies kept are those whose kinetic energy is centered on c_0, within half
     a harmonic (the copies near the truncation are the inaccurate ones, and their
     energy is off at the edges). A whirl locked to pX/2 has its energy split
     evenly between two harmonics, so two of its copies sit on that edge; turned
@@ -329,7 +329,7 @@ def _refine_critical(system: RotorSystem, branch: int, guess: float, lo: float, 
 def synchronous_response(system: RotorSystem, omegas: np.ndarray) -> np.ndarray:
     """Steady-state 1X response at constant speeds: Q (len(omegas), n_dof), complex.
 
-    The unbalance, the disc's skew and the shaft's bow together. q(t) = Re(Q e^{iΩt}),
+    The unbalance, the disk's skew and the shaft's bow together. q(t) = Re(Q e^{iΩt}),
     with the keyphasor mark at angle φ = Ωt (along +x at t = 0). Above
     the stability onset this particular solution still exists, but the free whirl
     grows over it, so the rotor never settles to it.
@@ -395,7 +395,7 @@ def harmonic_response(
     F_k, the turning stiffness being Σ_j E_j e^{ijφ} (E_{-j} = conj(E_j));
     harmonics past the ends are taken as zero. Magnetic bearings add their push
     D(ikΩ) to row k (support_stiffness); at k = 0 with integral action their
-    journals are held at the centre.
+    journals are held at the center.
     """
     M, C, G, K = system._matrices
     H = system._circulatory if system.speed_dependent else np.zeros_like(K)

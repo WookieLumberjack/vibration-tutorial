@@ -26,7 +26,7 @@ def run_for(sim, duration):
 
 
 def test_actuator_gains_linearize_the_magnet_pair():
-    # f = k [(i0 + i)²/(s0 - x)² - (i0 - i)²/(s0 + x)²]: its slopes at the centre are k_m and k_i.
+    # f = k [(i0 + i)²/(s0 - x)² - (i0 - i)²/(s0 + x)²]: its slopes at the center are k_m and k_i.
     m = MAGNET
     k, s0, i0 = m.force_constant, m.gap, m.bias
 
@@ -62,7 +62,7 @@ def test_integral_action_centres_the_journals_under_gravity():
     s = ON_MAGNETS
     q = s.static_deflection(0.0)
     assert abs(q[YA]) < 1e-15 and abs(q[YB]) < 1e-15
-    assert q[YD] < -1e-5  # the shaft still bends under the disc
+    assert q[YD] < -1e-5  # the shaft still bends under the disk
     np.testing.assert_allclose(s.static_state(0.0)[: s.n_dof], q, atol=1e-18)
     # The integrators carry the bearings' shares of the weight, as current: k_i i = W.
     sim = RotorSimulator(s)
@@ -126,7 +126,7 @@ def test_simulation_holds_the_steady_state():
 
 
 def test_amplifier_lag_drives_the_forward_mode_where_the_damping_turns_negative():
-    # The disc's forward tilting mode rises with the speed; it goes unstable as it passes the band's
+    # The disk's forward tilting mode rises with the speed; it goes unstable as it passes the band's
     # top edge, where the filter's and the amplifier's lag make the bearings' damping negative.
     m = MagneticBearing(amplifier_hz=300.0)
     onset = stability_onset(on(m), 30_000.0 / RPM)

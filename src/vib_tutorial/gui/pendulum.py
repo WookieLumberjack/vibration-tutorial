@@ -2,9 +2,9 @@
 
 The single oscillator turned: J for m, moments for forces, and gravity's mgd sin θ for the spring. The pendulum is
 stepped as it swings (`view_models/live_pendulum.LivePendulum`: the whole equation and its linearized ghost),
-not a swing worked out in advance and played back. Left: the pendulum (a bob on a string, a rod on a pivot, a disc
+not a swing worked out in advance and played back. Left: the pendulum (a bob on a string, a rod on a pivot, a disk
 on a wire, or a mass upright on a spring), its size, the spring, gravity and damping, then the Things to try
-(setups to go back to; their predictions are asked once the reader has handled the pendulum). Centre: the pendulum
+(setups to go back to; their predictions are asked once the reader has handled the pendulum). Center: the pendulum
 (`pendulum_view.PendulumView`: pluck it, or drag its grips to change L, m, k<sub>t</sub> and the rod's pivot as it
 swings, the angular momentum kept) with the moments on it beside it (`free_body_view.FreeBodyView`, the string's
 pull under them), the run's controls, the swing against time beside its ghost, which keeps what came before a change
@@ -63,13 +63,13 @@ MEASURE_EVERY = 0.2  # s of run between the period recorder's looks
 PLAYED_AFTER = 2.0  # s of run after the reader's first change: they've handled it, predictions on
 REACH_STEP = math.radians(10.0)  # the phase plane's and moment plot's reach is redrawn in steps of this
 SWING_TIP = (
-    "<p>The angle as it swings, the last 20 s: the whole equation (colour) and the linearized one, sin θ ≈ θ "
-    "(grey), which drifts ahead on a large swing. A dashed line marks a change: the swing carries on through it. "
+    "<p>The angle as it swings, the last 20 s: the whole equation (color) and the linearized one, sin θ ≈ θ "
+    "(gray), which drifts ahead on a large swing. A dashed line marks a change: the swing carries on through it. "
     "Paused, drag the line at the end back to see the pendulum then.</p>"
 )
 MOMENT_TIP = (
-    "<p>The restoring moment against the angle: the whole one (colour) and its tangent at 0, the linearized "
-    "stiffness (grey). The dot is where the pendulum is now. Gravity's sin θ bends a hanging pendulum's below its "
+    "<p>The restoring moment against the angle: the whole one (color) and its tangent at 0, the linearized "
+    "stiffness (gray). The dot is where the pendulum is now. Gravity's sin θ bends a hanging pendulum's below its "
     "tangent: a softening spring.</p>"
 )
 PERIOD_TIP = (
@@ -80,7 +80,7 @@ PERIOD_TIP = (
 )
 PHASE_TIP = (
     "<p>The swing as a path in the (θ, θ̇) plane, the last swing and a half, over the undamped orbits of constant "
-    "energy (grey), with the separatrix (bold) where there is one: the orbit through the upside-down balance, "
+    "energy (gray), with the separatrix (bold) where there is one: the orbit through the upside-down balance, "
     "dividing swinging from going round.</p>"
 )
 MOMENTS_TIP = (
@@ -97,7 +97,7 @@ ENERGY_TIP = (
 
 
 class PendulumPage(QtWidgets.QWidget):
-    """The pendulum's controls on the left, the live pendulum and its plots in the centre, the tabs on the right."""
+    """The pendulum's controls on the left, the live pendulum and its plots in the center, the tabs on the right."""
 
     follows_chain = False  # MainWindow: this page has its own model, not the chain
 
@@ -127,7 +127,7 @@ class PendulumPage(QtWidgets.QWidget):
         self.mass = box.number("Mass m:", 0.01, 1e4, 1.0, 3, " kg", TIPS["mass"])
         self.length = box.number("Length L:", 0.05, 20.0, 1.0, 3, " m", TIPS["length"])
         self.length_label = box.label(self.length)
-        self.pivot = box.number("Pivot from centre:", 0.001, 10.0, 0.5, 3, " m", TIPS["pivot"])
+        self.pivot = box.number("Pivot from center:", 0.001, 10.0, 0.5, 3, " m", TIPS["pivot"])
         self.spring = box.number("Torsion spring:", 0.0, 1e5, 15.0, 3, " N·m/rad", TIPS["spring"])
         self.gravity = box.number("Gravity g:", 0.0, 100.0, 9.81, 2, " m/s²", TIPS["gravity"])
         self.zeta = box.number("Damping ζ:", 0.0, 2.0, 0.0, 3, "", TIPS["zeta"])
@@ -150,7 +150,7 @@ class PendulumPage(QtWidgets.QWidget):
         lv.addWidget(self.trials)
         lv.addStretch(1)
 
-        # --- centre: the pendulum and its moments, the run, the swing and the moment curve
+        # --- center: the pendulum and its moments, the run, the swing and the moment curve
         self.view = PendulumView()
         self.view.setMinimumHeight(200)
         self.view.grabbed.connect(self._on_grabbed)

@@ -4,7 +4,7 @@ The page's settings are an `IsolationTrial` (its trials, `practice_state()` and 
 `isolator(trial)` is the machine on its mounts. Each panel has a function from those to what it shows:
 
 - `mount_info(iso)`: the mounts' k, c and f<sub>n</sub>, under their boxes.
-- `transmissibility(iso)`: the centre: T against f/f<sub>n</sub> with the plain mounts' family behind it, the
+- `transmissibility(iso)`: the center: T against f/f<sub>n</sub> with the plain mounts' family behind it, the
   running point, its readout, and the force on the floor against the speed.
 - `design_note(iso, target)`: the sag an isolation needs, under the Design box ("" when none can give it).
 - `start_up_view(iso, ramp)`: the Start-up tab's run up through resonance (the costly one: drawn only when it shows),

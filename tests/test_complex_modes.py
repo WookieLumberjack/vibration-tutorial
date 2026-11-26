@@ -167,7 +167,7 @@ def test_a_dampers_root_locus():
     end = np.abs(sw.poles[-1]) / (2 * np.pi)
     assert np.isnan(end[1]) and sorted(end[[0, 2, 3]]) == pytest.approx(locked, rel=1e-3)
     assert sw.roots[-1].size == 2  # mode 2's pair, overdamped
-    # followed by continuity: no jumps between neighbouring values (but near critical damping, where a pair
+    # followed by continuity: no jumps between neighboring values (but near critical damping, where a pair
     # meets on the real axis, its poles move as the square root of the distance)
     step = np.abs(np.diff(sw.poles, axis=0)) / np.abs(sw.poles[1:])
     assert np.nanmax(np.where(sw.zeta_exact[1:] < 0.7, step, np.nan)) < 0.1

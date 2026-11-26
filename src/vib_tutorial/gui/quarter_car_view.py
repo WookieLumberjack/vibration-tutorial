@@ -1,11 +1,11 @@
-"""The quarter-car drawn driving over its road: the road scrolling under the tyre, the wheel on the tyre and
+"""The quarter-car drawn driving over its road: the road scrolling under the tire, the wheel on the tire and
 the body on the suspension, each moving as the drive's record has it.
 
 Bottom to top: the road's profile around the car (the car stays put and the road goes by, at the page's speed),
-the tyre (a spring, kₜ) from the road under the wheel to the wheel (mᵤ), the suspension (a spring kₛ and a
+the tire (a spring, kₜ) from the road under the wheel to the wheel (mᵤ), the suspension (a spring kₛ and a
 damper cₛ) up to the body (mₛ), and the body's rest level, dashed. Heights are exaggerated, all by the same
 factor, so the road, the wheel and the body keep their true proportions to each other: the body floating over
-the bumps the wheel follows, or the wheel hopping on its tyre.
+the bumps the wheel follows, or the wheel hopping on its tire.
 
 - `set_record(t, road, body, wheel, speed)`: the drive (s, m, m, m and the speed in m/s) and its exaggeration,
   from the largest height any of them reaches.
@@ -31,8 +31,8 @@ SWING = 0.3  # the largest height drawn, in the drawing's units
 Y_RANGE = (-SWING - 0.1, TYRE_H + WHEEL_H + SUSP_H + BODY_H + SWING + 0.1)
 LEG = 0.22  # the suspension's spring and damper either side of the middle
 TIP = (
-    "<p>The car driving over the road, as the Drive tab's record has it. The road goes by under the tyre; the "
-    "wheel follows it on the tyre, and the body rides on the suspension. Heights are exaggerated, all alike: "
+    "<p>The car driving over the road, as the Drive tab's record has it. The road goes by under the tire; the "
+    "wheel follows it on the tire, and the body rides on the suspension. Heights are exaggerated, all alike: "
     "the body floats over bumps the wheel follows.</p>"
 )
 

@@ -3,8 +3,8 @@
 Each line is the full spectrum of one block of the orbit at a station (see
 core/rotor_waterfall.py), drawn at a height for its speed (a cascade) or its
 time (a waterfall), with its amplitude rising above that baseline. Lines are
-filled down to their baseline in the background colour, front to back, so a
-tall peak hides the lines behind it as on an analyser's 3D plot. On the base of
+filled down to their baseline in the background color, front to back, so a
+tall peak hides the lines behind it as on an analyzer's 3D plot. On the base of
 each line, the +1X line and the free whirl frequencies at its speed are marked:
 where the peaks fall on them, the spectrum is the unbalance or a free mode.
 
@@ -45,8 +45,8 @@ WATERFALL_TIP = (
     "backward to the left, as on the <i>Stability</i> tab. Against speed the lines make a <i>cascade</i>, "
     "against time a <i>waterfall</i>; each rises from its baseline by its amplitude.</p>"
     "<p>The red line on the base is +1X at each line's speed (dotted: −1X), where the unbalance drives. "
-    "The dots are the free whirl frequencies at that speed, from the Campbell diagram and coloured as "
-    "there, forward and backward. Tap the disc as it runs and peaks show up on them.</p>"
+    "The dots are the free whirl frequencies at that speed, from the Campbell diagram and colored as "
+    "there, forward and backward. Tap the disk as it runs and peaks show up on them.</p>"
 )
 
 
@@ -204,7 +204,7 @@ class WaterfallTab(QtWidgets.QWidget):
 
     The page feeds it the history's samples (`feed`), starts it afresh for a new rotor, speed range or block
     length (`restart`, which Clear and the block box do themselves) and draws it while it shows (`draw`).
-    `tapping`: the page's *Tap the disc every* is ticked (the note says to, if not)."""
+    `tapping`: the page's *Tap the disk every* is ticked (the note says to, if not)."""
 
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)
@@ -310,5 +310,5 @@ class WaterfallTab(QtWidgets.QWidget):
             f"resolution), overlapping by half. Tallest peak {fmt_len(tallest.amp)} at "
             f"{tallest.freq:+.1f} Hz{order}, at {at}"
             + (": heights are in decades above 1/1000 of it (60 dB)." if log else ".")
-            + ("" if self.tapping else " Tap the disc, or tick <i>Tap the disc every</i>, to ring the free whirl.")
+            + ("" if self.tapping else " Tap the disk, or tick <i>Tap the disk every</i>, to ring the free whirl.")
         )

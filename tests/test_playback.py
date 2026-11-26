@@ -420,7 +420,7 @@ def test_the_quarter_car_drives_over_its_road(main_window, app):
     assert view.wheel_rect.rect().top() == pytest.approx(TYRE_H + g * wheel)
     assert view.body_rect.rect().top() == pytest.approx(TYRE_H + WHEEL_H + SUSP_H + g * body)
     x, y = view.road_line.getData()
-    assert np.interp(0.0, x, y) == pytest.approx(g * road, abs=1e-6 * g)  # the road under the tyre, now
+    assert np.interp(0.0, x, y) == pytest.approx(g * road, abs=1e-6 * g)  # the road under the tire, now
 
     # Scrubbing the cursor moves the car with it.
     pb.cursors[0].dragged.emit(3.0)

@@ -13,7 +13,7 @@ def _spring(fg: str):
 
 
 def quarter_svg() -> str:
-    """The body m_s on the suspension's spring k_s and damper c_s, on the wheel m_u, on the tyre k_t, on the road
+    """The body m_s on the suspension's spring k_s and damper c_s, on the wheel m_u, on the tire k_t, on the road
     z_r; the body rises x_s and the wheel x_u."""
     fg, muted = colors.foreground, colors.muted
     body, wheel = colors.mass[0], colors.mass[1]

@@ -3,7 +3,7 @@
 Left: the pulse (a classical shape; a measured record: the absolute acceleration of a mass on
 the chain under a base half-sine, or a pyrotechnic-like transient, with noise and an offset; or
 damped sines or wavelets synthesized to a target spectrum), the spectrum's Q and the oscillator
-looked at, and things to try. Centre: the pulse, its velocity, and the SRS (maximax, primary and
+looked at, and things to try. Center: the pulse, its velocity, and the SRS (maximax, primary and
 residual, positive and negative) with the chain's modes marked. Right: the oscillator picked on
 the spectrum; the chain's own peaks from the SRS mode by mode (ABS, SRSS, NRL) against its exact
 response; the tripartite plot; the classical pulses' spectra side by side; and the notes.
@@ -118,7 +118,7 @@ TIPS = {
     "is the largest of them. For a measured record, primary means within the record.</p>",
     "f": "<p>The oscillator shown on the right. Drag the line on the spectrum, or click it.</p>",
 }
-PULSE_TIP = "<p>The base's acceleration (for a measured mass, the base's half-sine is grey).</p>"
+PULSE_TIP = "<p>The base's acceleration (for a measured mass, the base's half-sine is gray).</p>"
 VELOCITY_TIP = (
     "<p>The base's velocity, ∫a dt. The change Δv over the pulse decides the spectrum's low end: a soft "
     "oscillator takes the pulse as an impulse.</p>"
@@ -343,7 +343,7 @@ TRIALS = (
     _trial(
         "Wavelets to a spectrum",
         "The same target met by 28 wavelets, each <m>sin(ωt/N<sub>w</sub>) sin ωt</m> over <m>N<sub>w</sub></m> half-cycles, <m>N<sub>w</sub></m> odd: each starts and ends at "
-        "rest, so the record does too, within a micrometre, and a shaker can play it: the table moves at most "
+        "rest, so the record does too, within a micrometer, and a shaker can play it: the table moves at most "
         "0.54 m and comes back.",
         shape=Shape.WAVELETS,
     ),
@@ -640,7 +640,7 @@ def _nice(x: float) -> float:
 
 
 class ShockPage(QtWidgets.QWidget):
-    """Controls on the left, the pulse and its spectrum in the centre, the picked oscillator and notes on the right."""
+    """Controls on the left, the pulse and its spectrum in the center, the picked oscillator and notes on the right."""
 
     dof_requested = QtCore.Signal(int)  # the user changed N here; the main window owns the system
     system_requested = QtCore.Signal(object)  # a practice problem's chain, for the Simulation page
@@ -719,7 +719,7 @@ class ShockPage(QtWidgets.QWidget):
         lv.addStretch(1)
         left_scroll = ColumnScroll(left)
 
-        # --- centre: the pulse, its velocity, the spectrum
+        # --- center: the pulse, its velocity, the spectrum
         self.pulse_plot = _plot("Base acceleration", None, "Time", "s")
         self.pulse_plot.setToolTip(PULSE_TIP)
         plot_height(self.pulse_plot, 110)

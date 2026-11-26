@@ -1,4 +1,4 @@
-"""The Gyroscope page's 3D view of the top: an orthographic projection, turned by dragging, that draws the disc (or
+"""The Gyroscope page's 3D view of the top: an orthographic projection, turned by dragging, that draws the disk (or
 a tippe top's ball) on its stem, the axis's trail and the turning points' circles, the vectors ω, L and τ (or the
 friction F on a table), and the body's and the axis frame's axes. The page passes it each frame's state (`draw`).
 """
@@ -17,16 +17,16 @@ from .lesson import Dot
 from .orbit_view import OrbitView
 from .style import colors
 
-BODY_AXES = 6  # the body's axes' colour, colors.mass[k], apart from the vectors', the trail's and the disc's in every
-# theme; the axis frame's are drawn dashed in the axis's own colour, as they go with it
+BODY_AXES = 6  # the body's axes' color, colors.mass[k], apart from the vectors', the trail's and the disk's in every
+# theme; the axis frame's are drawn dashed in the axis's own color, as they go with it
 AXES_NONE, AXES_BODY, AXES_HELD, AXES_BOTH = range(4)  # the axes the 3D view draws on the top
 AXES_SHOWN = ("None", "Body's (turn with the top)", "Axis frame's (not the spin)", "Both")
 VIEW_TIP = (
-    "<p>The top on its tip, in 3D: drag to turn the view, double-click to reset it. The line through the disc "
-    "is its axis and the tick on the disc a mark that turns with it; the thin line is where the end of the "
+    "<p>The top on its tip, in 3D: drag to turn the view, double-click to reset it. The line through the disk "
+    "is its axis and the tick on the disk a mark that turns with it; the thin line is where the end of the "
     "axis has been, between the dotted circles at the turning points. With <i>Vectors</i> ticked: the "
     "angular momentum L, the angular velocity ω and gravity's moment τ, each scaled to fit. <i>Axes</i> draws the "
-    "body's axes e₁, e₂ (solid) and the axis frame's e₁′, e₂′ (dashed) at the disc's centre, about the axis e₃ "
+    "body's axes e₁, e₂ (solid) and the axis frame's e₁′, e₂′ (dashed) at the disk's center, about the axis e₃ "
     "they share.</p>"
 )
 
@@ -35,7 +35,7 @@ class TopView(OrbitView, pg.PlotWidget):
     """The top in 3D, orthographically projected; drag to turn it."""
 
     YAW, PITCH = math.radians(25.0), math.radians(20.0)
-    RIM = 48  # points round the disc
+    RIM = 48  # points round the disk
 
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)
@@ -103,7 +103,7 @@ class TopView(OrbitView, pg.PlotWidget):
 
     def set_top(self, top: Top, turning: tuple[float, ...], round_top: RoundTop | None = None) -> None:
         """A new top or launch: its size sets the view's, and its turning points the circles (none on a table,
-        where the view follows the top: its centre of mass stays over the middle)."""
+        where the view follows the top: its center of mass stays over the middle)."""
         self.top, self.turning, self.round = top, turning, round_top
         self.ball = round_top is not None and round_top.rim == 0
         self.reach = 2.4 * top.radius if self.ball else 1.6 * max(top.height, top.corner)
@@ -145,12 +145,12 @@ class TopView(OrbitView, pg.PlotWidget):
             self.draw(*self._last)
 
     def _anchor(self, axis: np.ndarray, centre: np.ndarray) -> np.ndarray:
-        """Where the drawn axis starts, for axes (..., 3) and centres of mass G: the stem's end (the tip), or a
-        ball's centre."""
+        """Where the drawn axis starts, for axes (..., 3) and centers of mass G: the stem's end (the tip), or a
+        ball's center."""
         rt = self.round
         if rt is None:
             return np.zeros_like(axis)
-        hub = centre - rt.offset * axis  # the round tip's centre
+        hub = centre - rt.offset * axis  # the round tip's center
         return hub if self.ball else hub - rt.radius * axis
 
     def _outline(self, item: QtWidgets.QGraphicsPathItem, x: np.ndarray, y: np.ndarray) -> None:
@@ -171,7 +171,7 @@ class TopView(OrbitView, pg.PlotWidget):
         track: np.ndarray | None = None,
         force: np.ndarray | None = None,
     ) -> None:
-        """The top with its axis along `axis` (a unit vector), the disc's mark toward `mark`, and L; `trail` is
+        """The top with its axis along `axis` (a unit vector), the disk's mark toward `mark`, and L; `trail` is
         where the axis has pointed (n, 3). On a table: G at `centre` (drawn over the middle), G when the axis
         pointed along `trail` (n, 3; its height), where the tip has touched the table (`track`, (m, 2)) and the
         friction."""
@@ -239,7 +239,7 @@ class TopView(OrbitView, pg.PlotWidget):
         self._draw_axes(axis, mark, G, anchor + R * axis)
 
     def _draw_axes(self, axis: np.ndarray, mark: np.ndarray, G: np.ndarray, end: np.ndarray) -> None:
-        """The body's e₁, e₂ and the axis frame's e₁′, e₂′ from the disc's centre G, as `show_axes` picks, and e₃
+        """The body's e₁, e₂ and the axis frame's e₁′, e₂′ from the disk's center G, as `show_axes` picks, and e₃
         named at the axis's end."""
         body = self.show_axes in (AXES_BODY, AXES_BOTH)
         held = self.show_axes in (AXES_HELD, AXES_BOTH)

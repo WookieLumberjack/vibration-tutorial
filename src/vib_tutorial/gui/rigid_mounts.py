@@ -1,10 +1,10 @@
-"""Rigid body on mounts page: a box on four mounts in 3D, its six coupled modes, the elastic centre, decoupling.
+"""Rigid body on mounts page: a box on four mounts in 3D, its six coupled modes, the elastic center, decoupling.
 
-Left: the body (a uniform box: mass and size), the mounts (where they sit, how far below the centre of mass,
-their tilt toward the middle, their stiffness along their axes and across), and which mode to show. Centre: the
+Left: the body (a uniform box: mass and size), the mounts (where they sit, how far below the center of mass,
+their tilt toward the middle, their stiffness along their axes and across), and which mode to show. Center: the
 box on its mounts in 3D (drag to turn it), swinging in the mode picked, and the six modes' frequencies with
 their kinetic energy's split among the six coordinates. Right: the frequencies as one quantity is swept, each
-plane's elastic centre beside the mounts' lines of action, and the Theory. The page has its own model
+plane's elastic center beside the mounts' lines of action, and the Theory. The page has its own model
 (core/rigid_mounts.py) and animates the mode on its own frame loop while it shows.
 """
 
@@ -145,23 +145,23 @@ FOCUS = round(math.degrees(Layout(drop=0.08).focus_tilt()), 2)  # the focalized 
 
 TRIALS = (
     MountTrial(
-        "Level with the centre of mass: six pure modes",
-        "A 20 kg box 0.6 × 0.5 × 0.6 m on four mounts of 50 kN/m (12.5 across) level with its centre of mass. "
+        "Level with the center of mass: six pure modes",
+        "A 20 kg box 0.6 × 0.5 × 0.6 m on four mounts of 50 kN/m (12.5 across) level with its center of mass. "
         "Every mode is pure, all its kinetic energy in one coordinate: <m>x</m> and <m>y</m> at 7.96 Hz (<m>√(4k<sub>s</sub>/m)/2π</m>), "
-        "roll 8.47, yaw 9.79, bounce 15.9 (<m>√(4k<sub>a</sub>/m)/2π</m>) and pitch 16.2 Hz. The elastic centre is the "
-        "centre of mass.",
+        "roll 8.47, yaw 9.79, bounce 15.9 (<m>√(4k<sub>a</sub>/m)/2π</m>) and pitch 16.2 Hz. The elastic center is the "
+        "center of mass.",
         mode=4,
     ),
     MountTrial(
-        "Mounts below the centre of mass",
-        "The same mounts 80 mm below the centre of mass. Pushed sideways at the mounts, the box also rolls, so "
+        "Mounts below the center of mass",
+        "The same mounts 80 mm below the center of mass. Pushed sideways at the mounts, the box also rolls, so "
         "sway and roll share two modes: 6.90 Hz (y 67 %, roll 33 %), the box rocking about a point below it, and "
-        "9.77 Hz (roll 67 %, y 33 %), rocking about a point above. The elastic centre has dropped to the mounts' "
+        "9.77 Hz (roll 67 %, y 33 %), rocking about a point above. The elastic center has dropped to the mounts' "
         "plane. Fore-and-aft and pitch couple too, but hardly (99 %): their frequencies are far apart.",
         drop=0.08,
         mode=0,
         predict=Prediction(
-            "The same mounts moved 80 mm below the box's centre of mass. Which of its six modes couple?",
+            "The same mounts moved 80 mm below the box's center of mass. Which of its six modes couple?",
             (
                 "None: they stay pure",
                 "Sway with yaw",
@@ -170,9 +170,9 @@ TRIALS = (
             ),
             3,
             why=(
-                "Below the centre of mass the mounts' shear turns the box: a sideways push now rolls it, and a fore-and-aft one pitches it.",
-                'Sway and yaw couple when the mounts sit unevenly about the vertical through the centre of mass. Lowering them puts their shear below it instead.',
-                'Bounce and pitch couple when the mounts sit unevenly fore and aft. Lowering them keeps them even, and the vertical forces still act through the centre of mass.',
+                "Below the center of mass the mounts' shear turns the box: a sideways push now rolls it, and a fore-and-aft one pitches it.",
+                'Sway and yaw couple when the mounts sit unevenly about the vertical through the center of mass. Lowering them puts their shear below it instead.',
+                'Bounce and pitch couple when the mounts sit unevenly fore and aft. Lowering them keeps them even, and the vertical forces still act through the center of mass.',
                 '',
             ),
         ),
@@ -180,26 +180,26 @@ TRIALS = (
     MountTrial(
         "Tilted to the focus: decoupled again",
         f"Each mount leaning {sig(FOCUS, 6)}° toward the middle, the pair's lines of action meet above them, and the roll "
-        "plane's elastic centre, <m>t(k<sub>a</sub> − k<sub>s</sub>) sin β cos β/(k<sub>a</sub> sin<sup>2</sup>β + k<sub>s</sub> "
-        "cos<sup>2</sup>β)</m> above the mounts, rises the 80 mm to the centre of mass: sway and roll are pure again (roll 7.56 Hz, "
+        "plane's elastic center, <m>t(k<sub>a</sub> − k<sub>s</sub>) sin β cos β/(k<sub>a</sub> sin<sup>2</sup>β + k<sub>s</sub> "
+        "cos<sup>2</sup>β)</m> above the mounts, rises the 80 mm to the center of mass: sway and roll are pure again (roll 7.56 Hz, "
         "y 8.91 Hz). That's a focalized mount system. The tilt is in the roll plane only, so the pitch plane's "
-        "centre stays at the mounts: no single elastic centre now.",
+        "center stays at the mounts: no single elastic center now.",
         drop=0.08,
         tilt=FOCUS,
         sweep=Sweep.TILT,
         tab=TAB_CENTRE,
     ),
     MountTrial(
-        "Centre of mass off-centre",
-        "The mounts level again, but the centre of mass 80 mm ahead of their middle: a weight pushes the rear "
+        "Center of mass off-center",
+        "The mounts level again, but the center of mass 80 mm ahead of their middle: a weight pushes the rear "
         "mounts less than the front, so bounce and pitch couple, 13.7 Hz (z 61 %, pitch 39 %) and 18.9 Hz, and so "
-        "do sway and yaw, 7.30 Hz (y 83 %, yaw 17 %) and 10.7 Hz. The elastic centre is 80 mm behind the centre of "
+        "do sway and yaw, 7.30 Hz (y 83 %, yaw 17 %) and 10.7 Hz. The elastic center is 80 mm behind the center of "
         "mass, under the mounts' middle: the cure is to move the mounts, or stiffen the ones that carry more.",
         offset=0.08,
         mode=4,
         sweep=Sweep.OFFSET,
         predict=Prediction(
-            'The mounts level again, but the centre of mass 80 mm ahead of their middle. Which modes couple?',
+            'The mounts level again, but the center of mass 80 mm ahead of their middle. Which modes couple?',
             (
                 "None: they stay pure",
                 "Fore-and-aft with pitch",
@@ -208,9 +208,9 @@ TRIALS = (
             ),
             3,
             why=(
-                'With the mounts uneven fore and aft, a vertical force through the centre of mass loads the front and rear differently, and pitches the box.',
-                'Fore-and-aft and pitch couple when the mounts sit above or below the centre of mass; moving it forward keeps them level with it.',
-                'Sway and roll couple when the mounts sit above or below the centre of mass; moving it forward keeps them level with it.',
+                'With the mounts uneven fore and aft, a vertical force through the center of mass loads the front and rear differently, and pitches the box.',
+                'Fore-and-aft and pitch couple when the mounts sit above or below the center of mass; moving it forward keeps them level with it.',
+                'Sway and roll couple when the mounts sit above or below the center of mass; moving it forward keeps them level with it.',
                 '',
             ),
         ),
@@ -218,16 +218,16 @@ TRIALS = (
     MountTrial(
         "Stiff in shear: no focus to be had",
         "Mounts as stiff across as along (<m>k<sub>s</sub> = k<sub>a</sub></m>) 80 mm below: tilting one changes nothing, "
-        "since it is equally stiff every way, and the roll plane's elastic centre stays at the mounts whatever the "
+        "since it is equally stiff every way, and the roll plane's elastic center stays at the mounts whatever the "
         "tilt. Focalizing needs <m>k<sub>s</sub></m> &lt; <m>k<sub>a</sub></m>, and the softer in shear the higher it can lift "
-        "the centre: <m>d ≤ t(1 − ρ<sub>s</sub>)/2√ρ<sub>s</sub></m>.",
+        "the center: <m>d ≤ t(1 − ρ<sub>s</sub>)/2√ρ<sub>s</sub></m>.",
         drop=0.08,
         shear_ratio=1.0,
         sweep=Sweep.TILT,
     ),
     MountTrial(
         "An unbalance at 3000 rpm: isolated",
-        "The level box with 2 kg·mm of unbalance turning about a crank along x, 100 mm ahead of its centre of mass "
+        "The level box with 2 kg·mm of unbalance turning about a crank along x, 100 mm ahead of its center of mass "
         "and 100 mm up, at 3000 rpm (50 Hz). It pushes <m>m<sub>e</sub>eΩ<sup>2</sup></m> = 197 N, turning; 22.4 N reaches the floor, 11.3 %: "
         "the load turns three times faster than the stiffest mode, and the box's inertia carries it. Above about "
         "1350 rpm the mounts isolate; the Response tab shows where they don't.",
@@ -291,14 +291,14 @@ TRIALS = (
             why=(
                 "A torque about x turns the block about x, which is roll; the bounce and pitch shapes don't turn about x.",
                 "With pure modes only the roll mode's shape turns about x, so only its modal force φᵀQ isn't zero.",
-                'Roll couples with sway only when the mounts sit above or below the centre of mass; these are level with it, so the modes are pure.',
+                'Roll couples with sway only when the mounts sit above or below the center of mass; these are level with it, so the modes are pure.',
                 '',
             ),
         ),
     ),
     MountTrial(
         "Mounts below: the torque drives two modes",
-        "The same torque with the mounts 80 mm below the centre of mass: the roll it drives is shared by the two "
+        "The same torque with the mounts 80 mm below the center of mass: the roll it drives is shared by the two "
         "sway–roll modes, so it drives both (modal forces 1.00 and 0.70), and the box sways as it rolls.",
         excitation=Excitation.TORQUE,
         drop=0.08,
@@ -328,7 +328,7 @@ def _bounce(rng: np.random.Generator) -> Question:
     m, k = pick(rng, (10.0, 20.0, 50.0, 100.0)), pick(rng, (20.0, 50.0, 100.0, 200.0))
     f = math.sqrt(4 * k * 1e3 / m) / TWO_PI
     return Question(
-        f"A {sig(m, 6)} kg machine sits on four mounts of {sig(k, 6)} kN/m each, level with its centre of mass and evenly "
+        f"A {sig(m, 6)} kg machine sits on four mounts of {sig(k, 6)} kN/m each, level with its center of mass and evenly "
         "spaced about it. At what frequency does it bounce?",
         f,
         f"Bounce is a pure mode here: the four mounts in parallel, 4k = {number(4 * k)} kN/m, carry m: "
@@ -346,10 +346,10 @@ def _roll(rng: np.random.Generator) -> Question:
     f = math.sqrt(4 * k * 1e3 * t * t / i_xx) / TWO_PI
     return Question(
         f"A {sig(m, 6)} kg box, {sig(w * 1000, 6)} mm wide and {sig(h * 1000, 6)} mm tall, sits on four mounts of {sig(k, 6)} kN/m along "
-        f"their axes, {sig(t * 1000, 6)} mm either side of its centre and level with its centre of mass. At what "
+        f"their axes, {sig(t * 1000, 6)} mm either side of its center and level with its center of mass. At what "
         "frequency does it roll?",
         f,
-        f"Level with the centre of mass, roll is pure: each mount stretches t θ, so the roll stiffness is "
+        f"Level with the center of mass, roll is pure: each mount stretches t θ, so the roll stiffness is "
         f"4k t² = {number(4 * k * 1e3 * t * t)} N·m/rad, against I<sub>xx</sub> = m(w² + h²)/12 = {number(i_xx)} kg·m²: "
         f"f = √(4kt²/I<sub>xx</sub>)/2π = {number(f)} Hz.",
         unit="Hz",
@@ -362,11 +362,11 @@ def _focus(rng: np.random.Generator) -> Question:
     layout = Layout(track=t, drop=h, shear_ratio=rho)
     beta = math.degrees(layout.focus_tilt())
     return Question(
-        f"Mounts {sig(t * 1000, 6)} mm either side of a machine's middle sit {sig(h * 1000, 6)} mm below its centre of mass, "
+        f"Mounts {sig(t * 1000, 6)} mm either side of a machine's middle sit {sig(h * 1000, 6)} mm below its center of mass, "
         f"their stiffness across {sig(rho, 6)} of that along their axes. How far should each lean toward the middle, in "
         "degrees, to decouple sway from roll?",
         beta,
-        f"The roll plane's elastic centre must rise h to the centre of mass: t(1 − ρ) sin β cos β/(sin²β + ρ cos²β) "
+        f"The roll plane's elastic center must rise h to the center of mass: t(1 − ρ) sin β cos β/(sin²β + ρ cos²β) "
         f"= h, so with u = tan β, h u² − t(1 − ρ) u + hρ = 0. Its smaller root is u = {number(math.tan(math.radians(beta)))}: "
         f"β = {number(beta)}°.",
         unit="°",
@@ -376,10 +376,10 @@ def _focus(rng: np.random.Generator) -> Question:
 
 def _lowered(rng: np.random.Generator) -> Question:
     return Question(
-        "A box on four upright mounts level with its centre of mass has six pure modes. The mounts are moved "
-        "down, below the centre of mass. Which modes couple?",
+        "A box on four upright mounts level with its center of mass has six pure modes. The mounts are moved "
+        "down, below the center of mass. Which modes couple?",
         0,
-        "Sway with roll and fore-and-aft with pitch: the mounts' shear now acts below the centre of mass, so a "
+        "Sway with roll and fore-and-aft with pitch: the mounts' shear now acts below the center of mass, so a "
         "sideways push also turns it, and turning it also moves the mounts sideways. Bounce and yaw stay pure.",
         choices=(
             "Sway with roll, and fore-and-aft with pitch",
@@ -390,10 +390,10 @@ def _lowered(rng: np.random.Generator) -> Question:
         why=(
             "",
             "Bounce and pitch couple when the mounts sit unevenly fore and aft. Lowering them keeps them even, and "
-            "the vertical forces still act through the centre of mass.",
-            "Sway and yaw couple when the mounts sit unevenly about the vertical through the centre of mass. "
+            "the vertical forces still act through the center of mass.",
+            "Sway and yaw couple when the mounts sit unevenly about the vertical through the center of mass. "
             "Lowering them puts their shear below it instead.",
-            "Below the centre of mass the mounts' shear turns the box: a sideways push now rolls it, and a "
+            "Below the center of mass the mounts' shear turns the box: a sideways push now rolls it, and a "
             "fore-and-aft one pitches it.",
         ),
         setup=dict(drop=0.08, mode=0),
@@ -403,10 +403,10 @@ def _lowered(rng: np.random.Generator) -> Question:
 
 def _offset(rng: np.random.Generator) -> Question:
     return Question(
-        "A box on four level mounts has its centre of mass moved forward, so the mounts no longer sit evenly "
+        "A box on four level mounts has its center of mass moved forward, so the mounts no longer sit evenly "
         "about it. Which modes couple?",
         0,
-        "Bounce with pitch, and sway with yaw: a vertical force through the centre of mass now loads the front "
+        "Bounce with pitch, and sway with yaw: a vertical force through the center of mass now loads the front "
         "and rear mounts unequally and turns the box, and the same goes for a sideways one about the vertical.",
         choices=(
             "Bounce with pitch, and sway with yaw",
@@ -416,11 +416,11 @@ def _offset(rng: np.random.Generator) -> Question:
         ),
         why=(
             "",
-            "Sway and roll couple when the mounts sit above or below the centre of mass; moving it forward keeps "
+            "Sway and roll couple when the mounts sit above or below the center of mass; moving it forward keeps "
             "them level with it.",
-            "Fore-and-aft and pitch couple when the mounts sit above or below the centre of mass; moving it forward "
+            "Fore-and-aft and pitch couple when the mounts sit above or below the center of mass; moving it forward "
             "keeps them level with it.",
-            "With the mounts uneven fore and aft, a vertical force through the centre of mass loads the front and "
+            "With the mounts uneven fore and aft, a vertical force through the center of mass loads the front and "
             "rear differently, and pitches the box.",
         ),
         setup=dict(offset=0.08, mode=4, sweep=Sweep.OFFSET),
@@ -446,10 +446,10 @@ def _decouple_spec(rng: np.random.Generator) -> Question:
         )
 
     return Question(
-        f"These mounts sit {sig(drop * 1000, 6)} mm below the box's centre of mass, so sway and roll couple. Without "
+        f"These mounts sit {sig(drop * 1000, 6)} mm below the box's center of mass, so sway and roll couple. Without "
         "moving them or changing their stiffness, make a mode at least 99 % sway and another at least 99 % roll.",
         0,
-        f"Lean them toward the middle until the roll plane's elastic centre reaches the centre of mass: "
+        f"Lean them toward the middle until the roll plane's elastic center reaches the center of mass: "
         f"h u² − t(1 − ρ) u + hρ = 0 with u = tan β gives β = {number(beta)}°.",
         setup=dict(drop=drop, sweep=Sweep.TILT, tab=TAB_CENTRE),
         goal=goal,
@@ -492,14 +492,14 @@ def _roll_axis(rng: np.random.Generator) -> Question:
 def _torque_modes(rng: np.random.Generator) -> Question:
     return Question(
         "An engine's firing torque about its crank (along x, a principal axis) acts on a block whose mounts are "
-        "level with its centre of mass and even about it. Which modes does it drive?",
+        "level with its center of mass and even about it. Which modes does it drive?",
         0,
         "The roll mode alone: the modes are pure, and only the roll mode's shape turns about x, so only its modal "
         "force φᵀQ is not zero.",
         choices=("Roll alone", "Roll and sway", "All six", "Bounce and pitch"),
         why=(
             "",
-            "Roll couples with sway only when the mounts sit above or below the centre of mass; these are level "
+            "Roll couples with sway only when the mounts sit above or below the center of mass; these are level "
             "with it, so the modes are pure.",
             "With pure modes only the roll mode's shape turns about x, so only its modal force φᵀQ isn't zero.",
             "A torque about x turns the block about x, which is roll; the bounce and pitch shapes don't turn about x.",
@@ -578,7 +578,7 @@ PROBLEMS = tuple(
         ("roll", "Roll on four mounts", "stiffness", "The stiffness matrix", _roll),
         ("focus", "The focal tilt", "decoupling", "Decoupling", _focus),
         ("lowered", "Predict: mounts below", "decoupling", "Decoupling", _lowered),
-        ("offset", "Predict: an offset centre of mass", "elastic-centre", "The elastic centre", _offset),
+        ("offset", "Predict: an offset center of mass", "elastic-centre", "The elastic center", _offset),
         ("decouple-spec", "Spec: decouple sway and roll", "decoupling", "Decoupling", _decouple_spec),
         ("transmitted", "Through the mounts", "floor", "What reaches the floor", _transmitted),
         ("roll-axis", "The torque roll axis", "torque-roll-axis", "The torque roll axis", _roll_axis),
@@ -589,15 +589,15 @@ PROBLEMS = tuple(
 )
 
 TIPS = {
-    "mass": "<p>The box's mass, its centre of mass at its middle.</p>",
+    "mass": "<p>The box's mass, its center of mass at its middle.</p>",
     "length": "<p>The box's size along x (fore and aft).</p>",
     "width": "<p>Its size along y (sideways).</p>",
     "height": "<p>Its size along z (up): I<sub>xx</sub> = m(w² + h²)/12, I<sub>yy</sub> = m(l² + h²)/12, "
     "I<sub>zz</sub> = m(l² + w²)/12.</p>",
     "span": "<p>Half the mounts' spacing fore and aft.</p>",
     "track": "<p>Half their spacing sideways, t.</p>",
-    "drop": "<p>How far below the centre of mass the mounts act, h.</p>",
-    "offset": "<p>How far the centre of mass sits ahead of the mounts' middle.</p>",
+    "drop": "<p>How far below the center of mass the mounts act, h.</p>",
+    "offset": "<p>How far the center of mass sits ahead of the mounts' middle.</p>",
     "tilt": "<p>Each mount's axis leaning toward the middle seen from the front, β: a V (focalized) mount system.</p>",
     "stiffness": "<p>Each mount's stiffness along its axis, k<sub>a</sub>.</p>",
     "shear": "<p>Its stiffness across its axis over along it, ρ = k<sub>s</sub>/k<sub>a</sub> (rubber mounts: about "
@@ -610,7 +610,7 @@ TIPS = {
     "the crank axis), or a torque about the crank axis at a multiple of the speed (an engine's firing).</p>",
     "rpm": "<p>The machine's speed Ω.</p>",
     "unbalance": "<p>mₑe: the unbalanced mass times its distance from the axis.</p>",
-    "at": "<p>Where the unbalance turns, from the centre of mass: off it, its force also turns the body.</p>",
+    "at": "<p>Where the unbalance turns, from the center of mass: off it, its force also turns the body.</p>",
     "torque": "<p>The torque's amplitude about the crank axis.</p>",
     "order": "<p>How many times a turn the torque goes round: a four-stroke four-cylinder engine fires twice a "
     "turn.</p>",
@@ -619,15 +619,15 @@ TIPS = {
 }
 VIEW_TIP = (
     "<p>The box on its mounts in 3D, swinging in the mode picked (slowed, and exaggerated): drag to turn the view, "
-    "double-click to reset it. Dotted: where it rests. The dot is its centre of mass, the cross the elastic "
+    "double-click to reset it. Dotted: where it rests. The dot is its center of mass, the cross the elastic "
     "centre.</p>"
 )
 TABLE_TIP = (
     "<p>The six modes: each one's frequency and how its kinetic energy splits among the three translations and "
-    "three rotations about the centre of mass. 100 % in one: a pure (decoupled) mode. Click a row to show it.</p>"
+    "three rotations about the center of mass. 100 % in one: a pure (decoupled) mode. Click a row to show it.</p>"
 )
 SWEEP_TIP = (
-    "<p>The six frequencies as one quantity changes, each dot coloured by the coordinate with most of the mode's "
+    "<p>The six frequencies as one quantity changes, each dot colored by the coordinate with most of the mode's "
     "energy. Decoupled modes cross freely; coupled ones veer apart. The vertical line is the setting now.</p>"
 )
 RESPONSE_TIP = (
@@ -638,7 +638,7 @@ RESPONSE_TIP = (
 DRIVE_TIP = "<p>Each mode's modal force |φ<sub>j</sub>ᵀQ|, over the largest: which modes this load drives.</p>"
 CENTRE_TIP = (
     "<p>The box seen from the front (the roll plane, left) and from the side (the pitch plane, right): the mounts, "
-    "their lines of action (dotted), the centre of mass (dot) and each plane's elastic centre (cross).</p>"
+    "their lines of action (dotted), the center of mass (dot) and each plane's elastic center (cross).</p>"
 )
 
 NOTES_HTML = load_notes("rigid_mounts", figures=mounts_figures.FIGURES, trials=trials_html(TRIALS))
@@ -720,8 +720,8 @@ class MountView(OrbitView, pg.PlotWidget):
         return np.array(out)
 
     def set_layout(self, layout: Layout, centre: np.ndarray, drive: Drive | None = None) -> None:
-        """A new body or mounts: its size sets the view's; `centre` is the elastic centre's point; with a drive,
-        its crank axis (through the unbalance, or the centre of mass) and, for a torque, the torque roll axis."""
+        """A new body or mounts: its size sets the view's; `centre` is the elastic center's point; with a drive,
+        its crank axis (through the unbalance, or the center of mass) and, for a torque, the torque roll axis."""
         self.layout_, self.centre, self.drive = layout, centre, drive
         self._place_static()
 
@@ -829,7 +829,7 @@ def _coil(bottom: np.ndarray, top: np.ndarray, rest: np.ndarray) -> np.ndarray:
 
 
 class MountsPage(QtWidgets.QWidget):
-    """Controls on the left, the box in 3D and its modes in the centre, the sweep and the elastic centre right."""
+    """Controls on the left, the box in 3D and its modes in the center, the sweep and the elastic center right."""
 
     follows_chain = False  # MainWindow: this page has its own model, not the chain
 
@@ -921,7 +921,7 @@ class MountsPage(QtWidgets.QWidget):
         connect_all(self.boxes, self._on_inputs)
         self.mode.currentIndexChanged.connect(self._on_mode)
 
-        # --- centre
+        # --- center
         self.view = MountView()
         self.table = QtWidgets.QTableWidget(6, 8)
         self.table.setToolTip(TABLE_TIP)
@@ -1007,7 +1007,7 @@ class MountsPage(QtWidgets.QWidget):
         self.notes = theory(NOTES_HTML)
         self.tabs = QtWidgets.QTabWidget()
         self.tabs.addTab(sweep_tab, "Sweep")
-        self.tabs.addTab(column(planes, self.centre_note, stretch=False), "Elastic centre")
+        self.tabs.addTab(column(planes, self.centre_note, stretch=False), "Elastic center")
         self.tabs.addTab(column(self.response_plot, self.response_note, stretch=False), "Response")
         self.tabs.addTab(column(self.drive_plot, self.drive_note, stretch=False), "Drive")
         self.tabs.addTab(self.notes, "Theory")
@@ -1115,7 +1115,7 @@ class MountsPage(QtWidgets.QWidget):
         self.centre, self.left = point, left
         focus = self.layout_.focus_tilt()
         self.focus_info.setText(
-            "Level with the centre of mass: no tilt needed."
+            "Level with the center of mass: no tilt needed."
             if self.layout_.drop <= 0
             else f"Focal tilt: {sig(math.degrees(focus), 4)}°."
             if math.isfinite(focus)
@@ -1130,9 +1130,9 @@ class MountsPage(QtWidgets.QWidget):
         where = f"({_mm(point[0])}, {_mm(point[1])}, {_mm(point[2])}) mm"
         self.readout.setText(
             (
-                f"Elastic centre at {where} from the centre of mass"
+                f"Elastic center at {where} from the center of mass"
                 if left < 1e-6
-                else f"No single elastic centre: the best point, {where}, leaves {sig(100 * left, 2)} % of the coupling"
+                else f"No single elastic center: the best point, {where}, leaves {sig(100 * left, 2)} % of the coupling"
             )
             + f". The roll plane's is at z = {_mm(roll)} mm, the pitch plane's at x = {_mm(px)}, z = {_mm(pz)} mm. "
             + self._showing()
@@ -1376,7 +1376,7 @@ class MountsPage(QtWidgets.QWidget):
         self.sweep_plot.setXRange(lo, hi, padding=0)
         self.sweep_plot.setYRange(0.0, float(np.nanmax(freqs)) * 1.7, padding=0)  # room above for the legend
         self.sweep_note.setText(
-            "Each dot is coloured by the coordinate with most of its mode's energy. Where two modes come close, "
+            "Each dot is colored by the coordinate with most of its mode's energy. Where two modes come close, "
             "coupled ones veer apart and trade characters; decoupled ones cross."
             + (f" Dashed: the focal tilt, {sig(math.degrees(focus), 4)}°." if on else "")
         )
@@ -1409,7 +1409,7 @@ class MountsPage(QtWidgets.QWidget):
             reach = max(half, top, abs(1000 * layout.drop) + 50) * 1.25
             p.setRange(xRange=(-reach, reach), yRange=(-reach, reach), padding=0)
         self.centre_note.setText(
-            f"Front (left) and side (right). The roll plane's elastic centre is at z = {_mm(roll)} mm; the pitch "
-            f"plane's at x = {_mm(px)}, z = {_mm(pz)} mm, from the centre of mass. Where a plane's is at the centre of "
+            f"Front (left) and side (right). The roll plane's elastic center is at z = {_mm(roll)} mm; the pitch "
+            f"plane's at x = {_mm(px)}, z = {_mm(pz)} mm, from the center of mass. Where a plane's is at the center of "
             "mass (the dot), its modes are pure."
         )

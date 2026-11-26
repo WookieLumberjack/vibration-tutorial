@@ -4,13 +4,13 @@
 </before>
 <goals page="variability_page">
 <li trial="1" problem="shares">estimate each mode's scatter from its strain energies;</li>
-<li trial="4" problem="band">find a bladed disc's band of modes;</li>
+<li trial="4" problem="band">find a bladed disk's band of modes;</li>
 <li trial="5" problem="participation">see weak coupling localize a mode on one blade.</li>
 </goals>
 <h3><a name="scatter"></a>No two structures are alike</h3>
 <p>Real masses, stiffnesses and joints scatter: from part to part, assembly to assembly, day to day. A model
 with nominal values predicts the average structure at best. <b>Monte Carlo</b> treats the properties as random:
-draw many structures, analyse each, and look at the spread of what matters. The page scatters every mass, spring
+draw many structures, analyze each, and look at the spread of what matters. The page scatters every mass, spring
 and damper independently and draws each copy's receptance and frequencies.</p>
 <p>Each property is its nominal value times a <b>lognormal</b> factor, which stays positive however wide the
 scatter. With the coefficient of variation <m>V</m> (the standard deviation over the mean: <m>V<sub>m</sub></m>,
@@ -37,7 +37,7 @@ over the number of springs (all alike): a mode averages over the parts it moves,
 half of theirs. Dampers don't enter at all: the undamped frequencies depend on <m>M</m> and <m>K</m> alone.</p>
 
 <h3><a name="peaks"></a>Why the peaks scatter most</h3>
-<p>The frequencies scatter by a per cent or two; the response near a resonance by far more, because the
+<p>The frequencies scatter by a percent or two; the response near a resonance by far more, because the
 peak moves sideways. Near mode <m>r</m> one term of the receptance dominates. If the scattered mode sits a
 fraction <m>δ</m> above the nominal one, then at the nominal resonance
 <m>ω<sub>r</sub>²(1 + δ)² − ω<sub>r</sub>²</m> ≈ <m>2δω<sub>r</sub>²</m> beside the damping's
@@ -57,16 +57,16 @@ band's edges (the 5th and 95th percentiles) rest on the few chains out in the ta
 the standard deviation does.</p>
 
 <h3><a name="localization"></a>Mode localization</h3>
-<p>A structure made of identical, weakly coupled parts (a bladed disc, a truss of identical bays, a row of
+<p>A structure made of identical, weakly coupled parts (a bladed disk, a truss of identical bays, a row of
 identical rooms) has modes that are waves through all the parts, in a narrow band of frequencies. The page's
-model is a ring of <m>N</m> blades, each a mass <m>m</m> on a spring <m>k</m> to a disc held still, neighbours
+model is a ring of <m>N</m> blades, each a mass <m>m</m> on a spring <m>k</m> to a disk held still, neighbors
 joined by springs <m>k<sub>c</sub></m>:</p>
 <p><img src="fig:ring"></p>
 <p>Tuned, a wave with <m>n</m> nodal diameters, <m>x<sub>j</sub></m> = <m>X</m>e<sup>i2πnj/N</sup>, stretches
 each coupling spring by <m>X</m>(e<sup>i2πn/N</sup> − 1), and the blade's equation gives</p>
 <eq>\omega^2 = \frac{k}{m}\left(1 + \frac{4k_c}{k}\sin^2\frac{\pi n}{N}\right), \qquad n = 0, 1, \ldots, N/2</eq>
 <p>from the blade's own frequency (<m>n</m> = 0, the coupling springs unstretched) to
-√(1 + 4<m>k<sub>c</sub></m>/<m>k</m>) times it (neighbours in opposition). The waves round the ring one way
+√(1 + 4<m>k<sub>c</sub></m>/<m>k</m>) times it (neighbors in opposition). The waves round the ring one way
 and the other share a frequency, so every mode but the first and (for even <m>N</m>) the last comes in a pair.</p>
 <p>Make the blades slightly different (<b>mistuning</b>: blade <m>j</m>'s stiffness <m>k</m>(1 +
 <m>δ<sub>j</sub></m>)) and, when the differences are comparable to the coupling, the waves can no longer pass:
@@ -86,11 +86,11 @@ precisely made but more weakly coupled can be worse. The <b>participation number
 standing wave (sin² averages ½ and sin⁴ ⅜), 1 for a mode on one blade, and 1/(cos⁴<m>θ</m> + sin⁴<m>θ</m>)
 for the pair.</p>
 
-<h3><a name="mistuning"></a>Forced response of a mistuned disc</h3>
+<h3><a name="mistuning"></a>Forced response of a mistuned disk</h3>
 <p>A turbine's blades are driven by the flow past the vanes ahead of them: the same force on every blade, its
-phase stepping round the disc,</p>
+phase stepping round the disk,</p>
 <eq>F_j = F\,\mathrm{e}^{\,\mathrm{i}\,2\pi E j/N}</eq>
-<p>with <m>E</m> the <b>engine order</b> (the number of disturbances per revolution). A tuned disc answers with
+<p>with <m>E</m> the <b>engine order</b> (the number of disturbances per revolution). A tuned disk answers with
 the matching wave alone, every blade alike: <m>n</m> = <m>E</m>, or <m>N</m> − <m>E</m> (a wave the other way)
 when <m>E</m> passes <m>N</m>/2, as the samples of a sine alias. Its peak, at that wave's frequency, is set by
 the damper alone. Mistuned, the force's wave is no longer a mode: the response spreads over several modes and
@@ -140,7 +140,7 @@ chain into the Simulation page.</p>
 <li>Scattered properties scatter the frequencies by less, and the response near a peak by much more: compare σ<sub>f</sub>/f with ζ.</li>
 <li>First-order sensitivities predict the frequencies' spread from the strain and kinetic energy shares.</li>
 <li>Weakly coupled, nearly identical parts localize their modes when the mistuning matches the coupling.</li>
-<li>A mistuned disc's worst blade can answer up to (1 + √N)/2 times the tuned one.</li>
+<li>A mistuned disk's worst blade can answer up to (1 + √N)/2 times the tuned one.</li>
 </takeaways>
 <h3><a name="notation"></a>Notation</h3>
 <notation>m chain_i matrices omega_i phi_i modal_const zeta scatter ring</notation>

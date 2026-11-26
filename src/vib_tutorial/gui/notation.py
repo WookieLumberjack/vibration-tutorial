@@ -1,6 +1,6 @@
 """The symbols the notes use, in one place: each page's notation table and the glossary are made from it.
 
-A `Symbol` is one row: what is written (HTML, set as inline maths), what it means, its units, and the page
+A `Symbol` is one row: what is written (HTML, set as inline math), what it means, its units, and the page
 that brings it in (with an anchor there, if the section matters). A notes file lists the symbols it uses with
 ``<notation>key key …</notation>``, which `links.load_notes` writes out as its table (`notation_html`); the
 glossary (`theory/glossary.html`'s ``<!--GLOSSARY-->``) lists them all, a table per course group
@@ -25,7 +25,7 @@ from . import maths
 @dataclass(frozen=True)
 class Symbol:
     key: str
-    symbol: str  # HTML, set as inline maths
+    symbol: str  # HTML, set as inline math
     meaning: str  # HTML
     units: str
     page: str  # the page that brings it in (an attribute in links.COURSE)
@@ -150,7 +150,7 @@ SYMBOLS = (
     Symbol(
         "J",
         "J",
-        "moment of inertia about the axis it turns on (a pendulum's pivot; a disc's polar inertia in a drive train)",
+        "moment of inertia about the axis it turns on (a pendulum's pivot; a disk's polar inertia in a drive train)",
         "kg·m²",
         "pendulum_page",
         "rotation",
@@ -158,7 +158,7 @@ SYMBOLS = (
     Symbol(
         "J_G",
         "J<sub>G</sub>, k<sub>G</sub>",
-        "moment of inertia about the centre of mass G; the radius of gyration √(J<sub>G</sub>/m)",
+        "moment of inertia about the center of mass G; the radius of gyration √(J<sub>G</sub>/m)",
         "kg·m², m",
         "pendulum_page",
         "rotation",
@@ -173,7 +173,7 @@ SYMBOLS = (
     ),
     Symbol("M_moment", "M", "a moment (torque) applied about the axis", "N·m", "pendulum_page", "rotation"),
     Symbol("k_t", "k<sub>t</sub>", "a torsion spring's stiffness (a wire's twist)", "N·m/rad", "pendulum_page"),
-    Symbol("d_arm", "d", "distance from the pivot to the centre of mass G", "m", "pendulum_page", "gravity-stiffness"),
+    Symbol("d_arm", "d", "distance from the pivot to the center of mass G", "m", "pendulum_page", "gravity-stiffness"),
     Symbol(
         "L_eq",
         "L<sub>eq</sub>",
@@ -182,7 +182,7 @@ SYMBOLS = (
         "pendulum_page",
         "gravity-stiffness",
     ),
-    Symbol("r_disc", "r", "a disc's radius", "m", "pendulum_page"),
+    Symbol("r_disc", "r", "a disk's radius", "m", "pendulum_page"),
     Symbol(
         "T_period",
         "T, T<sub>0</sub>, ω",
@@ -434,7 +434,7 @@ SYMBOLS = (
         "deriving_page",
         "lagrange",
     ),
-    Symbol("G_P", "G, P", "a body's centre of mass; another point on it", "–", "deriving_page", "free-body"),
+    Symbol("G_P", "G, P", "a body's center of mass; another point on it", "–", "deriving_page", "free-body"),
     Symbol(
         "x_G_P",
         "x<sub>G</sub>, x<sub>P</sub>, x<sub>f</sub>, x<sub>r</sub>",
@@ -452,7 +452,7 @@ SYMBOLS = (
         "deriving_page",
         "free-body",
     ),
-    Symbol("e_offset", "e, e*", "how far P is ahead of G; the elastic centre's e", "m", "deriving_page", "coupling"),
+    Symbol("e_offset", "e, e*", "how far P is ahead of G; the elastic center's e", "m", "deriving_page", "coupling"),
     Symbol(
         "car_axles",
         "a, b",
@@ -1129,7 +1129,7 @@ SYMBOLS = (
     Symbol(
         "car_q",
         "m<sub>s</sub>, m<sub>u</sub>, k<sub>s</sub>, c<sub>s</sub>, k<sub>t</sub>, x<sub>s</sub>, x<sub>u</sub>, z<sub>r</sub>",
-        "the quarter-car's body and wheel masses, suspension spring and damper, tyre; the body's and wheel's rise, the road's",
+        "the quarter-car's body and wheel masses, suspension spring and damper, tire; the body's and wheel's rise, the road's",
         "kg, N/m, N·s/m, m",
         "quarter_car_page",
         "quarter-car",
@@ -1137,7 +1137,7 @@ SYMBOLS = (
     Symbol(
         "tyre_w",
         "W, g, σ<sub>t</sub>, σ<sub>travel</sub>",
-        "the tyre's static load (m<sub>s</sub> + m<sub>u</sub>)g, gravity; the RMS of its dynamic load and of the suspension's travel",
+        "the tire's static load (m<sub>s</sub> + m<sub>u</sub>)g, gravity; the RMS of its dynamic load and of the suspension's travel",
         "N, m/s², N, m",
         "quarter_car_page",
         "quarter-car",
@@ -1177,7 +1177,7 @@ SYMBOLS = (
     Symbol(
         "body_q",
         "u, θ, q",
-        "a rigid body's translation and (small) rotation about its centre of mass; the two together, six coordinates",
+        "a rigid body's translation and (small) rotation about its center of mass; the two together, six coordinates",
         "m, rad",
         "mounts_page",
         "six-dof",
@@ -1201,7 +1201,7 @@ SYMBOLS = (
     Symbol(
         "mount_geom",
         "r, [r]<sub>×</sub>, T, K<sub>tr</sub>, s<sub>x</sub>, t",
-        "a mount's place from the centre of mass; the matrix of r ×; the map from q to the mount's end; K's translation–rotation block; the mounts' half-spacings fore and aft and across",
+        "a mount's place from the center of mass; the matrix of r ×; the map from q to the mount's end; K's translation–rotation block; the mounts' half-spacings fore and aft and across",
         "m, m, –, N/rad, m, m",
         "mounts_page",
         "stiffness",
@@ -1209,7 +1209,7 @@ SYMBOLS = (
     Symbol(
         "focus_tilt",
         "β, z<sub>e</sub>, d, s<sub>β</sub>, ρ<sub>s</sub>, c",
-        "a mount's tilt toward the middle; the roll plane's elastic centre above the mounts; the centre of mass's height above them; tan β; k<sub>s</sub>/k<sub>a</sub>; a point stiffness is taken about",
+        "a mount's tilt toward the middle; the roll plane's elastic center above the mounts; the center of mass's height above them; tan β; k<sub>s</sub>/k<sub>a</sub>; a point stiffness is taken about",
         "rad, m, m, –, –, m",
         "mounts_page",
         "decoupling",
@@ -1217,7 +1217,7 @@ SYMBOLS = (
     Symbol(
         "load_q",
         "Q, F, m<sub>e</sub>e, τ, n",
-        "a generalized force about the centre of mass; a force; an unbalance; a torque and its axis",
+        "a generalized force about the center of mass; a force; an unbalance; a torque and its axis",
         "N and N·m, N, kg·m, N·m, –",
         "mounts_page",
         "forced",
@@ -1321,7 +1321,7 @@ SYMBOLS = (
     Symbol(
         "storey",
         "Δ<sub>j</sub>, V<sub>j</sub>, V<sub>b</sub>, h, ν",
-        "storey j's drift u<sub>j</sub> − u<sub>j−1</sub>; its shear; the base shear; a storey's height; the code's "
+        "story j's drift u<sub>j</sub> − u<sub>j−1</sub>; its shear; the base shear; a story's height; the code's "
         "drift reduction factor",
         "m, N, N, m, –",
         "seismic_page",
@@ -1339,7 +1339,7 @@ SYMBOLS = (
     Symbol(
         "ductility",
         "μ, q, F<sub>y</sub>, u<sub>y</sub>, F<sub>el</sub>, u<sub>max</sub>",
-        "ductility u<sub>max</sub>/u<sub>y</sub>; the behaviour factor F<sub>el</sub>/F<sub>y</sub>; yield force "
+        "ductility u<sub>max</sub>/u<sub>y</sub>; the behavior factor F<sub>el</sub>/F<sub>y</sub>; yield force "
         "and displacement; the elastic force; the peak displacement",
         "–, –, N, m, N, m",
         "seismic_page",
@@ -1598,7 +1598,7 @@ SYMBOLS = (
     Symbol(
         "frame_dofs",
         "u, v, θ",
-        "a frame node's DOFs: its displacements along x and along y, and its turn, anticlockwise",
+        "a frame node's DOFs: its displacements along x and along y, and its turn, counterclockwise",
         "m, m, rad",
         "frame_page",
         "building",
@@ -1721,7 +1721,7 @@ SYMBOLS = (
     Symbol(
         "irregularity",
         "α<sub>i</sub>",
-        "the irregularity factor ν<sub>0</sub>/ν<sub>p</sub>: 1 narrow-band, towards 0 broad",
+        "the irregularity factor ν<sub>0</sub>/ν<sub>p</sub>: 1 narrow-band, toward 0 broad",
         "–",
         "random_page",
         "statistics",
@@ -1964,7 +1964,7 @@ SYMBOLS = (
     Symbol(
         "ring",
         "N, n, k<sub>c</sub>, ω<sub>b</sub>, x<sub>j</sub>, δ<sub>j</sub>, Δ, θ, P, E, F<sub>j</sub>",
-        "a ring of blades: their number; a wave's nodal diameters; the springs between neighbours; a blade's own "
+        "a ring of blades: their number; a wave's nodal diameters; the springs between neighbors; a blade's own "
         "frequency, √(k/m); blade j's motion and its stiffness's mistuning; two blades' difference; the mixing "
         "angle of their mode; the participation number, how many blades a mode moves; the engine order; the "
         "force on blade j",
@@ -1975,8 +1975,8 @@ SYMBOLS = (
     Symbol(
         "torsion_train",
         "J<sub>i</sub>, θ<sub>i</sub>, k<sub>i</sub>, c<sub>i</sub>, T, Θ, G, d, L, N",
-        "a drive train: disc i's inertia and angle; the stiffness and damping of the shaft after it; the torques on "
-        "the discs, and their complex amplitudes' angles; a shaft's shear modulus, diameter and length; an engine's "
+        "a drive train: disk i's inertia and angle; the stiffness and damping of the shaft after it; the torques on "
+        "the disks, and their complex amplitudes' angles; a shaft's shear modulus, diameter and length; an engine's "
         "cylinders",
         "kg·m², rad, N·m/rad, N·m·s/rad, N·m, rad, Pa, m, m, –",
         "torsional_page",
@@ -1988,7 +1988,7 @@ SYMBOLS = (
         "J<sub>in</sub>, J<sub>out</sub>, k<sub>m</sub>, c<sub>m</sub>, ε, n<sub>i</sub>, ψ<sub>i</sub>, z",
         "a gear pair: the teeth on the motor's side and the far side; their base radii; their angles, each in its "
         "own direction of turning; their inertias; the mesh's stiffness and damping along the line of action; the "
-        "transmission error; disc i's speed over the motor's (n<sub>in</sub>, n<sub>out</sub> the gears'); its "
+        "transmission error; disk i's speed over the motor's (n<sub>in</sub>, n<sub>out</sub> the gears'); its "
         "angle referred to the motor's shaft, θ<sub>i</sub>/n<sub>i</sub>; a gear's teeth",
         "–, –, m, m, rad, rad, kg·m², kg·m², N/m, N·s/m, m, –, rad, –",
         "torsional_page",
@@ -2030,7 +2030,7 @@ SYMBOLS = (
         "U, u, φ, T<sub>fluid</sub>, V, R, r, θ, δ",
         "a body in an ideal fluid: its velocity; the fluid's velocity, ∇φ; the velocity potential; the fluid's "
         "kinetic energy; the body's volume (per length for a cylinder) and radius; distance and angle from its "
-        "centre and line of motion; the gap to a concentric wall, R<sub>o</sub> − R",
+        "center and line of motion; the gap to a concentric wall, R<sub>o</sub> − R",
         "m/s, m/s, m²/s, J, m³, m, m, rad, m",
         "fluid_page",
         "added-mass",
@@ -2055,7 +2055,7 @@ SYMBOLS = (
         "slosh",
         "d, B, x, z, η, κ<sub>n</sub>, k<sub>n</sub>",
         "a sloshing tank: the liquid's depth; the tank's breadth; along it and up from the still surface; the "
-        "surface's height; mode n's wavenumber, nπ/L; the analogue's spring for it, m<sub>n</sub> times the mode's frequency squared",
+        "surface's height; mode n's wavenumber, nπ/L; the analog's spring for it, m<sub>n</sub> times the mode's frequency squared",
         "m, m, m, m, m, rad/m, N/m",
         "fluid_page",
         "sloshing",
@@ -2103,7 +2103,7 @@ SYMBOLS = (
         "flutter",
         "h, θ, b, e, x<sub>cg</sub>, r, S, I, k<sub>h</sub>, k<sub>θ</sub>, L, U<sub>F</sub>, U<sub>D</sub>",
         "a wing's typical section: plunge (down) and pitch (nose up); its semichord; the quarter chord's lead on "
-        "the elastic axis and the centre of mass's lag behind it, and the radius of gyration, all in semichords; "
+        "the elastic axis and the center of mass's lag behind it, and the radius of gyration, all in semichords; "
         "the static unbalance mx<sub>cg</sub>b and the inertia mr²b² about the axis; the plunge and pitch "
         "springs; the lift; the flutter and divergence speeds",
         "m, rad, m, –, –, –, kg·m/m, kg·m²/m, N/m², N·m/m, N/m, m/s, m/s",
@@ -2168,7 +2168,7 @@ SYMBOLS = (
         "rb_tensor",
         "r, I<sub>xx</sub>, I<sub>xy</sub>, P, d",
         "a bit of the body's position from G; a moment and a product of inertia; the principal axes, as a rotation "
-        "matrix's columns; from G to the shape's centre",
+        "matrix's columns; from G to the shape's center",
         "m, kg·m², kg·m², –, m",
         "rigid_body_page",
         "inertia-tensor",
@@ -2186,7 +2186,7 @@ SYMBOLS = (
         "rb_body",
         "m, a, b, c, m<sub>p</sub>, p, G, E",
         "a body: a bit of it, or the shape's mass; a box's sides (a cylinder's or sphere's radius a, a cylinder's "
-        "length c); a point mass and where it sits from the shape's centre; the centre of mass; the kinetic energy",
+        "length c); a point mass and where it sits from the shape's center; the center of mass; the kinetic energy",
         "kg, m, m, m, kg, m, –, J",
         "rigid_body_page",
         "inertia-tensor",
@@ -2220,7 +2220,7 @@ SYMBOLS = (
     Symbol(
         "top_body",
         "m, r, l, s, w, b, g, I<sub>x</sub>, I<sub>y</sub>, β",
-        "a top: its mass; a disc's radius; its centre's height up the stem; a square's side; a rectangle's sides; "
+        "a top: its mass; a disk's radius; its center's height up the stem; a square's side; a rectangle's sides; "
         "gravity; a plate's moments about two lines across its axis, and the angle of a third between them",
         "kg, m, m, m, m, m, m/s², kg·m², rad",
         "gyroscope_page",
@@ -2272,9 +2272,9 @@ SYMBOLS = (
     Symbol(
         "round_tip",
         "R, a, α, G, P, N, F, v<sub>P</sub>, v<sub>G</sub>, D, E<sub>J</sub>",
-        "a top on a table: its tip's radius; how far the tip's centre sits below the centre of mass (negative: "
-        "above, a tippe top's), and α = −a/R; the centre of mass; the contact point; the table's push and its "
-        "friction; the contact's slip and the centre of mass's velocity; the inertia J's energy uses; the least "
+        "a top on a table: its tip's radius; how far the tip's center sits below the center of mass (negative: "
+        "above, a tippe top's), and α = −a/R; the center of mass; the contact point; the table's push and its "
+        "friction; the contact's slip and the center of mass's velocity; the inertia J's energy uses; the least "
         "energy at a given J",
         "m, m, –, –, –, N, N, m/s, m/s, kg·m², J",
         "gyroscope_page",
@@ -2349,7 +2349,7 @@ SYMBOLS = (
     Symbol(
         "rotor_span",
         "a, b, ℓ, z",
-        "the disc's distance from bearing A and from B (a + b = L, the span); an overhung disc's distance past "
+        "the disk's distance from bearing A and from B (a + b = L, the span); an overhung disk's distance past "
         "its bearing; the position along the shaft, from A",
         "m",
         "rotor_page",
@@ -2363,7 +2363,7 @@ SYMBOLS = (
         "rotor_page",
     ),
     Symbol(
-        "I_p", "I<sub>p</sub>, I<sub>d</sub>", "a disc's polar and diametral moments of inertia", "kg·m²", "rotor_page"
+        "I_p", "I<sub>p</sub>, I<sub>d</sub>", "a disk's polar and diametral moments of inertia", "kg·m²", "rotor_page"
     ),
     Symbol(
         "rotor_supports",
@@ -2374,9 +2374,9 @@ SYMBOLS = (
     ),
     Symbol(
         "rotor_k",
-        "k<sub>s</sub>, k<sub>b</sub>, k<sub>eq</sub>, k<sub>θ</sub>, k<sub>disc</sub>",
-        "the shaft's midspan stiffness, 48EI/L³; a support's; the two in series; a disc's tilt stiffness; the "
-        "shaft's stiffness at the disc, its journals held",
+        "k<sub>s</sub>, k<sub>b</sub>, k<sub>eq</sub>, k<sub>θ</sub>, k<sub>disk</sub>",
+        "the shaft's midspan stiffness, 48EI/L³; a support's; the two in series; a disk's tilt stiffness; the "
+        "shaft's stiffness at the disk, its journals held",
         "N/m, N·m/rad",
         "rotor_page",
         "classic",
@@ -2384,7 +2384,7 @@ SYMBOLS = (
     Symbol(
         "rotor_xy",
         "x, y, θ, θ<sub>x</sub>, θ<sub>y</sub>, M<sub>x</sub>, M<sub>y</sub>",
-        "the shaft centre's horizontal and vertical displacement; the disc's tilt, the shaft's slopes there "
+        "the shaft center's horizontal and vertical displacement; the disk's tilt, the shaft's slopes there "
         "(dx/dz, dy/dz), and the moments on it in each plane",
         "m, rad, N·m",
         "rotor_page",
@@ -2436,7 +2436,7 @@ SYMBOLS = (
         "rotor_q",
         "q, f, f<sub>x</sub>, f<sub>y</sub>, f<sub>g</sub>, q<sub>s</sub>",
         "the DOFs: the stations' displacements and slopes (then ξ); the loads, and a force's two components; "
-        "the weights on the journals and the disc; the sag under them",
+        "the weights on the journals and the disk; the sag under them",
         "m, rad; N",
         "rotor_page",
     ),
@@ -2452,7 +2452,7 @@ SYMBOLS = (
         "shaft_modes",
         "ξ, τ<sub>i</sub>",
         "the shaft's modes' amplitudes with the stations held (mass normalized); the internal damping's loss "
-        "time, c<sub>i</sub>/k<sub>disc</sub>",
+        "time, c<sub>i</sub>/k<sub>disk</sub>",
         "√kg·m, s",
         "rotor_page",
     ),
@@ -2468,7 +2468,7 @@ SYMBOLS = (
     Symbol(
         "rotor_derivation",
         "L<sub>a</sub>, T<sub>k</sub>, V<sub>p</sub>, D<sub>v</sub>, K<sub>sym</sub>, K<sub>skew</sub>",
-        "the disc's angular momentum; the rotor's kinetic and strain energy; a kinetic energy term linear in "
+        "the disk's angular momentum; the rotor's kinetic and strain energy; a kinetic energy term linear in "
         "the velocities, q̇<sup>T</sup>D<sub>v</sub>q, which gives ΩG = D<sub>v</sub> − D<sub>v</sub><sup>T</sup>; "
         "the symmetric and skew parts of K",
         "kg·m²/s, J, –, N/m",
@@ -2508,7 +2508,7 @@ SYMBOLS = (
     Symbol(
         "bow",
         "δ<sub>b</sub>, β<sub>b</sub>, θ<sub>b</sub>, K<sub>shaft</sub>, q<sub>bow</sub>",
-        "a shaft's bow at the disc, its angle from the mark, and the bowed shaft's slope there; the shaft's "
+        "a shaft's bow at the disk, its angle from the mark, and the bowed shaft's slope there; the shaft's "
         "stiffness and its bowed shape, so that its force is K<sub>shaft</sub>(q − q<sub>bow</sub>)",
         "m (µm), rad, rad",
         "rotor_page",
@@ -2516,7 +2516,7 @@ SYMBOLS = (
     Symbol(
         "skew",
         "τ, γ",
-        "a disc's skew, its axis's tilt from the shaft's, and the angle it tilts toward, from the mark",
+        "a disk's skew, its axis's tilt from the shaft's, and the angle it tilts toward, from the mark",
         "rad (°)",
         "rotor_page",
     ),
@@ -2564,7 +2564,7 @@ SYMBOLS = (
         "cross_coupling",
         "k<sub>xy</sub>, k<sub>yx</sub>, c<sub>xy</sub>, c<sub>yx</sub>, c<sub>i</sub>, c<sub>e</sub>, λ",
         "a bearing's cross-coupled stiffness and damping, f<sub>x</sub> = −k<sub>xy</sub>y − c<sub>xy</sub>ẏ; the "
-        "shaft's internal damping and the external damping, at the disc; the swirl ratio, the oil's speed "
+        "shaft's internal damping and the external damping, at the disk; the swirl ratio, the oil's speed "
         "round the bearing over the shaft's",
         "N/m, N·s/m, –",
         "rotor_page",
@@ -2599,7 +2599,7 @@ SYMBOLS = (
     Symbol(
         "squeeze_film",
         "C<sub>sq</sub>",
-        "a squeeze-film damper's damping, on a centred circular orbit",
+        "a squeeze-film damper's damping, on a centered circular orbit",
         "N·s/m",
         "rotor_page",
         "other-bearings",
@@ -2615,7 +2615,7 @@ SYMBOLS = (
     Symbol(
         "whole_film",
         "ϑ, ϑ<sub>e</sub>, Ψ, r<sub>f</sub>, C<sub>b</sub>",
-        "the angle round a bearing from the line of centres, and its eccentric anomaly; the film's dissipation; "
+        "the angle round a bearing from the line of centers, and its eccentric anomaly; the film's dissipation; "
         "stepping the whole film, the rest of its force on the journals, and the whole uncavitated film's "
         "damping, which bounds the film's",
         "rad, W, N, N·s/m",
@@ -2625,7 +2625,7 @@ SYMBOLS = (
         "magnet",
         "h<sub>0</sub>, h, i<sub>0</sub>, i<sub>c</sub>, A<sub>p</sub>, N<sub>c</sub>, μ<sub>0</sub>, Λ, "
         "k<sub>m</sub>, k<sub>i</sub>",
-        "a magnetic bearing's air gap with the journal centred, and the gap; the bias and control currents; a "
+        "a magnetic bearing's air gap with the journal centered, and the gap; the bias and control currents; a "
         "pole face's area; the coil's turns; the permeability of free space; μ<sub>0</sub>N<sub>c</sub>²"
         "A<sub>p</sub>/4; a magnet pair's negative stiffness 4Λi<sub>0</sub>²/h<sub>0</sub>³ and current gain "
         "4Λi<sub>0</sub>/h<sub>0</sub>²",
@@ -2650,16 +2650,16 @@ SYMBOLS = (
         "stator_ring",
         "δ<sub>c</sub>, δ<sub>p</sub>, r<sub>d</sub>, k<sub>ring</sub>, c<sub>ring</sub>, F<sub>N</sub>, n̂, t̂, "
         "k<sub>full</sub>",
-        "a stator ring's radial clearance; how far the disc presses past it; the disc's distance from the "
-        "ring's centre; the ring's mount stiffness and damping; its push on the disc; unit vectors out from the "
-        "ring's centre and along it, with the spin; the ring as a spring at the disc in a full rub",
+        "a stator ring's radial clearance; how far the disk presses past it; the disk's distance from the "
+        "ring's center; the ring's mount stiffness and damping; its push on the disk; unit vectors out from the "
+        "ring's center and along it, with the spin; the ring as a spring at the disk in a full rub",
         "m, N/m, N·s/m, N, –",
         "rotor_page",
     ),
     Symbol(
         "rub_friction",
         "μ, R<sub>d</sub>, v<sub>t</sub>, v<sub>0</sub>, r<sub>k</sub>",
-        "the rim's friction coefficient on the ring; the disc's radius, √(2I<sub>p</sub>/m); the disc's velocity "
+        "the rim's friction coefficient on the ring; the disk's radius, √(2I<sub>p</sub>/m); the disk's velocity "
         "along the ring; the slip over which the friction is smoothed; the ring's force at step k",
         "–, m, m/s, m/s, N",
         "rotor_page",
@@ -2667,7 +2667,7 @@ SYMBOLS = (
     Symbol(
         "newkirk",
         "P<sub>h</sub>, δ<sub>T</sub>, a<sub>T</sub>, τ<sub>T</sub>",
-        "a rub's heat, the drag's work on the slip; the thermal bow at the disc; the bow per watt, settled; its "
+        "a rub's heat, the drag's work on the slip; the thermal bow at the disk; the bow per watt, settled; its "
         "time constant",
         "W, m, m/W, s",
         "rotor_page",
@@ -2695,7 +2695,7 @@ SYMBOLS = (
     Symbol(
         "m_L",
         "m<sub>L</sub>, m<sub>0</sub>, m<sub>n</sub>",
-        "a tank's liquid, and the spring–mass analogue's rigid mass and mode n's sloshing mass",
+        "a tank's liquid, and the spring–mass analog's rigid mass and mode n's sloshing mass",
         "kg",
         "fluid_page",
         "analogue",
@@ -2739,7 +2739,7 @@ SYMBOLS = (
     Symbol(
         "builder_disc",
         "R, r, t<sub>d</sub>",
-        "an annular disc's outer and inner radii and its thickness",
+        "an annular disk's outer and inner radii and its thickness",
         "m",
         "rotor_builder_page",
         "discs",
@@ -2774,7 +2774,7 @@ SYMBOLS = (
         "whirl_shapes",
         "X, Y, Q, F, F<sub>x</sub>, F<sub>y</sub>",
         "a node's complex x and y in a mode, x = Re(Xe<sup>iωt</sup>); the steady response and the force, "
-        "q = Re(Qe<sup>iΩt</sup>); the force's x and y at the disc's node",
+        "q = Re(Qe<sup>iΩt</sup>); the force's x and y at the disk's node",
         "m, N",
         "rotor_builder_page",
         "whirl",

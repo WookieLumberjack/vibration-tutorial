@@ -2,7 +2,7 @@
 
 Left: the test (where the ambient forces act and their spectrum, a machine running, the
 sensors), the acquisition (sample rate, record length, sensor noise) and the processing
-(FDD + EFDD or SSI-cov, and each one's settings), and a few things to try. Centre: the
+(FDD + EFDD or SSI-cov, and each one's settings), and a few things to try. Center: the
 singular values of the responses' cross-spectral matrix against frequency, the peaks picked
 (click to add or drop one) and their EFDD bells, over the exact natural frequencies, with
 the peaks whose kurtosis says harmonic crossed; below, the responses. Right: the identified
@@ -117,7 +117,7 @@ TIPS = {
     "fs/N<sub>b</sub> apart) and leaks less, so the damping comes out right; a short one gives more "
     "blocks to average, so the spectra are smoother. Set from the chain when it changes.</p>",
     "mac": "<p>EFDD: the lines round a peak whose first singular vector has a MAC with the peak's above "
-    "this are the mode's bell. Higher keeps less of the bell; lower lets in the neighbours.</p>",
+    "this are the mode's bell. Higher keeps less of the bell; lower lets in the neighbors.</p>",
     "machine": "<p>A machine running on m1: a sine force at this frequency (0: none) and amplitude (the random "
     "forces' RMS is 1 N). Its response is a sharp peak, a pole with almost no damping: it looks like "
     "a lightly damped mode. A peak whose filtered response has a kurtosis near 1.5 (a sine's; a mode's "
@@ -191,7 +191,7 @@ TRIALS = (
     _trial(
         "Long record, every mass",
         "Random forces at every mass, two thousand periods of the slowest mode: every mode found. The lightly "
-        "damped ones' damping comes out within a few per cent; on the default chain, modes 3 and 4 are close "
+        "damped ones' damping comes out within a few percent; on the default chain, modes 3 and 4 are close "
         "and heavily damped, their bells overlap and cut each other short, and mode 4's damping comes out low.",
     ),
     _trial(
@@ -242,7 +242,7 @@ TRIALS = (
         ),
     ),
     _trial(
-        "Coloured forces",
+        "Colored forces",
         "Forces low-passed at 1.5× the first mode, measured as displacements: the higher modes are barely "
         "driven and sink toward the noise, and the input's slope across their bells (OMA assumes it flat) "
         "spoils their damping, or loses the mode.",
@@ -582,7 +582,7 @@ def _cell(fn: float, zeta: float) -> str:
 
 
 class OmaPage(QtWidgets.QWidget):
-    """Controls on the left, singular values and records in the centre, results and notes on the right."""
+    """Controls on the left, singular values and records in the center, results and notes on the right."""
 
     dof_requested = QtCore.Signal(int)  # the user changed N here; the main window owns the system
     system_requested = QtCore.Signal(object)  # a practice problem's chain, for the Simulation page
@@ -691,7 +691,7 @@ class OmaPage(QtWidgets.QWidget):
         lv.addStretch(1)
         left_scroll = ColumnScroll(left)
 
-        # --- centre: the singular values, the records
+        # --- center: the singular values, the records
         self.sv = _plot("Singular value", None, "Frequency", "Hz")
         self.sv.setLogMode(x=False, y=True)
         self.sv.setToolTip(SV_TIP)
@@ -745,7 +745,7 @@ class OmaPage(QtWidgets.QWidget):
         ev.addWidget(self.efdd_note)
         self.stab_plot = StabilizationPlot()
         self.stab_plot.setToolTip(
-            "<p>SSI's poles at every model order, over s₁ (grey). Physical modes stay put "
+            "<p>SSI's poles at every model order, over s₁ (gray). Physical modes stay put "
             "as the order rises and form columns; noise poles scatter. Click a pole to "
             "add it or drop it.</p>"
         )
@@ -756,7 +756,7 @@ class OmaPage(QtWidgets.QWidget):
         self.methods.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.NoSelection)
         FitColumns(self.methods)
         self.methods.setToolTip(
-            "<p>Each exact mode as each method finds it: f<sub>n</sub> and ζ, coloured by the "
+            "<p>Each exact mode as each method finds it: f<sub>n</sub> and ζ, colored by the "
             "damping's error; hover for the frequency's error and the MAC.</p>"
         )
         self.methods_note = wrapped()
@@ -1370,7 +1370,7 @@ class OmaPage(QtWidgets.QWidget):
             "FDD + EFDD and SSI-cov from this record; the hammer test from the virtual modal test's way: "
             f"{HAMMER_AVERAGES} hits on m1, force and displacements measured, a force-exponential window, LSCF's "
             "stable poles and LSFD (on the chain alone: no machine, no ambient forces). Knowing the force, only the "
-            "hammer test could scale its shapes to modal masses. Colour: the damping's error (green within 10 %, "
+            "hammer test could scale its shapes to modal masses. Color: the damping's error (green within 10 %, "
             "amber 30 %)."
         )
 

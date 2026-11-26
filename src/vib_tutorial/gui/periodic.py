@@ -1,6 +1,6 @@
 """Periodic forcing page: a repeating force as a Fourier series, and each harmonic through the oscillator.
 
-Left: the oscillator, the waveform, its frequency and how many harmonics the series keeps. Centre: two periods
+Left: the oscillator, the waveform, its frequency and how many harmonics the series keeps. Center: two periods
 of the force (the true wave and the series) and of the steady response (exact, and the series). Right: the
 force's and the response's line spectra, the response from rest, the series' convergence, and the Theory.
 The page has its own model (core/periodic.py).
@@ -337,7 +337,7 @@ def _gibbs(rng: np.random.Generator) -> Question:
         "A square wave's Fourier series is cut at 5 harmonics, then at 50. What happens to its overshoot at the jumps?",
         0,
         "It stays about 9 % of the jump (Gibbs), only narrower: the series never matches a jump, it just squeezes "
-        "the ripple towards it.",
+        "the ripple toward it.",
         choices=("It stays about 9 %, only narrower", "It shrinks to nothing", "It shrinks to a tenth"),
         why=(
             "",
@@ -447,7 +447,7 @@ TIPS = {
     "harmonics": "<p>How many harmonics N the series keeps.</p>",
     "tune": "<p>Set f₀ to f<sub>n</sub> divided by this, so that harmonic sits on resonance.</p>",
 }
-TIME_TIP = "<p>Two periods. Grey: the true waveform; colour: its Fourier series with the harmonics kept.</p>"
+TIME_TIP = "<p>Two periods. Gray: the true waveform; color: its Fourier series with the harmonics kept.</p>"
 RESPONSE_TIP = (
     "<p>The steady response over two periods: solid, exact (one period stepped from the state that "
     "repeats); dashed, the series Σ H(jω₀) C<sub>j</sub> e<sup>ijω₀t</sup>.</p>"
@@ -473,7 +473,7 @@ def stems(x: np.ndarray, y: np.ndarray, floor: float) -> tuple[np.ndarray, np.nd
 
 
 class PeriodicPage(QtWidgets.QWidget):
-    """Controls on the left, the force and the steady response in the centre, spectra and convergence on the
+    """Controls on the left, the force and the steady response in the center, spectra and convergence on the
     right."""
 
     follows_chain = False  # MainWindow: this page has its own model, not the chain
@@ -523,7 +523,7 @@ class PeriodicPage(QtWidgets.QWidget):
             self._on_inputs,
         )
 
-        # --- centre
+        # --- center
         self.force_plot = plot("Force", "N", "Time", "s", height=150)
         self.force_plot.setToolTip(TIME_TIP)
         add_legend(self.force_plot.getPlotItem(), offset=(-10, 10))

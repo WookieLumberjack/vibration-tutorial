@@ -5,7 +5,7 @@ has recorded. Paused, a `Scrub` shows a cursor on each of its time plots at the 
 moves them all and emits `scrubbed(t)`, and the page draws its body as it was then. Resumed, the cursors go and
 the run carries on from where it was paused (the past is only looked at, not rewound to).
 
-- `Scrub(*plots)`: the cursors (`drag.DragLine`s, in the theme's strong colour), hidden.
+- `Scrub(*plots)`: the cursors (`drag.DragLine`s, in the theme's strong color), hidden.
 - `show(latest, earliest)`: paused: the cursors at `latest`, draggable back to `earliest`.
 - `hide()`: running again (or reset): the cursors go, and `t` is None.
 - `t`: the instant scrubbed to, or None while the page shows its latest state.

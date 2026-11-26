@@ -37,7 +37,7 @@ def test_f5_steps_every_page_through_the_levels_and_back(window):
             panes = _panes(page)
             assert panes[0].isHidden() == (level >= 1)
             assert panes[-1].isHidden() == (level == 2 and len(panes) >= 3)
-            assert all(not p.isHidden() for p in panes[1:-1])  # the centre always shows
+            assert all(not p.isHidden() for p in panes[1:-1])  # the center always shows
         if level == 2:
             w.pages.setCurrentWidget(w.sdof_page)
             QtWidgets.QApplication.processEvents()
@@ -170,7 +170,7 @@ def test_presenting_shows_a_way_back_in_the_corner(window):
     w.show()
     assert w.present_button.isHidden()
     w.set_present(2)
-    assert not w.present_button.isHidden() and "centre only" in w.present_button.toolTip()
+    assert not w.present_button.isHidden() and "center only" in w.present_button.toolTip()
     w.present_button.click()
     assert w.present_level == 0 and present.saved() == 0 and w.present_button.isHidden()
     assert all(not p.isHidden() for p in _panes(w.sim_page))

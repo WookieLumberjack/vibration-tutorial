@@ -2,13 +2,13 @@
 liquid's sloshing in a tank.
 
 Left: the fluid's density, and the body: a sphere or a cylinder, its radius and density, its natural frequency
-on its springs in vacuum, and a concentric wall round it (a tube in a pipe). Centre: the potential flow about the
-body as it moves to the right (speed in colour, streamlines), and the fluid's speed ahead of it against distance.
+on its springs in vacuum, and a concentric wall round it (a tube in a pipe). Center: the potential flow about the
+body as it moves to the right (speed in color, streamlines), and the fluid's speed ahead of it against distance.
 Right: the added-mass coefficient against the wall's distance, the frequency's fall against the body's density;
 a plate in water (its own controls: each mode's AVMI factor and its wet frequency); sloshing in a rectangular tank
-(its own controls: the frequencies and the spring–mass analogue's masses against depth); a tuned liquid damper on
+(its own controls: the frequencies and the spring–mass analog's masses against depth); a tuned liquid damper on
 a structure (its own controls; the tank is the sloshing tab's: its response, and its peak against depth); and the
-Theory (its figures: gui/fluid_structure_figures.py). While the sloshing or the damper tab shows, the centre shows
+Theory (its figures: gui/fluid_structure_figures.py). While the sloshing or the damper tab shows, the center shows
 the tank instead of the body: the mode's surface at its extremes and its flow as it passes level. The page has its own models (core/added_mass.py,
 core/sloshing.py) and no frame loop: a control change redraws at once.
 
@@ -144,7 +144,7 @@ TRIALS = (
     FluidTrial(
         "A sphere's added mass",
         "A steel ball 100 mm in radius, in water, on springs that give it 20 Hz in vacuum. As it moves, the water "
-        "parts in front, closes behind and flows round its sides (centre): that flow's kinetic energy is "
+        "parts in front, closes behind and flows round its sides (center): that flow's kinetic energy is "
         "<m>½m<sub>a</sub>U</m>² with <m>m<sub>a</sub></m> = ½<m>ρ<sub>f</sub>V</m> = 2.09 kg, half the water it displaces. On the "
         "ball's 32.9 kg it lowers the frequency to 19.4 Hz.",
         shape=Shape.SPHERE,
@@ -153,20 +153,20 @@ TRIALS = (
     FluidTrial(
         "A cylinder carries its own volume",
         "A steel rod 25 mm in radius, moving across its axis: the flow is two-dimensional, and the water it drags "
-        "along is all it displaces, <m>m<sub>a</sub></m> = <m>ρ<sub>f</sub></m>π<m>R</m>² = 1.96 kg a metre (<m>C<sub>a</sub></m> = 1, twice a "
-        "sphere's). The flow ahead falls off as <m>R</m>²/<m>r</m>² against a sphere's <m>R</m>³/<m>r</m>³ (centre, bottom): a cylinder "
+        "along is all it displaces, <m>m<sub>a</sub></m> = <m>ρ<sub>f</sub></m>π<m>R</m>² = 1.96 kg a meter (<m>C<sub>a</sub></m> = 1, twice a "
+        "sphere's). The flow ahead falls off as <m>R</m>²/<m>r</m>² against a sphere's <m>R</m>³/<m>r</m>³ (center, bottom): a cylinder "
         "stirs more of the fluid. 20 Hz falls to 18.8 Hz.",
     ),
     FluidTrial(
         "A light body",
         "The same cylinder at 500 kg/m³, half the water's density (a buoyant float, or a thin tube). Its added "
-        "mass is unchanged, 1.96 kg a metre, but now twice its own: the frequency falls to 0.577 of the dry one, "
+        "mass is unchanged, 1.96 kg a meter, but now twice its own: the frequency falls to 0.577 of the dry one, "
         "11.5 Hz. The frequency's fall depends on the densities' ratio (right, bottom).",
         density=500.0,
     ),
     FluidTrial(
         "In air",
-        "The steel cylinder in air (1.21 kg/m³): the added mass is 2.38 g a metre, 1/6500 of its mass, and the "
+        "The steel cylinder in air (1.21 kg/m³): the added mass is 2.38 g a meter, 1/6500 of its mass, and the "
         "frequency drops by less than 0.01 %. Added mass matters in water, and for light structures in air "
         "(balloons, membranes, thin panels).",
         fluid=AIR,
@@ -175,7 +175,7 @@ TRIALS = (
         "A tube in a pipe",
         "The rod inside a concentric pipe of 1.2 times its radius: the water it pushes has to squeeze through "
         "the 5 mm gap, fast, to get round it. <m>C<sub>a</sub></m> = (<m>R<sub>o</sub></m>² + <m>R</m>²)/(<m>R<sub>o</sub></m>² − <m>R</m>²) = 5.55 "
-        "(Fritz), so <m>m<sub>a</sub></m> = 10.9 kg a metre and 20 Hz becomes 15.3 Hz. Heat exchanger tubes in their "
+        "(Fritz), so <m>m<sub>a</sub></m> = 10.9 kg a meter and 20 Hz becomes 15.3 Hz. Heat exchanger tubes in their "
         "baffles, and fuel rods in their channels, are designed with it.",
         walled=True,
         ratio=1.2,
@@ -247,7 +247,7 @@ TRIALS = (
     FluidTrial(
         "Sloshing in a tank",
         "A tank 1 m long, filled to 0.5 m (Sloshing tab). Its first mode tilts the surface one way and the "
-        "other, at <m>ω</m>² = <m>gκ</m> tanh(<m>κd</m>) with <m>κ</m> = π/<m>L</m>: 0.846 Hz. Of the 500 kg of water, the spring–mass analogue's "
+        "other, at <m>ω</m>² = <m>gκ</m> tanh(<m>κd</m>) with <m>κ</m> = π/<m>L</m>: 0.846 Hz. Of the 500 kg of water, the spring–mass analog's "
         "first sloshing mass is 237 kg; 250 kg moves with the tank as if it were solid.",
         tab=TAB_SLOSH,
     ),
@@ -285,7 +285,7 @@ TRIALS = (
     FluidTrial(
         "A higher mode",
         "Mode 3 of the 0.5 m fill, 1.53 Hz: three half waves, and the flow reaches only a third as deep. Its "
-        "analogue mass is 9.55 kg, 2 % of the water (they go as 1/n³): a few modes are all a tank's analogue "
+        "analog mass is 9.55 kg, 2 % of the water (they go as 1/n³): a few modes are all a tank's analog "
         "needs.",
         slosh=3,
         tab=TAB_SLOSH,
@@ -293,8 +293,8 @@ TRIALS = (
     FluidTrial(
         "An even mode",
         "Mode 2, 1.25 Hz: the surface rises at both walls and falls in the middle. It's symmetric, so shaking the "
-        "tank sideways doesn't excite it, and it has no mass in the analogue (a shake along the tank's length "
-        "pushes the walls the same way, not towards each other).",
+        "tank sideways doesn't excite it, and it has no mass in the analog (a shake along the tank's length "
+        "pushes the walls the same way, not toward each other).",
         slosh=2,
         tab=TAB_SLOSH,
         predict=Prediction(
@@ -308,9 +308,9 @@ TRIALS = (
             ),
             3,
             why=(
-                'Shaking sideways pushes both walls the same way. An even mode wants them towards each other, so the shake does no work on it.',
+                'Shaking sideways pushes both walls the same way. An even mode wants them toward each other, so the shake does no work on it.',
                 "The first mode is odd and a sideways shake drives it. The second is symmetric, and the shake can't.",
-                'At its frequency, but not excited by it: a sideways shake does no work on a symmetric mode, and it has no mass in the analogue.',
+                'At its frequency, but not excited by it: a sideways shake does no work on a symmetric mode, and it has no mass in the analog.',
                 '',
             ),
         ),
@@ -403,7 +403,7 @@ def _cylinder(rng: np.random.Generator) -> Question:
         f"A solid cylinder {sig(r, 6)} mm in radius, density {sig(rho_s, 6)} kg/m³, vibrates across its axis on springs at "
         f"{sig(f, 6)} Hz in vacuum. What is its natural frequency in water (1000 kg/m³)?",
         wet,
-        f"Per metre, m<sub>s</sub> = ρ<sub>s</sub>πR² = {number(body.mass)} kg and m<sub>a</sub> = ρ<sub>f</sub>πR² = "
+        f"Per meter, m<sub>s</sub> = ρ<sub>s</sub>πR² = {number(body.mass)} kg and m<sub>a</sub> = ρ<sub>f</sub>πR² = "
         f"{number(body.added_mass)} kg, so f = {sig(f, 6)} √(m<sub>s</sub>/(m<sub>s</sub> + m<sub>a</sub>)) = {sig(f, 6)} √({sig(rho_s, 6)}/{sig(rho_s + 1000, 6)}) "
         f"= {number(wet)} Hz: only the densities matter.",
         unit="Hz",
@@ -504,7 +504,7 @@ def _pipe_spec(rng: np.random.Generator) -> Question:
         f"vacuum. Its natural frequency in the pipe must stay at or above {number(need, 3)} Hz. How small can the "
         "pipe be? Set its radius (R<sub>o</sub>/R).",
         0,
-        f"The frequency rises as the gap opens and the added mass falls towards the open water's ρπR². With "
+        f"The frequency rises as the gap opens and the added mass falls toward the open water's ρπR². With "
         f"R<sub>o</sub>/R = {sig(ratio, 6)}, C<sub>a</sub> = {number(body.coefficient)} and the rod runs at "
         f"{number(wet)} Hz.",
         setup=dict(walled=True, ratio=1.05, f_dry=float(f)),
@@ -537,7 +537,7 @@ def _slosh_mass(rng: np.random.Generator) -> Question:
     tank = Tank(L, h, B)
     m1 = float(slosh_mass(tank, 1))
     return Question(
-        f"A tank {sig(L, 6)} m long and {sig(B, 6)} m wide is filled with water to {sig(h, 6)} m. In the spring–mass analogue for "
+        f"A tank {sig(L, 6)} m long and {sig(B, 6)} m wide is filled with water to {sig(h, 6)} m. In the spring–mass analog for "
         "a sideways motion along its length, what is the first sloshing mass?",
         m1,
         f"m<sub>L</sub> = ρLBd = {number(tank.liquid_mass)} kg, and m<sub>1</sub> = m<sub>L</sub> 8 tanh(πd/L)"
@@ -588,14 +588,14 @@ def _even(rng: np.random.Generator) -> Question:
         "the water slosh?",
         0,
         "Hardly at all: the second mode is symmetric (the surface rises at both walls together), and a sideways "
-        "shake pushes the walls the same way, so it does no work on that mode. Its analogue mass is 0.",
+        "shake pushes the walls the same way, so it does no work on that mode. Its analog mass is 0.",
         choices=("Hardly at all", "A lot: it's at resonance", "As much as at the first mode", "Twice as much"),
         why=(
             "",
             "At resonance only if the shake does work on the mode. The second mode is symmetric, and a sideways "
-            "shake pushes the walls the same way: its analogue mass is 0.",
+            "shake pushes the walls the same way: its analog mass is 0.",
             "The first mode is antisymmetric and takes the shake's work; the second, symmetric, takes none.",
-            "A sideways shake does no work on the symmetric second mode: its analogue mass is 0.",
+            "A sideways shake does no work on the symmetric second mode: its analog mass is 0.",
         ),
         setup=dict(slosh=2, tab=TAB_SLOSH),
         predict=True,
@@ -634,7 +634,7 @@ def _damper_spec(rng: np.random.Generator) -> Question:
         f"keep the structure's peak response at or below {number(need, 3)} times its static deflection? Set "
         "ζ<sub>d</sub>.",
         0,
-        f"The peak falls as ζ<sub>d</sub> rises towards Den Hartog's optimum, about 13 % here. ζ<sub>d</sub> = "
+        f"The peak falls as ζ<sub>d</sub> rises toward Den Hartog's optimum, about 13 % here. ζ<sub>d</sub> = "
         f"{sig(zeta, 6)} % gives {number(peak(*_damper_of(design)))}.",
         setup=dict(length=2.0, depth=0.4, breadth=2.0, damper_zeta=0.5, tab=TAB_DAMPER),
         goal=goal,
@@ -653,17 +653,17 @@ PROBLEMS = tuple(
         ("thicker", "Predict: a thicker plate", "plates", "A plate in water", _thicker),
         ("pipe-spec", "Spec: a rod in a pipe", "confined", "Confined fluid", _pipe_spec),
         ("slosh", "A tank's sloshing frequency", "sloshing", "Sloshing", _slosh),
-        ("slosh-mass", "A sloshing mass", "analogue", "The spring–mass analogue", _slosh_mass),
+        ("slosh-mass", "A sloshing mass", "analogue", "The spring–mass analog", _slosh_mass),
         ("tuning", "Tuning a liquid damper", "damper", "A tuned liquid damper", _tuning),
         ("deeper", "Predict: a deeper tank", "sloshing", "Sloshing", _deeper),
-        ("even", "Predict: the second mode", "analogue", "The spring–mass analogue", _even),
+        ("even", "Predict: the second mode", "analogue", "The spring–mass analog", _even),
         ("damper-spec", "Spec: a liquid damper's screens", "damper", "A tuned liquid damper", _damper_spec),
     )
 )
 
 TIPS = {
     "fluid": "<p>The fluid's density: water 1000 kg/m³, sea water 1025, oil about 850, air 1.21.</p>",
-    "shape": "<p>A sphere, or a long circular cylinder moving across its axis (per metre of length).</p>",
+    "shape": "<p>A sphere, or a long circular cylinder moving across its axis (per meter of length).</p>",
     "radius": "<p>The body's radius R.</p>",
     "density": "<p>The body's density (a solid one; a tube's mass over its outer volume for a hollow one).</p>",
     "f_dry": "<p>The body's natural frequency on its springs in vacuum.</p>",
@@ -690,7 +690,7 @@ TIPS = {
     ),
 }
 FLOW_TIP = (
-    "<p>The fluid's motion as the body moves to the right at speed U: its speed over U in colour, and its "
+    "<p>The fluid's motion as the body moves to the right at speed U: its speed over U in color, and its "
     "streamlines. For a sphere, the plane through its line of motion.</p>"
 )
 AXIS_TIP = (
@@ -716,14 +716,14 @@ WETDRY_TIP = (
 
 TANK_TIP = (
     "<p>The tank's section in the mode picked: the surface at its two extremes (solid and dashed), and the flow as "
-    "it passes level, its speed in colour and its streamlines.</p>"
+    "it passes level, its speed in color and its streamlines.</p>"
 )
 SLOSH_F_TIP = (
     "<p>The first three sloshing modes' frequencies against the liquid's depth, for this tank's length: "
     "√(gd)nπ/L/2π in shallow liquid (dashed), √(gnπ/L)/2π in deep (dotted). Ring: the mode picked.</p>"
 )
 SLOSH_M_TIP = (
-    "<p>The spring–mass analogue's masses over the liquid's, against its depth over the tank's length: the rigid "
+    "<p>The spring–mass analog's masses over the liquid's, against its depth over the tank's length: the rigid "
     "mass m<sub>0</sub> and the first two sloshing masses (the even modes have none).</p>"
 )
 RESPONSE_TIP = (
@@ -756,7 +756,7 @@ def _tagged_modes(key: tuple) -> tuple[tuple, PlateModes]:
 
 
 class FluidStructurePage(QtWidgets.QWidget):
-    """Controls on the left, the flow about the body in the centre, the added mass and a plate in water on the
+    """Controls on the left, the flow about the body in the center, the added mass and a plate in water on the
     right."""
 
     follows_chain = False  # MainWindow: this page has its own model, not the chain
@@ -789,7 +789,7 @@ class FluidStructurePage(QtWidgets.QWidget):
             (self.fluid, self.shape, self.radius, self.density, self.f_dry, self.walled, self.ratio), self._on_body
         )
 
-        # --- centre
+        # --- center
         self.flow_plot = plot("y", "m", "x", "m", height=200)
         self.flow_plot.setToolTip(FLOW_TIP)
         self.flow_plot.setAspectLocked(True)
@@ -1210,7 +1210,7 @@ class FluidStructurePage(QtWidgets.QWidget):
         self.axis_plot.setYRange(0.0, 1.0, padding=0.03)
 
         wet = wet_frequency(self.f_dry.value(), body.mass, body.added_mass)
-        per = " a metre" if body.shape == Shape.CYLINDER else ""
+        per = " a meter" if body.shape == Shape.CYLINDER else ""
         self.info.setText(
             f"m = {fmt(body.mass, 'kg')}{per}, the fluid it displaces {fmt(body.fluid * body.volume, 'kg')}{per}."
         )
@@ -1321,9 +1321,9 @@ class FluidStructurePage(QtWidgets.QWidget):
         fn = slosh_frequency(tank, n)
         mL, m0, mn = tank.liquid_mass, rigid_mass(tank), float(slosh_mass(tank, n))
         excited = (
-            f"its analogue mass is {_kg(mn)}, {sig(mn / mL)} of the liquid's"
+            f"its analog mass is {_kg(mn)}, {sig(mn / mL)} of the liquid's"
             if n % 2
-            else "it's symmetric, so a sideways motion doesn't excite it (no analogue mass)"
+            else "it's symmetric, so a sideways motion doesn't excite it (no analog mass)"
         )
         self.readout.setText(
             f"Mode {n} sloshes at {_hz(fn)} (κ = nπ/L, ω² = gκ tanh(κd)); {excited}. Of the {_kg(mL)} of liquid, "

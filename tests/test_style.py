@@ -1,4 +1,4 @@
-"""The themes' colours: legible on their backgrounds, and the masses told apart by colour-blind eyes too."""
+"""The themes' colors: legible on their backgrounds, and the masses told apart by color-blind eyes too."""
 
 import ast
 import itertools
@@ -107,7 +107,7 @@ def test_a_wide_solid_curve_is_drawn_in_segments(main_window):
 def test_the_palettes_secondary_text_and_links_read(theme):
     """The palette the app gets (after another theme: Light's is the platform's but for these), its muted text
     (`theming.mute`'s) and links at least 4.5:1 on the window and on text fields, and on the window macOS gives
-    the Light theme (#ececec), where the platform's grey was 3.8:1 (#409 U-2)."""
+    the Light theme (#ececec), where the platform's gray was 3.8:1 (#409 U-2)."""
     import os
 
     os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")

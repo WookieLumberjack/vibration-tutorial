@@ -2,7 +2,7 @@
 
 Left: the sensors (how many modes to target, how many sensors, how they're placed: effective independence,
 EfI weighted by the driving-point residue, evenly spaced, or by hand) and the operating point (a force on one
-mass at one frequency, and the reference sensor). Centre: the target modes with the sensors on them, and the
+mass at one frequency, and the reference sensor). Center: the target modes with the sensors on them, and the
 operational deflection shape beside the mode most like it. Right: EfI's eliminations step by step, the noise
 and spatial aliasing each placement leaves, the ODS's spectrum and each mode's share of it, and the Theory.
 The page follows the Simulation page's chain.
@@ -280,7 +280,7 @@ def _reference(rng: np.random.Generator) -> Question:
         "which mass should the ODS's reference sensor go?",
         best + 1,
         f"Where the ODS moves most, mass {best + 1}: every other sensor is divided by the reference, so a "
-        "reference that hardly moves magnifies its own noise into every ratio. (The page's centre plot shows the "
+        "reference that hardly moves magnifies its own noise into every ratio. (The page's center plot shows the "
         "ODS: pick its largest entry.)",
         setup=dict(force=force, hz=hz, tab=TAB_ODS),
     )
@@ -397,7 +397,7 @@ TIPS = {
     "targets": "<p>How many of the lowest modes the test is to identify.</p>",
     "sensors": "<p>How many sensors: at least one per target, or the modes can't be told apart.</p>",
     "method": "<p>Effective independence drops, one at a time, the candidate that adds least to the Fisher "
-    "information det(ΦᵀΦ); weighted by the driving-point residue it favours where the response is large; or "
+    "information det(ΦᵀΦ); weighted by the driving-point residue it favors where the response is large; or "
     "spread them evenly, or pick them by hand.</p>",
     "hand": "<p>The masses with a sensor, when they're placed by hand.</p>",
     "force": "<p>The mass the operating force acts on (the machine's unbalance, say).</p>",
@@ -407,7 +407,7 @@ TIPS = {
 }
 SHAPES_TIP = (
     "<p>The target modes (each scaled to largest 1) along the chain, and the sensors on them (the circles, and "
-    "the grey lines). A mode with little movement at every sensor is hard to see.</p>"
+    "the gray lines). A mode with little movement at every sensor is hard to see.</p>"
 )
 ODS_TIP = (
     "<p>The operational deflection shape: the chain's deflection at the operating frequency under the force, at "
@@ -441,7 +441,7 @@ def _times(x: float) -> str:
 
 
 class TestPlanningPage(QtWidgets.QWidget):
-    """Controls on the left, the shapes in the centre, the methods' detail on the right."""
+    """Controls on the left, the shapes in the center, the methods' detail on the right."""
 
     __test__ = False  # pytest: not a test class
     dof_requested = QtCore.Signal(int)  # the user changed N here; the main window owns the system
@@ -501,7 +501,7 @@ class TestPlanningPage(QtWidgets.QWidget):
         connect_all((self.targets, self.count, self.method, *self.hand), self._on_sensors)
         connect_all((self.force, self.freq, self.reference), self._on_operating)
 
-        # --- centre
+        # --- center
         self.shapes_plot = plot("Mode (largest 1)", None, "Mass", None, height=160)
         self.shapes_plot.setToolTip(SHAPES_TIP)
         self.shapes_plot.setMouseEnabled(x=False, y=False)
@@ -901,7 +901,7 @@ class TestPlanningPage(QtWidgets.QWidget):
         self.parts_plot.getAxis("bottom").setTicks([[(r + 1, str(r + 1)) for r in range(n)]])
         lead = int(np.argmax(size))
         self.parts_note.setText(
-            f"Above: every mass's response to a unit force on mass {force + 1} (a colour per mass), the operating "
+            f"Above: every mass's response to a unit force on mass {force + 1} (a color per mass), the operating "
             f"frequency dashed. Below: each mode's share of the ODS at {sig(f, 4)} Hz, φ<sub>r</sub>η<sub>r</sub>'s "
             f"largest against the ODS's: mode {lead + 1} leads with {sig(size[lead])}. They add up (with their "
             "phases) to the ODS exactly."

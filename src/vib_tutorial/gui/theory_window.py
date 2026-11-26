@@ -57,7 +57,7 @@ def plain(html: str) -> str:
     """The text of some notes' HTML, as read: a formula's sub- and superscripts kept in their word, an
     equation's image as its alt text."""
     text = TAG.sub(" ", INLINE.sub("", ALT.sub(lambda m: " " + m.group(1) + " ", html)))
-    return re.sub(r"\s+", " ", html_lib.unescape(text).replace("\u2060", "")).strip()  # maths' word joiners
+    return re.sub(r"\s+", " ", html_lib.unescape(text).replace("\u2060", "")).strip()  # math' word joiners
 
 
 @dataclass(frozen=True)
@@ -343,7 +343,7 @@ class TheoryWindow(QtWidgets.QWidget):
 
     # --------------------------------------------------------------- window
     def apply_theme(self) -> None:
-        """Set the notes again: their links' colour and the figures are fixed when the HTML is set."""
+        """Set the notes again: their links' color and the figures are fixed when the HTML is set."""
         if self.page is not None:
             place = self._scroll()
             self.browser.setHtml(page_html(self.page))

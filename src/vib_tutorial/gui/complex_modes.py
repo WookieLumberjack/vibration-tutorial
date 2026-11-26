@@ -1,7 +1,7 @@
 """Complex modes page: when the chain's damping is not proportional, and what that does to its modes.
 
 Left: the chain's damping (its coupling index, a button that makes it proportional, a slider that gathers it
-into one damper and slides it along, `_on_damper_at`), chains to try, and the mode looked at. Centre: that
+into one damper and slides it along, `_on_damper_at`), chains to try, and the mode looked at. Center: that
 mode's exact shape ψ in the complex plane with its best-fit line, its snapshots over half a cycle with the
 shape swinging over them and its nodes marked (`mode_swing.ModeSwing`), and every mode's exact pole and shape against
 the proportional approximation's. Right: the FRF, exact and approximated; a free decay from an
@@ -57,7 +57,7 @@ SNAPSHOTS = 8  # over half a cycle, on the snapshots plot
 TIPS = {
     "damper_at": "<p>Gather all the chain's damping into one damper and slide it along: between the ground and "
     "m1, or between two masses. One damper is never proportional, and where it sits decides how complex each "
-    "mode gets: watch the mode's nodes slide (travelling) or stay put (standing).</p>",
+    "mode gets: watch the mode's nodes slide (traveling) or stay put (standing).</p>",
     "coupling": "<p>The largest off-diagonal term of Φ<sup>T</sup>CΦ against its diagonal's, "
     "|c<sub>rs</sub>|/√(c<sub>rr</sub>c<sub>ss</sub>): 0 when the damping is proportional, near 1 or "
     "more when it couples the modes strongly.</p>",
@@ -73,7 +73,7 @@ ARGAND_TIP = (
 STROBE_TIP = (
     "<p>The mode's shape at eight instants over half a cycle, Re(ψe<sup>iθ</sup>): a real mode's are one shape, "
     "scaled, and its nodes stay put (a standing wave); a complex mode's change shape as they go, and the nodes "
-    "move along the chain. Grey: ±|ψ|, the envelope.</p>"
+    "move along the chain. Gray: ±|ψ|, the envelope.</p>"
 )
 TABLE_TIP = (
     "<p>Each mode: the exact pole's frequency |λ|/2π and damping ratio, against the proportional approximation's "
@@ -96,7 +96,7 @@ SWEEP_TIP = (
 )
 LOCUS_TIP = (
     "<p>The root locus: each mode's exact pole λ as the element changes, Re λ across (the decay rate), "
-    "Im λ/2π up (the damped frequency). Grey crosses: real roots, where a mode is overdamped. The large dots "
+    "Im λ/2π up (the damped frequency). Gray crosses: real roots, where a mode is overdamped. The large dots "
     "are the chain's own value: drag one along its locus and every mode's pole slides with it; let go and the "
     "chain takes that value.</p>"
 )
@@ -106,7 +106,7 @@ IDENT_TIP = (
     "2iζ<sub>r</sub>ω<sub>r</sub>Ω), the modal constant φ<sub>jr</sub>φ<sub>kr</sub> real), the model of a proportionally damped structure.</p>"
 )
 SCATTER_TIP = (
-    "<p>Each mode's entries' angles from its best-fit line (one dot per mass, mass colours), and their mean, "
+    "<p>Each mode's entries' angles from its best-fit line (one dot per mass, mass colors), and their mean, "
     "weighted by size (the MPD, a bar). All on 0 for real modes.</p>"
 )
 
@@ -367,7 +367,7 @@ def _stiffer_damper(rng: np.random.Generator) -> Question:
             "",
             "That's the proportional approximation, which keeps the undamped shape. A very stiff damper locks its "
             "ends together and stops working, so the exact ζ falls again.",
-            "A damper too stiff to stretch takes no energy: the exact ζ falls back towards zero as it locks its joint.",
+            "A damper too stiff to stretch takes no energy: the exact ζ falls back toward zero as it locks its joint.",
         ),
         setup=dict(damping=(20.0, 0.0, 0.0, 0.0), tab=TAB_SWEEP),
         predict=True,
@@ -459,7 +459,7 @@ def _percent(approx: float, exact: float) -> str:
 
 
 class ComplexModesPage(QtWidgets.QWidget):
-    """The damping and the mode on the left, the mode's shape and the table in the centre, the rest on the right."""
+    """The damping and the mode on the left, the mode's shape and the table in the center, the rest on the right."""
 
     dof_requested = QtCore.Signal(int)  # the user changed N here; the main window owns the system
     edit_parameters = QtCore.Signal()  # the user wants the Simulation page's parameter panel
@@ -526,7 +526,7 @@ class ComplexModesPage(QtWidgets.QWidget):
         lv.addStretch(1)
         left_scroll = ColumnScroll(left)
 
-        # --- centre: the mode in the complex plane, its snapshots, the table
+        # --- center: the mode in the complex plane, its snapshots, the table
         self.argand = _plot("Im ψ", None, "Re ψ", None)
         self.argand.setAspectLocked(True)
         self.argand.setMouseEnabled(x=False, y=False)

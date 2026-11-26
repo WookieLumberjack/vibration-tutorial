@@ -42,10 +42,10 @@ Statistics
 ----------
 A Gaussian response is described by its RMS σ and, for how often it does things, by its
 PSD's spectral moments m_k = ∫ f^k G df (m₀ = σ²). Rice's formulas give the rate at which it
-crosses zero upwards, ν₀ = √(m₂/m₀), and the rate of its peaks (maxima), ν_p = √(m₄/m₂); a
-level a is crossed upwards ν₀ e^{−a²/2σ²} times a second. Their ratio α = ν₀/ν_p is the
+crosses zero upward, ν₀ = √(m₂/m₀), and the rate of its peaks (maxima), ν_p = √(m₄/m₂); a
+level a is crossed upward ν₀ e^{−a²/2σ²} times a second. Their ratio α = ν₀/ν_p is the
 irregularity factor: 1 for a narrow-band response (one peak per cycle, the peaks' heights
-Rayleigh distributed), towards 0 for a broad one (many small wiggles, the peaks' heights
+Rayleigh distributed), toward 0 for a broad one (many small wiggles, the peaks' heights
 nearly Gaussian, many below zero). Rice's peak distribution covers everything between
 (`peak_pdf`). The largest peak in a time T is, on average (Davenport), σ times
 √(2 ln ν₀T) + 0.5772/√(2 ln ν₀T): about 3σ for a few hundred cycles, 4–5σ for a long
@@ -445,7 +445,7 @@ class Rice:
 
     @property
     def alpha(self) -> float:
-        """The irregularity factor ν₀/ν_p: 1 narrow-band, towards 0 broad."""
+        """The irregularity factor ν₀/ν_p: 1 narrow-band, toward 0 broad."""
         return self.nu0 / self.nu_peak if self.nu_peak > 0 else 1.0
 
     def crossings(self, level: float) -> float:

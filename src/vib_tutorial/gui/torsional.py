@@ -1,8 +1,8 @@
-"""Torsional vibration page: a drive train of discs, shafts and gear meshes, its torsional criticals and forced
+"""Torsional vibration page: a drive train of disks, shafts and gear meshes, its torsional criticals and forced
 response, and a motor starting it.
 
-Left: the preset, the train (pick a disc or a link to edit it, or click it in the drawing),
-the excitation, the speeds and the start-up's motor and load. Centre, two tabs: the
+Left: the preset, the train (pick a disk or a link to edit it, or click it in the drawing),
+the excitation, the speeds and the start-up's motor and load. Center, two tabs: the
 interference (Campbell) diagram, natural frequencies against the orders that excite them,
 with the steady dynamic torque in a link against the motor's speed; and the start-up, the
 shafts' torque and the motor's speed against time as it runs. Right: the train drawn, its
@@ -120,7 +120,7 @@ def _two_discs(rng: np.random.Generator) -> Question:
         f"A {sig(j1, 6)} kg·m² motor drives a {sig(j2, 6)} kg·m² fan through a coupling of {sig(k, 6)} kN·m/rad. At what frequency "
         "does the train twist?",
         f,
-        f"Two discs on one shaft: f = √(k (J₁ + J₂) / J₁J₂) / 2π = √({sig(k, 6)}×10³ × {sig(j1 + j2, 6)} / {sig(j1 * j2, 6)}) / 2π = "
+        f"Two disks on one shaft: f = √(k (J₁ + J₂) / J₁J₂) / 2π = √({sig(k, 6)}×10³ × {sig(j1 + j2, 6)} / {sig(j1 * j2, 6)}) / 2π = "
         f"{number(TWO_PI * f)}/2π = {number(f)} Hz. (The train's other mode is the whole of it turning, at 0 Hz.)",
         unit="Hz",
         setup=dict(preset=FAN_PRESET, train=_fan(j1, j2, 1000 * k), shapes=True),
@@ -206,7 +206,7 @@ def _node(rng: np.random.Generator) -> Question:
         "the motor is the node, the point that doesn't swing, as a percentage of its length?",
         share,
         f"The two swing opposite, J₁θ₁ = −J₂θ₂ (no net momentum), so θ₁/θ₂ = −{sig(j2, 6)}/{sig(j1, 6)}, and the twist falls "
-        f"linearly along the shaft: the node is J₂/(J₁ + J₂) = {number(share)} % of the way, near the heavier disc.",
+        f"linearly along the shaft: the node is J₂/(J₁ + J₂) = {number(share)} % of the way, near the heavier disk.",
         unit="%",
         tolerance=0.01,
         setup=dict(preset=FAN_PRESET, train=_fan(j1, j2, FAN.links[0].stiffness), shapes=True),
@@ -267,9 +267,9 @@ def _faster_running(rng: np.random.Generator) -> Question:
         why=(
             "",
             "The train's frequencies come from its inertias and stiffnesses, not its speed: the criticals stay, and "
-            "the running speed moves towards them.",
+            "the running speed moves toward them.",
             "The train's frequencies come from its inertias and stiffnesses, not its speed: the criticals stay, and "
-            "the running speed moves towards them.",
+            "the running speed moves toward them.",
             "A forcing's size can grow with the speed; the frequencies, from J and k, don't move.",
         ),
         setup=dict(preset=FAN_PRESET, operating_rpm=1630.0),
@@ -298,7 +298,7 @@ def _coupling_spec(rng: np.random.Generator) -> Question:
         k = train.links[0].stiffness / 1000 if two else math.nan
         near = min((separation(c.rpm, running) for c in criticals(train, 1e9)), default=math.inf)
         return (
-            Requirement("Two discs on a coupling", f"{train.n} discs", two),
+            Requirement("Two disks on a coupling", f"{train.n} disks", two),
             kept("The motor's inertia", train.discs[0].inertia, j1, "kg·m²"),
             kept("The fan's inertia", train.discs[-1].inertia, j2, "kg·m²"),
             kept("The running speed", running, rpm, "rpm"),
@@ -329,7 +329,7 @@ def _coupling_spec(rng: np.random.Generator) -> Question:
 PROBLEMS = tuple(
     Problem(key, title, "torsional_page", f"See {page_link('torsional_page', anchor, section)}.", make)
     for key, title, anchor, section, make in (
-        ("two-discs", "Two discs on a shaft", "torsion", "Torsional vibration", _two_discs),
+        ("two-discs", "Two disks on a shaft", "torsion", "Torsional vibration", _two_discs),
         ("shaft-stiffness", "A shaft's stiffness", "torsion", "Torsional vibration", _shaft_stiffness),
         ("referred", "An inertia through a gear", "gears", "Gears", _referred),
         ("critical", "A critical speed", "interference", "The interference diagram", _critical),
@@ -382,7 +382,7 @@ NOTES_HTML = load_notes("torsional", figures=torsional_figures.FIGURES, presets=
 
 
 class TorsionalPage(QtWidgets.QWidget):
-    """Controls on the left, the interference diagram and the response in the centre, drawing and shapes on the right."""
+    """Controls on the left, the interference diagram and the response in the center, drawing and shapes on the right."""
 
     follows_chain = False  # MainWindow: this page has its own model, not the chain
 
@@ -402,7 +402,7 @@ class TorsionalPage(QtWidgets.QWidget):
         # The presets are the Things to try: one with a `predict` asks it before it loads.
         self.trials = TrialBox(
             [p.name for p in PRESETS],
-            "<p>Load a drive train with its running speed, and its start-up where it has one. Change any disc, "
+            "<p>Load a drive train with its running speed, and its start-up where it has one. Change any disk, "
             "link or speed and it becomes your own train.</p>",
             predictions=[p.predict for p in PRESETS],
         )
@@ -434,7 +434,7 @@ class TorsionalPage(QtWidgets.QWidget):
         lv.addStretch(1)
         left_scroll = ColumnScroll(left)
 
-        # --- centre: the interference diagram, the readout, the response
+        # --- center: the interference diagram, the readout, the response
         self.interference = plot("Frequency", "Hz", "Motor speed", "rpm", log_ready=True)
         self.interference.setToolTip(INTERFERENCE_TIP)
         plot_height(self.interference, 220)
@@ -477,7 +477,7 @@ class TorsionalPage(QtWidgets.QWidget):
 
         # --- right: the train drawn, the mode shapes, the notes
         self.drawing = pg.PlotWidget()
-        self.drawing.setAccessibleName("The train: motor, shafts, discs and gears")
+        self.drawing.setAccessibleName("The train: motor, shafts, disks and gears")
         self.drawing.setMenuEnabled(False)
         self.drawing.hideButtons()
         self.drawing.hideAxis("left")
@@ -486,8 +486,8 @@ class TorsionalPage(QtWidgets.QWidget):
         self.drawing.setAspectLocked(True)
         self.drawing.scene().sigMouseClicked.connect(self._on_drawing_click)
         self.drawing.setToolTip(
-            "<p>The train, motor on the left: discs (taller the more inertia), shafts, and "
-            "gear pairs, the far shaft stepped down. Click a disc or a link to edit it (the list above the editor "
+            "<p>The train, motor on the left: disks (taller the more inertia), shafts, and "
+            "gear pairs, the far shaft stepped down. Click a disk or a link to edit it (the list above the editor "
             "names the links).</p>"
         )
         self.drawing_note = wrapped(muted=True)
@@ -496,10 +496,10 @@ class TorsionalPage(QtWidgets.QWidget):
         dv.addWidget(self.drawing, 1)
         dv.addWidget(self.drawing_note)
 
-        self.shapes = plot("Swing (referred to the motor's shaft)", None, "Disc", None, log_ready=True)
+        self.shapes = plot("Swing (referred to the motor's shaft)", None, "Disk", None, log_ready=True)
         self.shapes.setMouseEnabled(x=False, y=False)
         self.shapes.setToolTip(
-            "<p>Each mode's swing at each disc, referred to the motor's shaft (θ / s, so a "
+            "<p>Each mode's swing at each disk, referred to the motor's shaft (θ / s, so a "
             "rigid turn of the whole train would be flat), largest +1. A link the curve "
             "crosses zero over holds a node, and twists.</p>"
         )
@@ -641,11 +641,11 @@ class TorsionalPage(QtWidgets.QWidget):
 
     @property
     def selected(self) -> int:
-        """The element being edited: 2i the i-th disc, 2i + 1 the link after it."""
+        """The element being edited: 2i the i-th disk, 2i + 1 the link after it."""
         return self.train_editor.selected
 
     def select(self, element: int) -> None:
-        """Edit element `element`: 2i the i-th disc, 2i + 1 the link after it."""
+        """Edit element `element`: 2i the i-th disk, 2i + 1 the link after it."""
         self.train_editor.select(element)
         self._draw_train()
 
@@ -883,7 +883,7 @@ class TorsionalPage(QtWidgets.QWidget):
         fr = forced_response(t, rpm)
         if not fr.sources:
             self.response_note.setText(
-                "No excitation: pick a disc to put a torque on, or give a mesh a transmission error."
+                "No excitation: pick a disk to put a torque on, or give a mesh a transmission error."
             )
             p.setXRange(0.0, top, padding=0)
             return
@@ -921,7 +921,7 @@ class TorsionalPage(QtWidgets.QWidget):
         )
 
     def _layout(self) -> tuple[list[tuple[float, float, float]], float]:
-        """Each disc's (x, axis height, half height) in the drawing, and the width of a disc."""
+        """Each disk's (x, axis height, half height) in the drawing, and the width of a disk."""
         t = self.train
         width = 0.5
         jmax = max(d.inertia for d in t.discs)
@@ -998,7 +998,7 @@ class TorsionalPage(QtWidgets.QWidget):
                 + "."
             )
         else:
-            speeds = "One shaft: every disc turns at the motor's speed."
+            speeds = "One shaft: every disk turns at the motor's speed."
         if t.excitation is not None:
             speeds += f" The arrow is the excitation, on the {t.discs[t.excitation.disc].name.lower()}."
         self.drawing_note.setText(speeds)

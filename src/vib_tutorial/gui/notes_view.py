@@ -1,11 +1,11 @@
 """The browser every page's Theory notes show in: it draws their equations and figures.
 
 `NotesBrowser` is a QTextBrowser that answers the notes' ``eq:`` images (`notes_render.equation`, at its text's size
-and colour) and ``fig:`` images (`figures`), and sets inline maths (``<span class="m">``) a little larger
+and color) and ``fig:`` images (`figures`), and sets inline math (``<span class="m">``) a little larger
 than the text around it (`maths.INLINE_SIZE`). The document caches the images until its HTML is set again,
 so `refresh` sets it again (keeping the place read) after a theme change: `MainWindow._restyle` calls it on
 every NotesBrowser it holds, the Theory window on its own. The equations are inked in the theme's own text
-colour (`ink`), not the palette's: Qt sends the browser its new palette only after the refresh.
+color (`ink`), not the palette's: Qt sends the browser its new palette only after the refresh.
 
 The notes' text size is one for every browser (`zoom`, a factor in `ZOOMS`, kept in the settings): Ctrl+= / -
 / 0 (`add_zoom_keys`, on the main and Theory windows; the browser's own keys too) and Ctrl with the wheel step
@@ -32,7 +32,7 @@ from .theming import settings
 
 
 def ink() -> str:
-    """The equations' colour: the theme's text. Not the browser's palette, which Qt hands it only after
+    """The equations' color: the theme's text. Not the browser's palette, which Qt hands it only after
     `MainWindow._restyle` has redrawn the notes, so it would draw them in the previous theme's ink."""
     return colors.text or colors.foreground  # Light keeps the platform's palette: its text is black
 
@@ -112,7 +112,7 @@ class NotesBrowser(QtWidgets.QTextBrowser):
             self.setHtml(html)
 
     def text_px(self) -> float:
-        """The pixel size of the browser's text, which its maths is sized from."""
+        """The pixel size of the browser's text, which its math is sized from."""
         return float(QtGui.QFontInfo(self.font()).pixelSize())
 
     def setHtml(self, text: str) -> None:

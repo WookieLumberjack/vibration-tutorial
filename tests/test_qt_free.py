@@ -25,7 +25,7 @@ COURSE_DATA = [
         "notes_pages",  # page_html: a page's notes, gathered (#478 item 9)
         "notes_export",  # the notes as static HTML and SVG
         "references",
-        "style",  # the themes' colours
+        "style",  # the themes' colors
         "sim_trials",
         "sdof_trials",  # the Single oscillator's trials, problems and notes (#478 Phase 3)
         "damping_trials",  # its damping laws' trials and problems
@@ -44,7 +44,7 @@ COURSE_DATA = [
         "equations_snapshot",
         "figures",  # the notes' figures as SVG (#316 D7), measured by font_metrics
         "font_metrics",
-        "maths",  # the notes' maths: inline markup, equations as SVG
+        "maths",  # the notes' math: inline markup, equations as SVG
     )
 ] + [  # every page's figures
     f"vib_tutorial.gui.{m.name}" for m in pkgutil.iter_modules(gui.__path__) if m.name.endswith("_figures")

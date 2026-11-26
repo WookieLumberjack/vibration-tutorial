@@ -16,7 +16,7 @@ MAX = 10_000.0 / RPM
 
 
 def run(sim: RotorSimulator, seconds: float):
-    """Advance in pieces (advance caps its steps); return (t, disc xy) over the run."""
+    """Advance in pieces (advance caps its steps); return (t, disk xy) over the run."""
     ts, xys = [], []
     end = sim.t + seconds
     while sim.t < end - 1e-12:

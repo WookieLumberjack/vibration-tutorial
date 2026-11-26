@@ -87,7 +87,7 @@ def test_circle_fit_beats_peak_picking_between_lines():
         name: abs(found[2].identified.fn_hz / exact.fn_hz - 1) for name, found in (("peak", peak), ("circle", circle))
     }
     assert err["circle"] < 0.2 * err["peak"]
-    assert abs(circle[2].identified.zeta / exact.zeta - 1) < 0.1  # the neighbouring modes bend the circle a little
+    assert abs(circle[2].identified.zeta / exact.zeta - 1) < 0.1  # the neighboring modes bend the circle a little
     assert circle[2].mac > 0.99
 
 

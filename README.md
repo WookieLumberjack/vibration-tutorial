@@ -76,7 +76,7 @@ The course runs through 11 groups of pages, in the order the app's tabs take the
 - [Energy methods](docs/modes.md#energy-methods): Rayleigh, Dunkerley, Rayleigh–Ritz and Holzer: frequencies from the energies, and how good they are
 - [FRF matrix](docs/modes.md#frf-matrix): every receptance H<sub>jk</sub>, and how the modes add up to it
 - [Complex modes](docs/modes.md#complex-modes): when damping makes the modes complex, and what the usual approximation misses
-- [Rigid body on mounts](docs/modes.md#rigid-body-on-mounts): a machine on four mounts in 3D: six coupled modes, the elastic centre, and decoupling by tilting them
+- [Rigid body on mounts](docs/modes.md#rigid-body-on-mounts): a machine on four mounts in 3D: six coupled modes, the elastic center, and decoupling by tilting them
 
 **[Building models](docs/building-models.md)**
 
@@ -98,9 +98,9 @@ The course runs through 11 groups of pages, in the order the app's tabs take the
 **[Rotating machines](docs/rotating-machines.md)**
 
 - [Gyroscope](docs/rotating-machines.md#gyroscope): a spinning top: Euler's equations, steady precession, nutation and the sleeping top
-- [Torsional vibration](docs/rotating-machines.md#torsional-vibration): a drive train of discs, shafts and gears, and its start-up
+- [Torsional vibration](docs/rotating-machines.md#torsional-vibration): a drive train of disks, shafts and gears, and its start-up
 - [Jeffcott rotor](docs/rotating-machines.md#jeffcott-rotor): a spinning shaft: critical speeds, balancing, bearings, stability, rub
-- [Rotor builder](docs/rotating-machines.md#rotor-builder): build a rotor from shafts, discs, bearings and seals: its whirl modes, criticals and stability
+- [Rotor builder](docs/rotating-machines.md#rotor-builder): build a rotor from shafts, disks, bearings and seals: its whirl modes, criticals and stability
 - [Machinery diagnostics](docs/rotating-machines.md#machinery-diagnostics): order tracking under a run-up, gear-mesh sidebands, bearing defects by the envelope, and the cepstrum
 
 **[Testing](docs/testing.md)**

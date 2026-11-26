@@ -76,7 +76,7 @@ class RotorSetup:
 
 
 def critical_rpm(system: RotorSystem) -> float:
-    """A disc at midspan on identical, isotropic bearings: its critical speed is its first natural frequency,
+    """A disk at midspan on identical, isotropic bearings: its critical speed is its first natural frequency,
     whatever the speed (the gyroscopic moment never enters the first mode)."""
     return float(whirl_modes(system, 0.0).freq_hz[0]) * 60.0
 
@@ -92,7 +92,7 @@ def _critical(rng: np.random.Generator) -> Question:
     setup: dict[str, Any] = dict(length=length, diameter=d / 1000, disc_mass=m, kx=kb)
     model = critical_rpm(RotorSetup(**setup).system())
     return Question(
-        f"A {sig(m, 6)} kg disc at the middle of a {sig(length, 6)} m steel shaft (E = 200 GPa) {sig(d, 6)} mm across, its bearings on "
+        f"A {sig(m, 6)} kg disk at the middle of a {sig(length, 6)} m steel shaft (E = 200 GPa) {sig(d, 6)} mm across, its bearings on "
         f"supports of {number(kb)} N/m each. The shaft's mass and the journals' aside, what is its critical speed?",
         rpm,
         f"EI = Eπd⁴/64 = {number(ei)} N·m², so the shaft at midspan is k<sub>s</sub> = 48EI/L³ = {number(ks)} N/m, in "
@@ -108,12 +108,12 @@ def _whirl_radius(rng: np.random.Generator) -> Question:
     e, r, zeta = pick(rng, (10, 20, 50)), pick(rng, (0.5, 0.8, 1.2, 2, 3)), pick(rng, (0.02, 0.05, 0.1))
     x = e * r * r / math.sqrt((1 - r * r) ** 2 + (2 * zeta * r) ** 2)
     return Question(
-        f"A disc's centre of mass is {sig(e, 6)} µm off the shaft's axis, its mode's ζ = {sig(zeta, 6)}. Running at {sig(r, 6)} times the "
-        "critical speed, how far does the disc whirl?",
+        f"A disk's center of mass is {sig(e, 6)} µm off the shaft's axis, its mode's ζ = {sig(zeta, 6)}. Running at {sig(r, 6)} times the "
+        "critical speed, how far does the disk whirl?",
         x,
         f"|X| = e r²/√((1 − r²)² + (2ζr)²) = {sig(e, 6)} × {number(r * r)}/√({number((1 - r * r) ** 2)} + "
         f"{number((2 * zeta * r) ** 2)}) = {number(x)} µm."
-        + (" Well above the critical it tends to e: the disc spins about its own centre of mass." if r > 1.5 else ""),
+        + (" Well above the critical it tends to e: the disk spins about its own center of mass." if r > 1.5 else ""),
         unit="µm",
     )
 
@@ -141,7 +141,7 @@ def _conical(rng: np.random.Generator) -> Question:
         omega * RPM,
         f"The tilt whirls at I<sub>d</sub>ω² − I<sub>p</sub>Ωω − k<sub>θ</sub> = 0 forward; on the 1X line ω = Ω, so "
         f"(I<sub>d</sub> − I<sub>p</sub>)Ω² = k<sub>θ</sub>: Ω = √({sig(k_theta, 6)}/{number(i_d - i_p)}) = "
-        f"{number(omega)} rad/s, {number(omega * RPM)} rpm. A disc (I<sub>p</sub> ≥ I<sub>d</sub>) never meets it.",
+        f"{number(omega)} rad/s, {number(omega * RPM)} rpm. A disk (I<sub>p</sub> ≥ I<sub>d</sub>) never meets it.",
         unit="rpm",
     )
 
@@ -159,7 +159,7 @@ def _balance(rng: np.random.Generator) -> Question:
     grams = abs(w) / radius
     v0_deg = round(math.degrees(cmath.phase(v0))) % 360
     return Question(
-        f"Balancing at one speed: the disc reads {number(abs(v0))} µm at {v0_deg}° as found, and {number(v1_amp)} µm "
+        f"Balancing at one speed: the disk reads {number(abs(v0))} µm at {v0_deg}° as found, and {number(v1_amp)} µm "
         f"at {v1_deg}° with a {sig(trial, 6)} g·mm trial weight at 0°. (Every angle counts counter-clockwise, the way the "
         f"shaft turns: a reading's phase as a lead from the keyphasor, a weight's from the mark.) With the trial off, "
         f"what mass of correction goes at {sig(radius, 6)} mm radius?",
@@ -191,7 +191,7 @@ def _internal_onset(rng: np.random.Generator) -> Question:
     rpm = 60 * fn * (1 + ce / ci)
     return Question(
         f"A Jeffcott rotor on rigid bearings, its natural frequency {sig(fn, 6)} Hz, has c<sub>e</sub> = {sig(ce, 6)} N·s/m of "
-        f"damping at the disc and c<sub>i</sub> = {sig(ci, 6)} N·s/m in the shaft. Above what speed does it whirl unstably?",
+        f"damping at the disk and c<sub>i</sub> = {sig(ci, 6)} N·s/m in the shaft. Above what speed does it whirl unstably?",
         rpm,
         f"Internal damping drives a forward whirl once the shaft turns faster than it whirls: the onset is "
         f"Ω = ω<sub>n</sub>(1 + c<sub>e</sub>/c<sub>i</sub>) = {sig(fn, 6)} Hz × {number(1 + ce / ci)} = "
@@ -203,16 +203,16 @@ def _internal_onset(rng: np.random.Generator) -> Question:
 # ------------------------------------------------------------------ predictions
 def _high_spot(rng: np.random.Generator) -> Question:
     return Question(
-        "The classic Jeffcott rotor runs at 3200 rpm, about twice its 1584 rpm critical speed. Where is the disc's "
+        "The classic Jeffcott rotor runs at 3200 rpm, about twice its 1584 rpm critical speed. Where is the disk's "
         "high spot, against its heavy spot?",
         0,
-        "Nearly opposite it: the disc lags 176° there. Above the critical the shaft deflects away from the heavy spot, "
-        "and the disc tends to spin about its own centre of mass (self-centring).",
+        "Nearly opposite it: the disk lags 176° there. Above the critical the shaft deflects away from the heavy spot, "
+        "and the disk tends to spin about its own center of mass (self-centering).",
         choices=("Nearly opposite it", "At it", "About 90° behind it", "About 45° behind it"),
         why=(
             "",
-            "That's below the critical, where the shaft bends towards the heavy spot. Above it the disc lags nearly "
-            "180°, turning about its own centre of mass.",
+            "That's below the critical, where the shaft bends toward the heavy spot. Above it the disk lags nearly "
+            "180°, turning about its own center of mass.",
             "90° is at the critical speed itself; at twice the critical the lag is nearly 180°.",
             "45° is below the critical; the lag grows through 90° at it, to nearly 180° above.",
         ),
@@ -226,7 +226,7 @@ def _overhung(rng: np.random.Generator) -> Question:
         "The overhung rotor's first mode is at 870 rpm at rest. Spinning, where does the unbalance find its critical "
         "speed?",
         0,
-        "Above it, at 1284 rpm: the overhung disc tilts as it whirls, and the gyroscopic moment stiffens the forward "
+        "Above it, at 1284 rpm: the overhung disk tilts as it whirls, and the gyroscopic moment stiffens the forward "
         "whirl as the speed rises. The backward branch meets 1X lower, at 664 rpm, but the unbalance doesn't drive it.",
         choices=("Above 870 rpm", "At 870 rpm", "Below 870 rpm"),
         why=(
@@ -299,8 +299,8 @@ def _stiff_shaft(rng: np.random.Generator) -> Question:
         a, b = s.bearing_a, s.bearing_b
         return (
             kept("Span L", s.length, length, "m"),
-            kept("Disc mass", s.disc_mass, m, "kg"),
-            kept("Disc position a/L", s.position, 0.5),
+            kept("Disk mass", s.disc_mass, m, "kg"),
+            kept("Disk position a/L", s.position, 0.5),
             kept("Young's modulus", s.youngs / 1e9, E_STEEL / 1e9, "GPa"),
             *(
                 kept(f"Bearing {n}'s {k}", v, kb, "N/m")
@@ -317,7 +317,7 @@ def _stiff_shaft(rng: np.random.Generator) -> Question:
         )
 
     return Question(
-        f"A {sig(m, 6)} kg disc at the middle of a 0.5 m steel shaft, on supports of 200,000 N/m, is to run at {sig(run, 6)} rpm "
+        f"A {sig(m, 6)} kg disk at the middle of a 0.5 m steel shaft, on supports of 200,000 N/m, is to run at {sig(run, 6)} rpm "
         f"with its critical speed at least 15 % above that ({number(lowest)} rpm), a stiff-shaft design. Choose the "
         f"shaft's diameter, no more than {number(widest)} mm.",
         0,
@@ -336,7 +336,7 @@ def _gyro_matrix(rng: np.random.Generator) -> Question:
         "backward whirl frequencies split apart as the speed rises?",
         0,
         "ΩG, the gyroscopic term: skew-symmetric and growing with the speed, it comes from the spin's angular "
-        "momentum I<sub>p</sub>Ω turned by the disc's tilt, and it stiffens the forward whirl and softens the "
+        "momentum I<sub>p</sub>Ω turned by the disk's tilt, and it stiffens the forward whirl and softens the "
         "backward one. At rest the two share one frequency.",
         choices=("ΩG, the gyroscopic term", "C, the damping", "K, the stiffness", "ΩH, internal damping's term"),
         why=(
@@ -385,16 +385,16 @@ def _gravity_critical(rng: np.random.Generator) -> Question:
 
 def _rub_whirl(rng: np.random.Generator) -> Question:
     return Question(
-        "A disc rubs all the way round its stator ring, its rim slipping forward over the ring. Which way does the "
-        "friction push the disc round the ring?",
+        "A disk rubs all the way round its stator ring, its rim slipping forward over the ring. Which way does the "
+        "friction push the disk round the ring?",
         0,
         "Backward. The rim's speed R<sub>d</sub>Ω is far faster than the whirl, so it slips forward over the ring "
-        "and the friction on it acts backward; enough of it flips the whirl backward, to the disc's frequency on "
+        "and the friction on it acts backward; enough of it flips the whirl backward, to the disk's frequency on "
         "the ring, far above the speed: dry whirl.",
         choices=("Backward round the ring", "Forward, with the spin", "Neither: friction only damps the whirl"),
         why=(
             "",
-            "Friction acts against the slip, and the rim slips forward over the ring: so on the disc it acts backward.",
+            "Friction acts against the slip, and the rim slips forward over the ring: so on the disk it acts backward.",
             "Friction at a slipping contact acts along the tangent, a cross-coupled stiffness: it drives a whirl, "
             "it doesn't only damp it.",
         ),
@@ -425,7 +425,7 @@ PROBLEMS = tuple(
             _internal_onset,
         ),
         ("high-spot", "Predict: above the critical", "unbalance", "Unbalance response", _high_spot),
-        ("overhung", "Predict: an overhung disc", "overhung", "The overhung rotor", _overhung),
+        ("overhung", "Predict: an overhung disk", "overhung", "The overhung rotor", _overhung),
         ("anisotropic", "Predict: anisotropic supports", "anisotropic", "Anisotropic supports", _anisotropic),
         (
             "oil-damping",

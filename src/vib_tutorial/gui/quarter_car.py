@@ -1,7 +1,7 @@
 """Quarter-car page: a suspension on a rough road, and the conflict between comfort, grip and travel.
 
-Left: the road (ISO 8608 class and speed) and the car (body and wheel masses, spring, damper, tyre). Centre: the
-body's acceleration and the tyre's dynamic load as PSDs, with their RMS values. Right: the comfort–grip trade-off
+Left: the road (ISO 8608 class and speed) and the car (body and wheel masses, spring, damper, tire). Center: the
+body's acceleration and the tire's dynamic load as PSDs, with their RMS values. Right: the comfort–grip trade-off
 over springs and dampers, each output against the damper, a drive over a synthesized road, and the Theory. The
 page has its own model (core/quarter_car.py).
 """
@@ -80,15 +80,15 @@ class CarTrial:
 TRIALS = (
     CarTrial(
         "A car on an average road",
-        "A quarter of a family car (300 kg of body on 20 kN/m and 1.5 kN·s/m, a 40 kg wheel on a 200 kN/m tyre) "
+        "A quarter of a family car (300 kg of body on 20 kN/m and 1.5 kN·s/m, a 40 kg wheel on a 200 kN/m tire) "
         "at 72 km/h on a class C road. The body bounces at 1.24 Hz and the wheel hops at 11.8 Hz. The body's "
-        "acceleration is 1.48 m/s² RMS, the suspension travels 10.7 mm RMS, and the tyre's load swings by 24 % "
+        "acceleration is 1.48 m/s² RMS, the suspension travels 10.7 mm RMS, and the tire's load swings by 24 % "
         "of its static load.",
     ),
     CarTrial(
         "Rougher and faster",
         "Each ISO class is four times the last's PSD, so twice its RMS, and the road's velocity is white with a "
-        "PSD in proportion to <m>v</m>, so the RMS grows as <m>√v</m>. Class D at 108 km/h: 3.63 m/s², and the tyre's load swings by 59 % of "
+        "PSD in proportion to <m>v</m>, so the RMS grows as <m>√v</m>. Class D at 108 km/h: 3.63 m/s², and the tire's load swings by 59 % of "
         "its static load RMS: it leaves the road 4.4 % of the time.",
         grade="D",
         speed_kmh=108.0,
@@ -96,12 +96,12 @@ TRIALS = (
     CarTrial(
         "A softer damper",
         "The damper at 830 N·s/m, the best for comfort on this spring (<m>ζ</m> = 0.17 on the body): 1.36 m/s², 8 % "
-        "better. But the wheel hop is now lightly damped: the tyre's load swings by 29 %, and the suspension "
+        "better. But the wheel hop is now lightly damped: the tire's load swings by 29 %, and the suspension "
         "travels 14.4 mm.",
         damper=830.0,
         tab=TAB_DAMPER,
         predict=Prediction(
-            "The damper softened from 1.5 to 0.83 kN·s/m. What happens to comfort, and to the tyre's grip?",
+            "The damper softened from 1.5 to 0.83 kN·s/m. What happens to comfort, and to the tire's grip?",
             (
                 "Comfort worsens, grip improves",
                 "Both worsen",
@@ -112,19 +112,19 @@ TRIALS = (
             why=(
                 "That's a harder damper. Softening it takes the harshness out but lets the wheel hop, worsening grip.",
                 "A softer damper passes less of the road's harshness to the body: comfort improves; it's grip that suffers.",
-                "The damper is the conflict: softer lets the body ride more gently, but it also lets the wheel hop more freely, so the tyre's load swings more.",
+                "The damper is the conflict: softer lets the body ride more gently, but it also lets the wheel hop more freely, so the tire's load swings more.",
                 '',
             ),
         ),
     ),
     CarTrial(
         "A firmer damper",
-        "The damper at 2.3 kN·s/m, the best for the tyre's grip (<m>ζ</m> = 0.48): its load swings by 23 %, while the "
+        "The damper at 2.3 kN·s/m, the best for the tire's grip (<m>ζ</m> = 0.48): its load swings by 23 %, while the "
         "body's acceleration rises to 1.72 m/s². No damper is best for both: the classic conflict.",
         damper=2340.0,
         tab=TAB_DAMPER,
         predict=Prediction(
-            "The damper firmed up from 1.5 to 2.3 kN·s/m. What happens to comfort, and to the tyre's grip?",
+            "The damper firmed up from 1.5 to 2.3 kN·s/m. What happens to comfort, and to the tire's grip?",
             (
                 "Comfort worsens, grip improves",
                 "Both worsen",
@@ -134,7 +134,7 @@ TRIALS = (
             0,
             why=(
                 '',
-                "A firmer damper holds the wheel to the road: the tyre's load swings less, by 23 %. It's comfort that pays.",
+                "A firmer damper holds the wheel to the road: the tire's load swings less, by 23 %. It's comfort that pays.",
                 'A firmer damper passes more of the road to the body: its acceleration rises to 1.72 m/s². Only grip improves.',
                 "That's softening it. Firmed up, it passes more of the road to the body and holds the wheel down better.",
             ),
@@ -151,11 +151,11 @@ TRIALS = (
     CarTrial(
         "A heavier wheel",
         "The unsprung mass up from 40 to 60 kg (heavier wheels, a solid axle): the wheel hops at 9.6 Hz, and "
-        "the tyre's load swings by 26 % instead of 24 %. Unsprung mass costs grip, which is why racing cars "
+        "the tire's load swings by 26 % instead of 24 %. Unsprung mass costs grip, which is why racing cars "
         "chase light wheels and inboard brakes.",
         unsprung=60.0,
         predict=Prediction(
-            "The wheel up from 40 to 60 kg (heavier wheels, a solid axle). What happens to the tyre's grip?",
+            "The wheel up from 40 to 60 kg (heavier wheels, a solid axle). What happens to the tire's grip?",
             (
                 "It stays the same",
                 "It improves",
@@ -163,8 +163,8 @@ TRIALS = (
             ),
             2,
             why=(
-                "Unsprung mass moves the wheel hop (9.6 Hz, not 11.8), and with it the swing in the tyre's load.",
-                "A heavier wheel is harder for the tyre to keep on the road: it hops lower and harder, and the tyre's load swings more.",
+                "Unsprung mass moves the wheel hop (9.6 Hz, not 11.8), and with it the swing in the tire's load.",
+                "A heavier wheel is harder for the tire to keep on the road: it hops lower and harder, and the tire's load swings more.",
                 '',
             ),
         ),
@@ -222,10 +222,10 @@ def _bounce(rng: np.random.Generator) -> Question:
     keff = ks * kt / (ks + kt) * 1e3
     f = math.sqrt(keff / ms) / TWO_PI
     return Question(
-        f"A quarter-car's body is {sig(ms, 6)} kg on a {sig(ks, 6)} kN/m spring, over a {sig(kt, 6)} kN/m tyre. Roughly where does it "
+        f"A quarter-car's body is {sig(ms, 6)} kg on a {sig(ks, 6)} kN/m spring, over a {sig(kt, 6)} kN/m tire. Roughly where does it "
         "bounce?",
         f,
-        f"The wheel is light, so the body sits on the spring and the tyre in series: k = k<sub>s</sub>k<sub>t</sub>/"
+        f"The wheel is light, so the body sits on the spring and the tire in series: k = k<sub>s</sub>k<sub>t</sub>/"
         f"(k<sub>s</sub> + k<sub>t</sub>) = {number(keff / 1e3)} kN/m, and f = √(k/m<sub>s</sub>)/2π = {number(f)} Hz.",
         unit="Hz",
         setup=dict(sprung=ms, spring=ks, tyre=kt),
@@ -236,7 +236,7 @@ def _wheel_hop(rng: np.random.Generator) -> Question:
     mu, ks, kt = pick(rng, (30, 40, 50, 60)), pick(rng, (15, 20, 30)), pick(rng, (150, 200, 250))
     f = math.sqrt((ks + kt) * 1e3 / mu) / TWO_PI
     return Question(
-        f"A {sig(mu, 6)} kg wheel between a {sig(ks, 6)} kN/m suspension spring and a {sig(kt, 6)} kN/m tyre, under a heavy body. "
+        f"A {sig(mu, 6)} kg wheel between a {sig(ks, 6)} kN/m suspension spring and a {sig(kt, 6)} kN/m tire, under a heavy body. "
         "Roughly where does it hop?",
         f,
         f"The body barely moves at that frequency, so the wheel bounces on both springs at once: "
@@ -277,8 +277,8 @@ def _lift(rng: np.random.Generator) -> Question:
     ratio = pick(rng, (0.3, 0.4, 0.5, 0.6))
     share = 100 * 0.5 * math.erfc(1 / (math.sqrt(2) * ratio))
     return Question(
-        f"A tyre's dynamic load is Gaussian, its RMS {sig(100 * ratio, 6)} % of the static load. What percentage of the time "
-        "is the tyre off the road?",
+        f"A tire's dynamic load is Gaussian, its RMS {sig(100 * ratio, 6)} % of the static load. What percentage of the time "
+        "is the tire off the road?",
         share,
         f"It leaves the road when the dynamic load falls below −W: W/σ = {number(1 / ratio)} standard deviations "
         f"down, a fraction Φ(−{number(1 / ratio)}) = ½ erfc({number(1 / ratio)}/√2) = {number(share)} % of the time.",
@@ -291,7 +291,7 @@ def _soft_damper(rng: np.random.Generator) -> Question:
     return Question(
         "The family car's damper is softened from 1.5 to 0.83 kN·s/m. What happens to comfort and grip?",
         0,
-        "Comfort improves (the body's acceleration falls 8 %, 1.48 to 1.36 m/s²) and grip worsens (the tyre's load "
+        "Comfort improves (the body's acceleration falls 8 %, 1.48 to 1.36 m/s²) and grip worsens (the tire's load "
         "swings by 29 % of its static load, not 24 %): the wheel hop is now lightly damped.",
         choices=(
             "Comfort improves, grip worsens",
@@ -302,7 +302,7 @@ def _soft_damper(rng: np.random.Generator) -> Question:
         why=(
             "",
             "The damper is the conflict: softer lets the body ride more gently, but it also lets the wheel hop more "
-            "freely, so the tyre's load swings more.",
+            "freely, so the tire's load swings more.",
             "A softer damper passes less of the road's harshness to the body: comfort improves; it's grip that "
             "suffers.",
             "That's a harder damper. Softening it takes the harshness out but lets the wheel hop, worsening grip.",
@@ -316,14 +316,14 @@ def _heavy_wheel(rng: np.random.Generator) -> Question:
     return Question(
         "The car's wheel gets heavier, 40 to 60 kg (a solid axle). What happens to its grip?",
         0,
-        "It worsens: the wheel hops lower and harder (9.6 Hz, not 11.8), and the tyre's load swings by 26 % of its "
+        "It worsens: the wheel hops lower and harder (9.6 Hz, not 11.8), and the tire's load swings by 26 % of its "
         "static load, not 24 %. Unsprung mass costs grip.",
         choices=("It worsens", "It improves", "It stays the same"),
         why=(
             "",
-            "A heavier wheel is harder for the tyre to keep on the road: it hops lower and harder, and the tyre's "
+            "A heavier wheel is harder for the tire to keep on the road: it hops lower and harder, and the tire's "
             "load swings more.",
-            "Unsprung mass moves the wheel hop (9.6 Hz, not 11.8), and with it the swing in the tyre's load.",
+            "Unsprung mass moves the wheel hop (9.6 Hz, not 11.8), and with it the swing in the tire's load.",
         ),
         setup=dict(unsprung=60.0),
         predict=True,
@@ -366,15 +366,15 @@ def _damper_spec(rng: np.random.Generator) -> Question:
             kept("The body", t.sprung, base.sprung, "kg"),
             kept("The wheel", t.unsprung, base.unsprung, "kg"),
             kept("The spring", t.spring, base.spring / 1e3, "kN/m"),
-            kept("The tyre", t.tyre, base.tyre / 1e3, "kN/m"),
+            kept("The tire", t.tyre, base.tyre / 1e3, "kN/m"),
             at_most("The body's RMS acceleration", now.rms[Output.BODY], most_body, "m/s²"),
-            at_most("The tyre load's RMS", 100 * now.load_ratio, most_tyre, "% of static"),
+            at_most("The tire load's RMS", 100 * now.load_ratio, most_tyre, "% of static"),
         )
 
     return Question(
-        f"The family car (300 kg body, 40 kg wheel, 20 kN/m spring, 200 kN/m tyre) at {sig(kmh, 6)} km/h on a class {grade} "
+        f"The family car (300 kg body, 40 kg wheel, 20 kN/m spring, 200 kN/m tire) at {sig(kmh, 6)} km/h on a class {grade} "
         f"road. Choose its damper so that the body's RMS acceleration is at most {number(most_body)} m/s² and the "
-        f"tyre's load swings by at most {number(most_tyre)} % of its static load, RMS.",
+        f"tire's load swings by at most {number(most_tyre)} % of its static load, RMS.",
         0,
         f"A softer damper helps comfort and a firmer one grip, so the two limits leave a window between them. "
         f"{sig(cd, 6)} N·s/m gives {number(r.rms[Output.BODY])} m/s² and {number(100 * r.load_ratio)} %; the Damper tab "
@@ -401,7 +401,7 @@ PROBLEMS = tuple(
         ("wheel-hop", "Wheel hop", "quarter-car", "The quarter-car", _wheel_hop),
         ("body-zeta", "The body's damping", "conflict", "The conflict", _body_zeta),
         ("sag", "Sag", "conflict", "The conflict", _sag),
-        ("lift", "The tyre off the road", "quarter-car", "The quarter-car", _lift),
+        ("lift", "The tire off the road", "quarter-car", "The quarter-car", _lift),
         ("soft-damper", "Predict: a softer damper", "conflict", "The conflict", _soft_damper),
         ("heavy-wheel", "Predict: a heavier wheel", "conflict", "The conflict", _heavy_wheel),
         ("faster", "Predict: four times as fast", "road", "A road as a random input", _faster),
@@ -414,17 +414,17 @@ TIPS = {
     "displacement PSD.</p>",
     "speed": "<p>The car's speed: the road's spatial PSD becomes a PSD in time.</p>",
     "sprung": "<p>The body's share on this wheel.</p>",
-    "unsprung": "<p>The wheel, tyre, brake and part of the axle and suspension.</p>",
+    "unsprung": "<p>The wheel, tire, brake and part of the axle and suspension.</p>",
     "spring": "<p>The suspension spring (at the wheel).</p>",
     "damper": "<p>The suspension damper (at the wheel).</p>",
-    "tyre": "<p>The tyre's vertical stiffness.</p>",
+    "tyre": "<p>The tire's vertical stiffness.</p>",
 }
 PSD_TIP = (
     "<p>The output's PSD over the road's: |H(f)|² G<sub>z</sub>(f). Dotted: the body-bounce and wheel-hop "
     "frequencies.</p>"
 )
 TRADE_TIP = (
-    "<p>The RMS body acceleration (comfort) against the tyre load's RMS over its static load (grip): "
+    "<p>The RMS body acceleration (comfort) against the tire load's RMS over its static load (grip): "
     "a curve per spring, the damper rising along it. Lower left is better. Drag the dot along its curve to change "
     "the damper.</p>"
 )
@@ -443,7 +443,7 @@ NOTES_HTML = load_notes("quarter_car", figures=quarter_figures.FIGURES, trials=t
 
 
 class QuarterCarPage(QtWidgets.QWidget):
-    """Controls on the left, the PSDs in the centre, the trade-off, damper sweep and drive on the right."""
+    """Controls on the left, the PSDs in the center, the trade-off, damper sweep and drive on the right."""
 
     follows_chain = False  # MainWindow: this page has its own model, not the chain
 
@@ -468,7 +468,7 @@ class QuarterCarPage(QtWidgets.QWidget):
         self.unsprung = car.number("Wheel mᵤ:", 5.0, 300.0, 40.0, 0, " kg", TIPS["unsprung"])
         self.spring = car.number("Spring kₛ:", 2.0, 500.0, 20.0, 1, " kN/m", TIPS["spring"])
         self.damper = car.number("Damper cₛ:", 0.0, 20000.0, 1500.0, 0, " N·s/m", TIPS["damper"])
-        self.tyre = car.number("Tyre kₜ:", 20.0, 2000.0, 200.0, 0, " kN/m", TIPS["tyre"])
+        self.tyre = car.number("Tire kₜ:", 20.0, 2000.0, 200.0, 0, " kN/m", TIPS["tyre"])
         self.car_info = note_label()
         car.row(self.car_info)
 
@@ -476,11 +476,11 @@ class QuarterCarPage(QtWidgets.QWidget):
             (self.grade, self.speed, self.sprung, self.unsprung, self.spring, self.damper, self.tyre), self.redraw
         )
 
-        # --- centre
+        # --- center
         self.body_plot = plot(
             "Body acceleration PSD", "(m/s²)²/Hz", "Frequency", "Hz", log_x=True, log_y=True, height=150
         )
-        self.tyre_plot = plot("Tyre load PSD", "N²/Hz", "Frequency", "Hz", log_x=True, log_y=True, height=150)
+        self.tyre_plot = plot("Tire load PSD", "N²/Hz", "Frequency", "Hz", log_x=True, log_y=True, height=150)
         self.tyre_plot.setXLink(self.body_plot)
         self.body_item, self.tyre_item = pg.PlotDataItem(), pg.PlotDataItem()
         self.mode_lines = [[pg.InfiniteLine(angle=90), pg.InfiniteLine(angle=90)] for _ in range(2)]
@@ -495,7 +495,7 @@ class QuarterCarPage(QtWidgets.QWidget):
         self.readout = readout_label()
 
         # --- right
-        self.trade_plot = plot("Tyre load RMS / static load", None, "Body acceleration RMS", "m/s²", height=200)
+        self.trade_plot = plot("Tire load RMS / static load", None, "Body acceleration RMS", "m/s²", height=200)
         self.trade_plot.setToolTip(TRADE_TIP)
         add_legend(self.trade_plot.getPlotItem(), offset=(-10, 10))
         self.trade_items = [pg.PlotDataItem(name=f"spring × {sig(s, 6)}") for s in SPRING_FACTORS]
@@ -649,8 +649,8 @@ class QuarterCarPage(QtWidgets.QWidget):
         lift = r.lift_probability
         self.readout.setText(
             f"RMS: body acceleration <b>{sig(r.rms[Output.BODY])} m/s²</b>, suspension travel "
-            f"<b>{fmt(r.rms[Output.TRAVEL], 'm')}</b>, tyre load <b>{fmt(r.rms[Output.TYRE], 'N')}</b> "
-            f"({sig(100 * r.load_ratio)} % of the static {fmt(r.weight, 'N')}). The tyre leaves the road "
+            f"<b>{fmt(r.rms[Output.TRAVEL], 'm')}</b>, tire load <b>{fmt(r.rms[Output.TYRE], 'N')}</b> "
+            f"({sig(100 * r.load_ratio)} % of the static {fmt(r.weight, 'N')}). The tire leaves the road "
             + (f"{sig(100 * lift, 2)} % of the time." if lift > 1e-4 else "almost never.")
             + f" Road: class {road.grade} at {sig(road.speed * 3.6)} km/h."
         )

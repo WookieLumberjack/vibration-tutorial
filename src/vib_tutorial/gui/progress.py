@@ -98,7 +98,7 @@ def tried_counts(totals: dict[str, int]) -> dict[str, tuple[int, int]]:
 
 
 GOAL = re.compile(
-    r'<li>((?:(?!<li>).)*?) <a href="trial:(\w+)#(\d+)">Try it</a> · <a href="practice:(\w+)#([\w-]+)">Practise it</a></li>',
+    r'<li>((?:(?!<li>).)*?) <a href="trial:(\w+)#(\d+)">Try it</a> · <a href="practice:(\w+)#([\w-]+)">Practice it</a></li>',
     re.S,  # a goal's text runs over lines, but never across another item
 )
 REVEAL = re.compile(r"Pick it to answer and see\.<!--ANSWER:(\w+)-->")
@@ -117,7 +117,7 @@ def marks(html: str) -> str:
         tick = "✓ " if t and p else ""
         return (
             f'<li>{tick}{text} <a href="trial:{page}#{n}">Try it</a>{" ✓" if t else ""} · '
-            f'<a href="practice:{practice_page}#{key}">Practise it</a>{" ✓" if p else ""}</li>'
+            f'<a href="practice:{practice_page}#{key}">Practice it</a>{" ✓" if p else ""}</li>'
         )
 
     def reveal(m: re.Match) -> str:

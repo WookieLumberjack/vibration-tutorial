@@ -12,16 +12,16 @@ The pages in the order the app's tabs take them.
 ## Seismic response
 
 The chain as a shear building on the ground: a design spectrum in the European code's shape, each
-mode's participation and effective mass, peak floor displacements, drifts and storey shears from the
+mode's participation and effective mass, peak floor displacements, drifts and story shears from the
 spectrum, combined by ABS, SRSS, NRL or CQC, against seven records synthesized to match the spectrum and
-stepped exactly. A roof tank tuned to mode 1 shows why close modes need CQC; a soft storey and base
-isolation are trials too, and the notes cover drift limits, ductility and the behaviour factor. The
-*Building* tab plays the building swaying under the first record, scrubbed with a time cursor, each storey's
-columns reddening as its drift nears the record's largest: the soft storey and the bearings light up. Storey
+stepped exactly. A roof tank tuned to mode 1 shows why close modes need CQC; a soft story and base
+isolation are trials too, and the notes cover drift limits, ductility and the behavior factor. The
+*Building* tab plays the building swaying under the first record, scrubbed with a time cursor, each story's
+columns reddening as its drift nears the record's largest: the soft story and the bearings light up. Story
 1's stiffness has a box of its own, with the period of the building as a rigid block on it, and a challenge
 asks for the bearings that bring the shear above them under a limit without letting them move too far.
 
-![Seismic response page: a roof tank tuned to mode 1 of the five-storey building splits it into modes at 0.96 and 1.06 Hz; SRSS gives a base shear of 165 kN, 21 % below the mean of seven matched records (209 kN), and the tank's swing 54 % high](images/seismic_response.png)
+![Seismic response page: a roof tank tuned to mode 1 of the five-story building splits it into modes at 0.96 and 1.06 Hz; SRSS gives a base shear of 165 kN, 21 % below the mean of seven matched records (209 kN), and the tank's swing 54 % high](images/seismic_response.png)
 
 ## Nonlinearity & forces
 

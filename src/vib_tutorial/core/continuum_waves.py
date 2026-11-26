@@ -2,7 +2,7 @@
 
 A smooth pulse (a raised cosine, its full width a fraction of the length) starts on the
 medium, either at rest (it splits into two halves, each going its own way) or, on a string
-or bar, travelling right (its velocity −c u₀′: d'Alembert's right-going wave alone).
+or bar, traveling right (its velocity −c u₀′: d'Alembert's right-going wave alone).
 
 On the **continuum** a string's or bar's waves keep their shape: u = r(x − ct) + l(x + ct).
 The reference carries the two exactly, as a digital waveguide: each is sampled at cells
@@ -68,7 +68,7 @@ BEAM_REACH = 40.0  # the beam's modes are summed up to κ = BEAM_REACH / width: 
 
 @dataclass(frozen=True)
 class Waves:
-    """The pulse (full width and centre as fractions of the length; travelling right or released at rest), the mesh's
+    """The pulse (full width and center as fractions of the length; traveling right or released at rest), the mesh's
     mass, and what the wave meets: a dashpot on the right end (c_d / Z, None: the medium's own end), a section
     step (where, as a fraction of the length, None: none, and Z₂/Z₁)."""
 
@@ -84,7 +84,7 @@ class Waves:
         if not 0 < self.width <= 1:
             raise ValueError("the pulse's width is a fraction of the length")
         if not 0 <= self.at <= 1:
-            raise ValueError("the pulse's centre is on the length")
+            raise ValueError("the pulse's center is on the length")
         if self.dashpot is not None and self.dashpot < 0:
             raise ValueError("a dashpot can't be negative")
         if self.step_at is not None and not 0 < self.step_at < 1:
@@ -97,7 +97,7 @@ class Waves:
 
 
 def pulse(x: np.ndarray, centre: float, width: float) -> np.ndarray:
-    """A raised cosine, 1 at the centre, 0 beyond half its width either side."""
+    """A raised cosine, 1 at the center, 0 beyond half its width either side."""
     s = (np.asarray(x, dtype=float) - centre) / (0.5 * width)
     return np.where(np.abs(s) < 1.0, 0.5 * (1.0 + np.cos(math.pi * s)), 0.0)
 

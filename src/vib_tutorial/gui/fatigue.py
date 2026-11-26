@@ -1,6 +1,6 @@
 """Fatigue page: a random stress counted by rainflow, against the narrow-band and Dirlik estimates.
 
-Left: the stress PSD (one or two resonant peaks), the S–N curve and the record. Centre: the PSD and a stretch of
+Left: the stress PSD (one or two resonant peaks), the S–N curve and the record. Center: the PSD and a stretch of
 the record with the reversals rainflow counts. Right: the count a step at a time over the record's first
 `RF_SHOW` reversals (`core.fatigue.rainflow_steps`; Step, Back, and Start on the run bar while the tab shows, on a
 timer that stops when the page hides),
@@ -138,7 +138,7 @@ TRIALS = (
             ),
             2,
             why=(
-                "The damage per cycle grows as S<sup>5</sup>, so it's weighted hard towards the largest, rarest ranges, far above the RMS.",
+                "The damage per cycle grows as S<sup>5</sup>, so it's weighted hard toward the largest, rarest ranges, far above the RMS.",
                 'Small cycles are many, but each does damage as S<sup>5</sup>: half the range does 1/32 of the damage.',
                 '',
             ),
@@ -193,7 +193,7 @@ TRIALS = (
             (
                 "It's always high",
                 "It's always low",
-                "It stays within a few per cent",
+                "It stays within a few percent",
                 "It scatters widely",
             ),
             3,
@@ -326,7 +326,7 @@ def _steep_slope(rng: np.random.Generator) -> Question:
         why=(
             "",
             "Small cycles are many, but each does damage as S<sup>5</sup>: half the range does 1/32 of the damage.",
-            "The damage per cycle grows as S<sup>5</sup>, so it's weighted hard towards the largest, rarest ranges, "
+            "The damage per cycle grows as S<sup>5</sup>, so it's weighted hard toward the largest, rarest ranges, "
             "far above the RMS.",
         ),
         setup=dict(stress=Stress(sigma2=10.0), b=5.0, tab=TAB_DAMAGE),
@@ -452,7 +452,7 @@ NOTES_HTML = load_notes("fatigue", figures=fatigue_figures.FIGURES, trials=trial
 
 
 class FatiguePage(QtWidgets.QWidget):
-    """Controls on the left, the PSD and the record in the centre, the distributions on the right."""
+    """Controls on the left, the PSD and the record in the center, the distributions on the right."""
 
     follows_chain = False  # MainWindow: this page has its own model, not the chain
 
@@ -494,7 +494,7 @@ class FatiguePage(QtWidgets.QWidget):
         )
         connect_all((self.b, self.s_ref, self.n_ref), self._on_curve)
 
-        # --- centre
+        # --- center
         self.psd_plot = plot("Stress PSD", "MPa²/Hz", "Frequency", "Hz", log_y=True, height=130)
         self.psd_plot.setToolTip(PSD_TIP)
         self.psd_item = pg.PlotDataItem()

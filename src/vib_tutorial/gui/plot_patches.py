@@ -1,16 +1,16 @@
 """Changes to how every pyqtgraph plot draws, installed once by make_app (`install`), and `hold_still`.
 
 Grids. pyqtgraph draws a plot's grid as its axes' ticks stretched across the plot, in the
-foreground colour at a low alpha, and above the data (the axes sit at z 0.5, over the ViewBox).
+foreground color at a low alpha, and above the data (the axes sit at z 0.5, over the ViewBox).
 Blending those long translucent lines is what a plot that rescales every frame spent its paint
 on: on the Duffing page's phase plane and strip chart, ~35 ms a frame, against ~5 ms with the
-same lines drawn opaque. So a grid axis draws them in the colour they would have come out over
+same lines drawn opaque. So a grid axis draws them in the color they would have come out over
 the background, and goes behind the ViewBox, so that the lines pass under the curves, not over.
 
 Titles. A LabelItem's minimum width is its text's, so a long plot title (the Virtual modal
 test's FRF says what each line style means) made its plot wider than a 1280 px window's pane
 leaves it, and the layout overflowed its view: the plot's right side and legend were cut off.
-A level, centred label (a title, not a legend's entry) now wraps to the width it's given, centred, and only asks for TITLE_MIN_WIDTH.
+A level, centered label (a title, not a legend's entry) now wraps to the width it's given, centered, and only asks for TITLE_MIN_WIDTH.
 
 Scale. The Projector theme draws every line wider and every marker larger (`Theme.line_scale`,
 `marker_scale`): `mkPen` (pyqtgraph's own, which its items call too) scales the width it makes, and a
@@ -31,7 +31,7 @@ them and every frame drew the curves again, and then copied them too (20 ms a fr
 screen; make_app calls it once the app exists, since making the QApplication sets the limit back to 10 MB.
 
 Units. An axis scales its numbers to an SI prefix by default, and writes it before the units: "m%", "k°", "mdB",
-"krpm", none of them a unit. An axis labelled in one of `NO_PREFIX` (or in dB of anything) keeps its numbers
+"krpm", none of them a unit. An axis labeled in one of `NO_PREFIX` (or in dB of anything) keeps its numbers
 as they are (`_set_label`; #409 U-18).
 
 Wide lines. Qt strokes a polyline wider than 1 px as one outline, and a curve that zigzags (a response with a
@@ -39,7 +39,7 @@ stiff mode in it, a noisy signal) makes that outline slow: the Numerical integra
 ~35 ms a paint, against ~1 ms at 1 px. pyqtgraph draws a solid, opaque, wide pen as separate segments instead,
 which is fast, but only without antialiasing (where segments overlap, a translucent pen's joints show darker);
 the app antialiases, so a solid opaque pen wider than 1 px is drawn in segments here too (`_segmented`): its
-overlaps are the same colour. Only with flat caps, which `mkPen` gives (a polyline's caps are only its two ends):
+overlaps are the same color. Only with flat caps, which `mkPen` gives (a polyline's caps are only its two ends):
 square or round ones overlap at every joint, and the line came out visibly heavier. A dashed pen still strokes one polyline (its dashes run along the whole curve), so
 keep a dense dashed curve at 1 px: the integration page's dashed closed form at 2 px took 220 ms.
 
@@ -96,7 +96,7 @@ def _set_grid(self, grid) -> None:
 
 
 def _wraps(label) -> bool:
-    """A level, centred label: a title. Not a legend's entry (left-justified), which a legend sizes itself to.
+    """A level, centered label: a title. Not a legend's entry (left-justified), which a legend sizes itself to.
 
     Only the label's own state is read: this runs as items are torn down too, where asking for a parent
     that is being deleted crashed."""
@@ -235,7 +235,7 @@ def _set_label(self, text=None, units=None, unitPrefix=None, **args) -> None:
         self.enableAutoSIPrefix(False)  # which works out a prefix all the same, from the range now: drop it
         self.autoSIPrefixScale, self.labelUnitPrefix = 1.0, ""
         self._updateLabel()
-        self.picture = None  # the ticks, labelled again unscaled
+        self.picture = None  # the ticks, labeled again unscaled
         self.update()
         self._prefix_off = True
     elif getattr(self, "_prefix_off", False):  # relabelled in units that take one

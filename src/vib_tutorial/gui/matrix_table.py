@@ -1,9 +1,9 @@
-"""A matrix as the notes show it: a rich-text table with labelled rows and columns, its cells tinted by block
+"""A matrix as the notes show it: a rich-text table with labeled rows and columns, its cells tinted by block
 (#409 S-13: the CMS, coupling and rotor notes drew their own).
 
 A cell's tint is its pair of groups' (`colors.block_tints`, keyed by the sorted pair: interior "i", boundary "b",
 kept modes "q"); an entry is `text.entry` (four figures, 0 where it's negligible beside the matrix's largest),
-greyed when it's 0. `dim_cols` greys the columns from it on (discarded modes); `nowrap` keeps a wide matrix's
+grayed when it's 0. `dim_cols` grays the columns from it on (discarded modes); `nowrap` keeps a wide matrix's
 numbers whole, so it scrolls sideways rather than breaking them (the rotor's). Qt-free: the course's data.
 
 Working on it: `tests/test_view_models.py` checks the entries; the CMS, coupling and rotor tests draw them.
@@ -27,7 +27,7 @@ def matrix_html(
     dim_cols: int | None = None,
     nowrap: bool = False,
 ) -> str:
-    """An HTML table of A with labelled rows and columns, its cells tinted by block (see the module's docstring)."""
+    """An HTML table of A with labeled rows and columns, its cells tinted by block (see the module's docstring)."""
     scale = float(np.abs(A).max()) if A.size else 1.0
     wrap = "white-space:nowrap" if nowrap else ""
     th = f"<th style='{wrap}'>" if nowrap else "<th>"

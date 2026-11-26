@@ -464,7 +464,7 @@ class ModeShapePlot(pg.PlotWidget):
         self.apply_theme()
 
     def apply_theme(self) -> None:
-        """The envelope; the shapes take their colours from the entries (set_entries)."""
+        """The envelope; the shapes take their colors from the entries (set_entries)."""
         self.legend.setBrush(colors.legend_brush())
         for c in self.envelope:
             c.setPen(pg.mkPen(colors.grey, width=1, style=QtCore.Qt.PenStyle.DashLine))
@@ -528,7 +528,7 @@ def rotate(entry: ModeEntry, theta: float) -> np.ndarray:
 class PhasorPlot(pg.PlotWidget):
     """Complex-plane view of one mode shape: one arrow ψᵢ per mass.
 
-    Each arrow rotates at the mode's frequency (anticlockwise for Im λ > 0,
+    Each arrow rotates at the mode's frequency (counterclockwise for Im λ > 0,
     clockwise for its conjugate); its projection on the real axis is that
     mass's displacement. Arrows on one line (0° / 180°) mean a real mode;
     spread-out arrows mean the masses peak at different times.
@@ -560,7 +560,7 @@ class PhasorPlot(pg.PlotWidget):
         self.apply_theme()
 
     def apply_theme(self) -> None:
-        """The unit circle and axes; the arrows are coloured in set_entries."""
+        """The unit circle and axes; the arrows are colored in set_entries."""
         self.circle.setPen(pg.mkPen(colors.faint, width=1, style=QtCore.Qt.PenStyle.DotLine))
         for line in self.axes:
             line.setPen(pg.mkPen(colors.faint, width=1))

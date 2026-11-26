@@ -1,7 +1,7 @@
 """Vibro-acoustics & SEA page: how a vibrating panel makes sound, and how much of it gets through.
 
 Left: the panel (a simply supported rectangle in a baffle, from Beams & plates), its material and loss factor, the
-mode to look at and where a point force drives it. Centre: the mode's shape with the drive point, and the
+mode to look at and where a point force drives it. Center: the mode's shape with the drive point, and the
 wavenumbers: the bending wave's k_b against sound's k = ω/c, crossing at the critical frequency, with the mode's own
 k_x and k_y. Right: the radiation efficiency (the mode's against frequency; every mode's at its resonance with
 their band average and Maidanik's), the point-driven panel (its input and radiated power, ⟨v²⟩ against the
@@ -139,7 +139,7 @@ TRIALS = (
         "Coincidence",
         "A steel panel 600 × 400 mm, 3 mm thick. Its bending waves travel at <m>√ω (D/ρh)<sup>1/4</sup></m>, slower at low "
         "frequency than sound's 343 m/s and faster at high: the two meet at the critical frequency "
-        "<m>f<sub>c</sub> = (c<sup>2</sup>/2π)√(ρh/D)</m> = 3.99 kHz (centre, bottom: <m>k<sub>b</sub></m> crosses <m>k</m>). Above it, a bending "
+        "<m>f<sub>c</sub> = (c<sup>2</sup>/2π)√(ρh/D)</m> = 3.99 kHz (center, bottom: <m>k<sub>b</sub></m> crosses <m>k</m>). Above it, a bending "
         "wave sends sound off at the angle where its trace matches, <m>sin θ = k/k<sub>b</sub></m>; below it, its sound "
         "cancels, all but at the edges and corners.",
     ),
@@ -152,7 +152,7 @@ TRIALS = (
     ),
     AcousticsTrial(
         "Mode (2, 2)",
-        "Mode (2, 2), 266 Hz: four cells, each pushing the air its neighbours pull. At 100 Hz <m>σ<sub>22</sub></m> is "
+        "Mode (2, 2), 266 Hz: four cells, each pushing the air its neighbors pull. At 100 Hz <m>σ<sub>22</sub></m> is "
         "1.4 × 10<sup>−5</sup>, against (1, 1)'s 0.082 at the same frequency: an even index cancels to two more "
         "powers of k, and here both are even. The modes' dots (right, bottom) fall in three bands: odd–odd "
         "highest, even–even lowest.",
@@ -622,7 +622,7 @@ WAVE_TIP = (
     "crossing at the critical frequency. Dotted: the mode's k<sub>x</sub> = mπ/a and k<sub>y</sub> = nπ/b. "
     "Where k is below both the mode is a corner mode, between them an edge mode.</p>"
 )
-SHAPE_TIP = "<p>The mode's shape (colour: up and down) and the drive point (Driven panel tab).</p>"
+SHAPE_TIP = "<p>The mode's shape (color: up and down) and the drive point (Driven panel tab).</p>"
 ONE_TIP = (
     "<p>The mode's radiation efficiency σ<sub>mn</sub> = W/ρcS⟨v²⟩ against frequency, by Wallace's integral, "
     "with its low-frequency limit (odd m and n). The dot is at the mode's own resonance.</p>"
@@ -684,7 +684,7 @@ NOTES_HTML = load_notes("vibroacoustics", figures=acoustics_figures.FIGURES, tri
 
 
 class VibroAcousticsPage(QtWidgets.QWidget):
-    """Controls on the left, the mode and the wavenumbers in the centre, the radiation, the driven panel and the
+    """Controls on the left, the mode and the wavenumbers in the center, the radiation, the driven panel and the
     transmission loss on the right."""
 
     follows_chain = False  # MainWindow: this page has its own model, not the chain
@@ -724,7 +724,7 @@ class VibroAcousticsPage(QtWidgets.QWidget):
         connect_all((self.mode_m, self.mode_n), self._mode_changed)
         connect_all((self.drive_x, self.drive_y), self._drive_changed)
 
-        # --- centre
+        # --- center
         self.shape_plot = plot("y", "m", "x", "m", height=180)
         self.shape_plot.setToolTip(SHAPE_TIP)
         self.shape_plot.setAspectLocked(True)

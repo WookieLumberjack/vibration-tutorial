@@ -4,7 +4,7 @@ A page's motion has its own controls (a `lesson.RunButton`, a Reset, a speed, a 
 put them, so Start sat somewhere different on each page. The `TransportBar` along the foot of the window drives
 whichever is runnable on the page and tab showing: its Start/Pause, Reset and speed press the page's own and its
 clock and labels follow theirs (read back several times a second while it shows: a page changes its buttons in
-ways no signal reports, `RunButton.rest` among them). On a page with nothing to run it says so, greyed out.
+ways no signal reports, `RunButton.rest` among them). On a page with nothing to run it says so, grayed out.
 
 A page says what's runnable with `transport()`, a `Transport` or None (it may depend on the tab showing: Fatigue's
 rainflow count runs only while its tab shows; the Torsional page's Start and Resume run its Start-up tab, and show
@@ -210,7 +210,7 @@ class TransportBar(QtWidgets.QFrame):
         self.updating.hide()
         self.page: QtWidgets.QWidget | None = None
         self.hold = QtWidgets.QPushButton("Hold curves")  # the window connects these (MainWindow.hold_curves)
-        self.hold.setToolTip("<p>Keep the plots' curves in grey, to compare a change against (H).</p>")
+        self.hold.setToolTip("<p>Keep the plots' curves in gray, to compare a change against (H).</p>")
         self.unhold = QtWidgets.QPushButton("Clear held")
         self.unhold.setToolTip("<p>Take the held curves off (Shift+H).</p>")
         self.setFrameShape(QtWidgets.QFrame.Shape.NoFrame)

@@ -192,7 +192,7 @@ def matrices_html(model: CoupledModel, full: ModalResult) -> str:
     parts = [
         "<p><i>Every number below follows the current parameters and choices. Symbols are defined in "
         "the <a href='#notation'>Notation</a> table at the end.</i></p>",
-        f"<p><small>Cell colours: <span style='background:{tints['i', 'i']}'>&nbsp;A&nbsp;</span> "
+        f"<p><small>Cell colors: <span style='background:{tints['i', 'i']}'>&nbsp;A&nbsp;</span> "
         f"<span style='background:{tints['b', 'b']}'>&nbsp;B&nbsp;</span> "
         f"<span style='background:{tints['b', 'i']}'>&nbsp;A–B coupling&nbsp;</span> "
         f"<span style='background:{tints['q', 'q']}'>&nbsp;2-DOF model&nbsp;</span></small></p>",

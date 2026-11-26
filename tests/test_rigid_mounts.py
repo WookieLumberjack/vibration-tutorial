@@ -1,4 +1,4 @@
-"""A rigid body on mounts: K against closed forms, the elastic centre, focalizing, and the trials' numbers."""
+"""A rigid body on mounts: K against closed forms, the elastic center, focalizing, and the trials' numbers."""
 
 import math
 
@@ -142,16 +142,16 @@ def test_trials():
         m = by[name].layout.modes()
         return {m.name(j): round(float(m.frequencies[j]), 2) for j in range(6)}, m
 
-    level, _ = table("Level with the centre of mass: six pure modes")
+    level, _ = table("Level with the center of mass: six pure modes")
     assert sorted(level.values()) == pytest.approx([7.96, 7.96, 8.47, 9.79, 15.92, 16.24], abs=0.006)
-    dropped, _ = table("Mounts below the centre of mass")
+    dropped, _ = table("Mounts below the center of mass")
     assert dropped["y 67 %, roll 33 %"] == pytest.approx(6.90) and dropped["roll 67 %, y 33 %"] == pytest.approx(9.77)
     assert dropped["x 99 %"] == pytest.approx(7.83)
-    assert elastic_centre(by["Mounts below the centre of mass"].layout.mounts())[0][2] == pytest.approx(-0.08)
+    assert elastic_centre(by["Mounts below the center of mass"].layout.mounts())[0][2] == pytest.approx(-0.08)
     assert FOCUS == pytest.approx(16.95)
     focused, _ = table("Tilted to the focus: decoupled again")
     assert focused["roll 100 %"] == pytest.approx(7.56) and focused["y 100 %"] == pytest.approx(8.91, abs=0.015)
-    offset, _ = table("Centre of mass off-centre")
+    offset, _ = table("Center of mass off-center")
     assert offset["z 61 %, pitch 39 %"] == pytest.approx(13.68, abs=0.015)
     assert offset["pitch 61 %, z 39 %"] == pytest.approx(18.89)
     assert offset["y 83 %, yaw 17 %"] == pytest.approx(7.30) and offset["yaw 83 %, y 17 %"] == pytest.approx(10.67)
@@ -200,7 +200,7 @@ def test_the_peak_of_a_force():
 
 def test_isolation_and_resonance():
     """Slow, the floor takes the whole load; near the bounce about 1/η times it; well above, (f_n/f)²-like."""
-    drive = Drive(at=(0.0, 0.0, 0.0), crank=0.0)  # at the centre of mass: it only pushes, sideways and up
+    drive = Drive(at=(0.0, 0.0, 0.0), crank=0.0)  # at the center of mass: it only pushes, sideways and up
     sp = spectrum(LEVEL, 0.1, drive, np.array([30.0, 954.9, 6000.0, 12000.0]))
     ratio = sp.total / sp.applied
     assert ratio[0] == pytest.approx(1.0, rel=0.02)

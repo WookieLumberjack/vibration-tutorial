@@ -69,7 +69,7 @@ def test_one_plane_balances_a_disc_unbalance_at_every_speed():
 
 def test_a_bowed_rotor_balances_at_every_speed_only_with_the_slow_roll_taken_out():
     # Relative to its bent shape, a bowed shaft sees the bow's inertia: an unbalance m δ_b at the
-    # disc. So one weight takes out every force, and the disc's probe is left reading the runout.
+    # disk. So one weight takes out every force, and the disk's probe is left reading the runout.
     s = RotorSystem(bow=10e-6, bow_angle=math.radians(120.0))
     trial = weight(0.5e-3, 0.02, 0.0)
     slow = reading(s, 100.0, DISC)
@@ -90,7 +90,7 @@ def test_a_bowed_rotor_balances_at_every_speed_only_with_the_slow_roll_taken_out
 
 
 def test_theory_slow_roll_taken_too_fast():
-    # The Theory's bowed rotor (20 µm at 90°), read at the disc and balanced at 1200 rpm: judged by the
+    # The Theory's bowed rotor (20 µm at 90°), read at the disk and balanced at 1200 rpm: judged by the
     # motion beyond the runout, a 300 rpm slow roll leaves far more than a 100 rpm one, though the
     # total reading at the critical looks better.
     s = RotorSystem(bow=20e-6, bow_angle=math.radians(90.0))
@@ -111,8 +111,8 @@ def test_theory_slow_roll_taken_too_fast():
 
 
 def test_theory_off_centre_bow_leaves_only_a_skew():
-    # Off centre the bow tilts the disc too: its inertia on that tilt is a skew, (I_d - I_p)θ_b Ω²,
-    # which one weight cannot cancel at every speed. Tiny on the defaults' disc, nothing with I_d = I_p.
+    # Off center the bow tilts the disk too: its inertia on that tilt is a skew, (I_d - I_p)θ_b Ω²,
+    # which one weight cannot cancel at every speed. Tiny on the defaults' disk, nothing with I_d = I_p.
     speeds = np.linspace(500.0, 6000.0, 111)
 
     def left(s: RotorSystem) -> float:
@@ -128,7 +128,7 @@ def test_theory_off_centre_bow_leaves_only_a_skew():
 
 
 def test_theory_asymmetric_shaft_needs_two_trials():
-    # The Theory's Δ = 0.10 rotor, heavy spot at 45°, read at the disc and balanced at 1200 rpm.
+    # The Theory's Δ = 0.10 rotor, heavy spot at 45°, read at the disk and balanced at 1200 rpm.
     # Its readings are V = α₊U + α₋Ū: one trial gets the weight wrong, two at right angles get it exactly.
     s = RotorSystem(asymmetry=0.10, unbalance_angle=math.radians(45.0))
     trial2 = weight(0.5e-3, 0.02, math.pi / 2)
@@ -168,7 +168,7 @@ def test_one_plane_cannot_cancel_a_couple_unbalance_at_every_speed():
     fixed = balance(s, 1200.0, weight(0.5e-3, 0.02, 0.0))
     assert abs(reading(fixed, 1200.0)) < 1e-12
     assert abs(reading(fixed, 3000.0)) > 0.1 * abs(reading(s, 3000.0))
-    # the notes' skewed disc, read at the disc and balanced at 1200 rpm: 72 µm at the critical falls only so far
+    # the notes' skewed disk, read at the disk and balanced at 1200 rpm: 72 µm at the critical falls only so far
     v0, v1 = reading(SKEWED, 1200.0, DISC), reading(SKEWED.with_(weights=(TRIAL,)), 1200.0, DISC)
     one = SKEWED.with_(weights=(correction(v0, influence(v0, v1, TRIAL)),))
     assert round(abs(reading(one, 1752.5, DISC)) * 1e6, 1) == quoted("rotor_notes", "5.7")
@@ -248,7 +248,7 @@ def test_plane_weights_on_the_disc_make_a_force_and_a_couple():
     fixed = skewed.with_(plane_weights=(PlaneWeight(s.a - 0.02, m, True), PlaneWeight(s.a + 0.02, -m, True)))
     assert abs(fixed.couple_unbalance) < 1e-15 and abs(fixed.mass_unbalance) < 1e-15
     assert np.abs(synchronous_response(fixed, [100.0, 183.0, 600.0])).max() < 1e-18
-    # A weight on the shaft at the disc's plane is a weight on the disc.
+    # A weight on the shaft at the disk's plane is a weight on the disk.
     at_disc = s.with_(plane_weights=(PlaneWeight(s.a, w),))
     assert at_disc.mass_unbalance == pytest.approx(w)
     np.testing.assert_allclose(
@@ -259,7 +259,7 @@ def test_plane_weights_on_the_disc_make_a_force_and_a_couple():
 
 
 def test_a_weight_on_the_shaft_is_a_point_force_there():
-    # Rigid bearings and a massless shaft: the disc moves as a simply supported beam's formula says.
+    # Rigid bearings and a massless shaft: the disk moves as a simply supported beam's formula says.
     rigid = Bearing(kx=1e12, ky=1e12)
     s = RotorSystem(bearing_a=rigid, bearing_b=rigid, unbalance=0.0, plane_weights=(PlaneWeight(0.15, 1.0 + 0j),))
     q = np.linalg.solve(s.stiffness(0.0), s.plane_load(s.rotating_load(1.0)))
@@ -369,7 +369,7 @@ def test_below_the_critical_the_correction_lands_opposite_the_reading():
 
 
 def test_the_notes_phase_conventions_example():
-    """*Which way phase is counted*: the heavy spot at 60°, read at the disc at 1200 rpm, a 0.5 g trial at 30°."""
+    """*Which way phase is counted*: the heavy spot at 60°, read at the disk at 1200 rpm, a 0.5 g trial at 30°."""
     s = RotorSystem(unbalance_angle=math.radians(60.0))
     trial = weight(0.5e-3, 0.02, math.radians(30.0))
     assert quoted("rotor_notes", "0.5") == 0.5  # g (the whole degrees below are checked, not tied: only decimals are)

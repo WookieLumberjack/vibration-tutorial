@@ -1,5 +1,5 @@
 """The Rotor builder's sweeps over the speed: the Campbell diagram and its critical speeds, the stability map, and
-the steady response to the discs' unbalance.
+the steady response to the disks' unbalance.
 
 The **Campbell diagram** (`sweep`) works the whirl modes out at `N_SPEEDS` speeds from 0 to the top one, each
 branch the k-th frequency in order. Where a branch's frequency meets the shaft's own, f = Ω/2π (the 1X line),
@@ -13,7 +13,7 @@ The **stability map** is the same sweep's damping: each branch's log decrement �
 speed, and the speed where the least damped mode of all first grows (`Sweep.onset`), the same way on its ζ. API 684 asks
 for δ ≥ 0.1 at the running speed.
 
-The **unbalance response** (`unbalance_response`) is the steady state, exactly, in all the DOFs: each disc's
+The **unbalance response** (`unbalance_response`) is the steady state, exactly, in all the DOFs: each disk's
 unbalance U = m e at its heavy spot's angle ψ pushes with U Ω² turning with the shaft, f_x + i f_y =
 U e^{iψ} Ω² e^{iΩt}, so its complex amplitudes are F_x = U e^{iψ} Ω² and F_y = -i F_x, and
 
@@ -189,7 +189,7 @@ def _critical(at: _Speeds, branch: int, lo: float, hi: float, g_lo: float, g_hi:
 
 # ------------------------------------------------------------------ the unbalance response
 def unbalance_load(rotor: Rotor) -> np.ndarray:
-    """P (n_dof, complex): the discs' unbalance per Ω², F = Ω² P."""
+    """P (n_dof, complex): the disks' unbalance per Ω², F = Ω² P."""
     P = np.zeros(rotor.n_dof, dtype=complex)
     for d in rotor.discs:
         j = 4 * rotor.node_at(d.z)
@@ -223,6 +223,6 @@ def orbit(Q: np.ndarray, node: int | np.ndarray) -> np.ndarray:
 
 
 def lag(Q: np.ndarray, node: int, rotor: Rotor) -> np.ndarray:
-    """How far (°, 0 to 360) node `node`'s x lags behind the first unbalanced disc's heavy spot."""
+    """How far (°, 0 to 360) node `node`'s x lags behind the first unbalanced disk's heavy spot."""
     heavy = next((d.unbalance_angle for d in rotor.discs if d.unbalance), 0.0)
     return np.degrees(heavy - np.angle(Q[..., 4 * node])) % 360.0

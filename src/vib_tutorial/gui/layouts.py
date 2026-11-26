@@ -129,7 +129,7 @@ class FlowLayout(QtWidgets.QLayout):
             x = area.x()
             for item, least, size in line:
                 width = min(least + int(share * (size.width() - least)), max(area.width(), least))
-                if move:  # centred on the line, so a checkbox lines up with a taller combo box
+                if move:  # centered on the line, so a checkbox lines up with a taller combo box
                     item.setGeometry(QtCore.QRect(x, y + (height - size.height()) // 2, width, size.height()))
                 x += width + gap
             y += height + line_gap

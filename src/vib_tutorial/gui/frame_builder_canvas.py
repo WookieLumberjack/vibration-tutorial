@@ -172,7 +172,7 @@ def _spiral(at: np.ndarray, h: float) -> list:
 
 
 def _arrow(at: np.ndarray, dof: int, sign: float, h: float) -> list:
-    """A load's arrow ending at `at`: along x or y, or round it for a moment (anticlockwise if sign > 0)."""
+    """A load's arrow ending at `at`: along x or y, or round it for a moment (counterclockwise if sign > 0)."""
     if dof == 2:
         a = np.linspace(-0.6, 0.9, 16) * math.pi * sign
         r = 1.2 * h

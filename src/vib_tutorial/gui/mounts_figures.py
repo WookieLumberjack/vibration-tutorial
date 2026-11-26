@@ -13,7 +13,7 @@ LENGTH = 40.0  # px, a mount's drawn length
 
 def focus_svg() -> str:
     """The roll plane: a box's section on two mounts t either side of the middle, each leaning β toward it. Their
-    lines of action meet above them, at the roll plane's elastic centre, here tilted so it is the centre of mass,
+    lines of action meet above them, at the roll plane's elastic center, here tilted so it is the center of mass,
     d above the mounts."""
     fg, muted, faint = colors.foreground, colors.muted, colors.faint
     box, mount = colors.mass[0], colors.force
@@ -36,8 +36,8 @@ def focus_svg() -> str:
         fig.math_label(left_foot + 9, base - 34, "β", fg, "start"),
         fig.circle(cx, meet, 6.0, fg),
         fig.circle(cx, meet, 2.5, fg, fill=fg),
-        fig.text(cx + 12, meet + 4, "elastic centre", fg, "start"),
-        fig.text(cx + 12, meet + 20, "= centre of mass", fg, "start"),
+        fig.text(cx + 12, meet + 4, "elastic center", fg, "start"),
+        fig.text(cx + 12, meet + 20, "= center of mass", fg, "start"),
         fig.line(cx + 108, meet, cx + 108, top, muted, 1.0),
         fig.math_label(cx + 113, (meet + top) / 2 + 5, "d = z<sub>e</sub>", fg, "start"),
         fig.line(cx - t, top + 4, cx - t, base - 2, faint, 1.0, "2 3"),

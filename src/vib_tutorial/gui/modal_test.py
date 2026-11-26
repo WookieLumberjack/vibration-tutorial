@@ -1,6 +1,6 @@
 """Virtual modal test page: measure the chain's FRF as in a lab and compare it with the exact one.
 
-Left: the test (excitation, acquisition, noise, processing). Centre: the
+Left: the test (excitation, acquisition, noise, processing). Center: the
 latest recorded block and force spectrum above the estimated FRF and its
 coherence. Right: a check of the settings against the chain's modes, and
 theory. The data are measured a few blocks per frame, so the average can be
@@ -173,7 +173,7 @@ TRIALS = (
         "A short block",
         "<m>N<sub>b</sub></m> = 256 with no window: the hit is still ringing when the block ends, so the peaks leak, low and "
         "wide, and the damping comes out too high. Pick the Force + exponential window: the leakage goes, but "
-        "every mode gains <m>Δζ = 1/τ<sub>w</sub>ω<sub>n</sub></m> (the dashed grey curve), which the extraction takes off "
+        "every mode gains <m>Δζ = 1/τ<sub>w</sub>ω<sub>n</sub></m> (the dashed gray curve), which the extraction takes off "
         "again unless you untick <i>Remove the exponential window's damping</i>.",
         block=256,
         window=Window.RECTANGULAR,
@@ -212,7 +212,7 @@ TRIALS = (
     ModalTestTrial(
         "Friction: the linearity check",
         "0.5 N of friction on every mass, hammer at 100%. Press <i>Hold for comparison</i>, then set the force "
-        "level to 1000%: the peaks grow taller and sharper, towards the exact (frictionless) FRF, and the "
+        "level to 1000%: the peaks grow taller and sharper, toward the exact (frictionless) FRF, and the "
         "coherence drops even with no noise. See <i>Nonlinearity: friction</i>.",
         friction=0.5,
     ),
@@ -482,7 +482,7 @@ def save_playback(label: str) -> None:
 
 
 HOLD_TIP = (
-    "<p>Keep the FRF measured now on the plot, in grey, while you change the force level or the "
+    "<p>Keep the FRF measured now on the plot, in gray, while you change the force level or the "
     "excitation and measure again. It is drawn while the force is at the same mass and the same "
     "quantity is measured.</p>"
     "<p>For a linear chain the two agree, apart from noise. If they differ, the structure is "
@@ -491,7 +491,7 @@ HOLD_TIP = (
 
 
 class ModalTestPage(QtWidgets.QWidget):
-    """Controls on the left, signals and FRF in the centre, setup check and theory on the right."""
+    """Controls on the left, signals and FRF in the center, setup check and theory on the right."""
 
     dof_requested = QtCore.Signal(int)  # the user changed N here; the main window owns the system
     edit_parameters = QtCore.Signal()  # the user wants the Simulation page's parameter panel
@@ -582,7 +582,7 @@ class ModalTestPage(QtWidgets.QWidget):
         left_scroll = ColumnScroll(left)
         left_scroll.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
 
-        # --- centre
+        # --- center
         self.signals = SignalView()
         self.frf_view = FrfView()
         self.output = QtWidgets.QComboBox()

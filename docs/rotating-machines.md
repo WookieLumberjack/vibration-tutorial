@@ -7,9 +7,9 @@ Spinning bodies: tops, drive trains, rotors on their bearings, and diagnosing a 
 The pages in the order the app's tabs take them.
 
 - [Gyroscope](#gyroscope): a spinning top: Euler's equations, steady precession, nutation and the sleeping top
-- [Torsional vibration](#torsional-vibration): a drive train of discs, shafts and gears, and its start-up
+- [Torsional vibration](#torsional-vibration): a drive train of disks, shafts and gears, and its start-up
 - [Jeffcott rotor](#jeffcott-rotor): a spinning shaft: critical speeds, balancing, bearings, stability, rub
-- [Rotor builder](#rotor-builder): build a rotor from shafts, discs, bearings and seals: its whirl modes, criticals and stability
+- [Rotor builder](#rotor-builder): build a rotor from shafts, disks, bearings and seals: its whirl modes, criticals and stability
 - [Machinery diagnostics](#machinery-diagnostics): order tracking under a run-up, gear-mesh sidebands, bearing defects by the envelope, and the cepstrum
 
 ## Gyroscope
@@ -21,7 +21,7 @@ between the turning points (the roots of a cubic, the period an elliptic integra
 and waves the axis traces. Upright, the top sleeps above I₃ω₃ = 2√(I₁mgl). The 3D view steps the whole
 rigid body (a quaternion and L, split into gravity's moment and the free top, each exact), which doesn't
 mind the Euler angles' lock upright, and checks it against the closed forms. A square plate in place of
-the disc moves exactly as a disc of radius s/√3 does: its moment is the same about every line across its
+the disk moves exactly as a disk of radius s/√3 does: its moment is the same about every line across its
 axis, so it is a symmetric top too. A rectangle isn't: with I₁ ≠ I₂ the spin isn't kept and every closed
 form goes. Without gravity Euler–Poinsot's solution in Jacobi's elliptic functions remains, and spun about its
 middle axis the plate flips over and back (the tennis-racket effect); with gravity there's none, and the
@@ -35,7 +35,7 @@ axis frame's or both on the top, so the two frames' difference, the spin about t
 
 Out of the cup, a round tip slides on a table with Coulomb friction. Only Jellett's constant
 J = L·(a e₃ + R ẑ) survives it, so the energy sinks onto the least energy that J allows at each tilt:
-on a slippery table a disc on a round tip rises toward sleeping (until its tip starts to roll, at
+on a slippery table a disk on a round tip rises toward sleeping (until its tip starts to roll, at
 sin θ = μI₃/maR; on a rough one it rolls round a circle instead), and a tippe top turns over onto its
 top if 1 − α < I₁/I₃ < 1 + α, ending with its own spin reversed at the rate J gives.
 
@@ -52,9 +52,9 @@ gears, a fan, an engine's cranks, a generator) on shafts, each disc twisting aga
 meshes keep both gears' inertias and join them by the teeth's stiffness along the line of action, so
 the far shaft turns at z<sub>in</sub>/z<sub>out</sub> times the near one's speed.
 
-- **The train**: pick a disc or a link (or click it in the *Drive train* drawing) to change its
+- **The train**: pick a disk or a link (or click it in the *Drive train* drawing) to change its
   inertia, stiffness or damping; make a shaft a gear mesh (teeth, base radius, mesh stiffness,
-  transmission error) or a mesh a shaft; add and remove discs.
+  transmission error) or a mesh a shaft; add and remove disks.
 - **The interference diagram**: the natural frequencies, flat since nothing depends on the speed,
   against the orders that excite them: the train's own pulsating torque (an engine's firing
   orders, a compressor's, a misaligned coupling's 2×), each mesh's tooth-pass, and 1× and 2× of
@@ -66,7 +66,7 @@ the far shaft turns at z<sub>in</sub>/z<sub>out</sub> times the near one's speed
 - **Mode shapes**: each mode's swing referred to the motor's shaft and which link it twists, and
   the n² reflection checked: the train referred to one shaft (inertias and stiffnesses × s²) has
   the same frequencies, while making the gears rigid keeps the lower modes and loses the mesh's.
-- **The start-up** (centre, *Start-up* tab): a motor on the first disc runs the train up from rest
+- **The start-up** (center, *Start-up* tab): a motor on the first disk runs the train up from rest
   against a load on the last that rises as its speed squared. An induction motor follows its
   speed–torque curve (Kloss's), with the line-frequency torque of switching it on direct on line;
   a synchronous motor starts on its cage, its poles adding a torque at twice the slip frequency
@@ -95,17 +95,17 @@ into step at 1500 rpm.
 
 ## Jeffcott rotor
 
-The **Jeffcott rotor** page spins a disc on a flexible shaft, between two bearings
+The **Jeffcott rotor** page spins a disk on a flexible shaft, between two bearings
 or overhung past one, each bearing on springs and dampers to ground, horizontally and vertically (or in an oil film,
-or floating in an active magnetic bearing). The disc has a mass,
-polar and diametral moments of inertia, and a mass unbalance; the disc can also be skewed on
+or floating in an active magnetic bearing). The disk has a mass,
+polar and diametral moments of inertia, and a mass unbalance; the disk can also be skewed on
 the shaft, the shaft bent (bowed), made stiffer about one axis than the other (asymmetric), and cracked. With the Jeffcott model's massless shaft the model has 8 DOFs: in each
-plane, both journals, the disc, and the shaft's slope at the disc. Give the shaft its mass and
+plane, both journals, the disk, and the shaft's slope at the disk. Give the shaft its mass and
 it becomes a beam finite element model, reduced to those 8 DOFs plus a few of the shaft's own
 modes. It is stepped in state space with the same exact first-order-hold update as the chain, as
 the speed ramps to a target.
 
-- **Presets**: the classic Jeffcott rotor, an off-centre disc, anisotropic supports, an
+- **Presets**: the classic Jeffcott rotor, an off-center disk, anisotropic supports, an
   overhung rotor, a long shaft whose own mass matters, a two-pole rotor with an asymmetric shaft,
   a cracked shaft, oil swirl at λ = ½, and plain journal bearings, both going into oil whip, an
   upright rotor in oil whirl, an overhung rotor on magnetic bearings that its controller's lag
@@ -116,13 +116,13 @@ the speed ramps to a target.
   with consistent or lumped mass, reduced Craig–Bampton style to the stations and the shaft's
   modes with the stations held, up to 1 kHz. The Campbell diagram draws the massless model's
   branches dashed beside the real ones.
-- **3D view**: the whirling shaft, the disc with its heavy spot, and the supports, drawn
+- **3D view**: the whirling shaft, the disk with its heavy spot, and the supports, drawn
   in perspective on an ordinary 2D plot, with no OpenGL. Drag to turn it.
-- **Orbits** at bearing A, the disc, midspan and bearing B, seen from the B end, with
-  once-per-revolution (keyphasor) marks. A line on the disc's orbit points at the heavy spot,
+- **Orbits** at bearing A, the disk, midspan and bearing B, seen from the B end, with
+  once-per-revolution (keyphasor) marks. A line on the disk's orbit points at the heavy spot,
   so the phase lag can be read off it: 0° below the critical speed, 90° at it, 180° above.
 - **Speed**: a target and a ramp rate, for run-ups and coast-downs through the criticals.
-  Tapping the disc rings every mode, forward and backward; it can also tap again and again as
+  Tapping the disk rings every mode, forward and backward; it can also tap again and again as
   it runs, like an impact test at speed.
 - **Run-up and coast-down**: one button ramps to a starting speed, lets the start-up transient
   die away, then runs up to a second speed and back at the ramp rate. Once per revolution a
@@ -131,20 +131,20 @@ the speed ramps to a target.
   to compare ramp rates, and a table gives each one's peak and the speed it came at against
   the steady state.
 - **Bode and polar plots**: the steady-state 1X (or 2X) amplitude and phase against speed at
-  either bearing, the disc or midspan, read by an x or a y probe or as the orbit's major axis,
+  either bearing, the disk or midspan, read by an x or a y probe or as the orbit's major axis,
   with the tracked sweeps over it and a marker at the current speed. On the polar plot the
   steady-state vector traces a near-circle through each critical speed. Phase counts as a lead,
   counter-clockwise, the way the shaft turns, as every angle on the page does (a lag is negative);
   each polar plot draws a key (the keyphasor mark at 0°, the rotation, positive phase, the probes),
   and the notes' *Which way phase is counted* converts to the lag most field instruments show.
-- **Bent shaft and skewed disc**: two more sources that turn with the shaft. The bow, a set
-  bend δ<sub>b</sub> at the disc at an angle from the keyphasor mark, drives the rotor with a force
+- **Bent shaft and skewed disk**: two more sources that turn with the shaft. The bow, a set
+  bend δ<sub>b</sub> at the disk at an angle from the keyphasor mark, drives the rotor with a force
   kδ<sub>b</sub> that does not grow with speed: the probes read it at slow roll, the polar curve
-  starts from it, and well above the critical the disc settles on the bearings' axis. Against
+  starts from it, and well above the critical the disk settles on the bearings' axis. Against
   the unbalance it adds or cancels, depending on its angle. The skew τ is a couple unbalance,
-  a moment (I<sub>d</sub> − I<sub>p</sub>)τΩ² on the disc's tilt.
-- **Gravity**: lay the rotor horizontal and it sags (378 µm at the disc with the defaults)
-  and whirls about the sagged position, its orbits below the bearings' centre. *Static sag*
+  a moment (I<sub>d</sub> − I<sub>p</sub>)τΩ² on the disk's tilt.
+- **Gravity**: lay the rotor horizontal and it sags (378 µm at the disk with the defaults)
+  and whirls about the sagged position, its orbits below the bearings' center. *Static sag*
   switches the drawing between a DC-coupled probe's view and an AC-coupled one. The tracking,
   the spectrum and the phase always use the vibration about the sag, which is exactly the
   response without gravity: gravity alone makes no whirl, even on anisotropic supports (unless
@@ -170,22 +170,22 @@ the speed ramps to a target.
   correction weight (grams at a radius and an angle from the keyphasor mark), puts it on and
   checks it. Each reading is a measurement on the running simulation: ramp, settle, average
   ten revolutions. *Mystery unbalance* hides the heavy spot to find. A polar plot draws the
-  readings with the weights where they sit on the disc (trial, correction, heavy spot), so read
+  readings with the weights where they sit on the disk (trial, correction, heavy spot), so read
   below the critical the correction lands opposite the reading. The response before and after
   against speed (amplitude and phase) shows what one weight can and cannot do: subtract the slow roll and a
   bowed rotor is balanced at every speed, leaving only its runout; balance the raw reading and
-  it is out of balance away from the balancing speed; a skewed disc's couple needs two planes.
+  it is out of balance away from the balancing speed; a skewed disk's couple needs two planes.
   - **Two planes**: two probes, a trial run in each plane in turn, the 2 × 2 influence matrix
-    with its condition number, and the two weights from its inverse. The planes are the disc's
+    with its condition number, and the two weights from its inverse. The planes are the disk's
     two faces (a set distance apart), which cancel its unbalance and couple at every speed, or
     anywhere on the shaft, which cancel the readings only at the balancing speed unless the
     planes are close to the unbalance. *Mystery unbalance* then hides a skew too.
-- **Campbell diagram**: the damped natural frequencies against speed, coloured by whirl
+- **Campbell diagram**: the damped natural frequencies against speed, colored by whirl
   direction, with the 1X line and the critical speeds, and the onset of instability with the
   growing modes crossed. Drag the speed line to set the target. The speed range is adjustable
   (up to 60,000 rpm, and the speed controls and plots follow it), and 2X and ½X lines can be
   drawn too.
-- **Overhung disc**: put the disc past a bearing (a/L above 1 or below 0) and it tilts as much as
+- **Overhung disk**: put the disk past a bearing (a/L above 1 or below 0) and it tilts as much as
   it moves, so the gyroscopic moment acts on the first mode in full and its forward and
   backward criticals separate strongly.
 - **Stability**: cross-coupled bearing stiffness k<sub>xy</sub> = −k<sub>yx</sub>, constant or
@@ -226,19 +226,19 @@ the speed ramps to a target.
   damping is negative (the controller's lag), with the rotor's modes at the speed now drawn across
   them. Choose *Magnetic bearings* under the bearing supports and the rotor floats in it at both ends:
   the controllers' states join the rotor's (the exact update still steps them), the integral holds
-  the journals at the centre under gravity, and a mode that moves out of the damped band, such as a
+  the journals at the center under gravity, and a mode that moves out of the damped band, such as a
   forward tilting mode rising with the speed, grows. The page pauses when a journal lands on its
   backup bearing.
-- **Rub**: a stator ring round the disc (a seal or a casing), with its clearance, its offset from the
-  bearings' line, its mount's stiffness and damping, and the friction of the disc's rim on it. Once the
-  whirl reaches it, the ring pushes the disc back and drags its rim against the slip, stepped by
+- **Rub**: a stator ring round the disk (a seal or a casing), with its clearance, its offset from the
+  bearings' line, its mount's stiffness and damping, and the friction of the disk's rim on it. Once the
+  whirl reaches it, the ring pushes the disk back and drags its rim against the slip, stepped by
   Newton's method beside the exact update. Brushing it on one side gives harmonics and, above twice
   the critical, ½X and ⅓X; held against it all round, enough friction flips the whirl backward, at the
-  disc's frequency on the ring, until the rim rolls round it (dry whirl). The tab gives the gap at
-  rest and the disc's frequency on the ring, and plots the ring's push; the ring is drawn round the
-  disc in the 3D view and on its orbit. The ring is in the time response only. Give it a thermal gain
+  disk's frequency on the ring, until the rim rolls round it (dry whirl). The tab gives the gap at
+  rest and the disk's frequency on the ring, and plots the ring's push; the ring is drawn round the
+  disk in the 3D view and on its orbit. The ring is in the time response only. Give it a thermal gain
   and the rub's heat bows the shaft toward where it rubs, with a thermal lag (the Newkirk effect): a
-  polar plot follows the disc's 1X vector and the bow, which spiral out below the critical speed and
+  polar plot follows the disk's 1X vector and the bow, which spiral out below the critical speed and
   heal above it.
 - **Equations & matrices**: M, C, G, K and the circulatory matrix H with the current numbers,
   the shaft's beam stiffness (condensed, or with mass reduced to the stations and the shaft's modes), the state matrix A(Ω), and the modes at the current
@@ -263,14 +263,14 @@ the speed ramps to a target.
   space. Three figures, drawn in the current theme, show the heavy and high spots, a schematic
   Campbell diagram and a journal's attitude angle.
 
-The default is the classic case: the disc at midspan on identical, isotropic supports, so its
+The default is the classic case: the disk at midspan on identical, isotropic supports, so its
 translation and tilt are uncoupled, and the first critical speed is the textbook
-√(k<sub>eq</sub>/m), 1580 rpm (1584 rpm with the journals' mass). Moving the disc off
-centre or making the bearings differ couples the tilt in, so the gyroscopic effect splits the
+√(k<sub>eq</sub>/m), 1580 rpm (1584 rpm with the journals' mass). Moving the disk off
+center or making the bearings differ couples the tilt in, so the gyroscopic effect splits the
 first mode. Different vertical and horizontal stiffness splits the critical speed in two,
 with backward whirl between them.
 
-![Jeffcott rotor at 1400 rpm, just below its 1584 rpm critical speed: the disc whirls 67 µm from centre and its heavy spot leads the high spot by 20°](images/jeffcott_rotor.png)
+![Jeffcott rotor at 1400 rpm, just below its 1584 rpm critical speed: the disk whirls 67 µm from center and its heavy spot leads the high spot by 20°](images/jeffcott_rotor.png)
 
 A ramp through a critical speed gives the whirl no time to build up to its steady-state peak.
 The faster the ramp, the lower the peak, and the further past the critical speed it comes: after
@@ -278,23 +278,23 @@ it on a run-up, before it on a coast-down. Whether a ramp counts as slow depends
 Ω'/ω<sub>c</sub>² against ζ². Once past the critical, the free vibration left over at the natural
 frequency beats with the 1X response.
 
-![Polar plot of the disc's 1X response with a 10 µm shaft bow set against the 20 g·mm unbalance (at 180°): the steady-state curve starts from the bow, -10 µm at slow roll, shrinks to 1.3 µm at 1116 rpm, where the two cancel, then loops through the 1596 rpm critical (110 µm), with a 500 rpm/s run-up and coast-down over it](images/jeffcott_bow.png)
+![Polar plot of the disk's 1X response with a 10 µm shaft bow set against the 20 g·mm unbalance (at 180°): the steady-state curve starts from the bow, -10 µm at slow roll, shrinks to 1.3 µm at 1116 rpm, where the two cancel, then loops through the 1596 rpm critical (110 µm), with a 500 rpm/s run-up and coast-down over it](images/jeffcott_bow.png)
 
 A bent shaft drives the rotor with a force that does not grow with speed. Turning slowly, the
 probes read the bow itself, so the polar curve starts from the bow, not from the origin. Here
 the bow points opposite the heavy spot: its response falls as the unbalance's grows, and they
 cancel at one speed. That is why the slow-roll vector is subtracted before balancing.
 
-![Balancing tab: a rotor with a 20 µm shaft bow at 90° and the 20 g·mm unbalance, balanced at 1200 rpm with a probe at the disc and the slow roll subtracted. The trial weight gives the influence coefficient 1.33 µm per g·mm, the correction is 1.41 g at 20 mm and 225°, and afterwards the disc reads its 20 µm runout at every speed, where as found it peaked at 293 µm at the critical](images/jeffcott_balancing.png)
+![Balancing tab: a rotor with a 20 µm shaft bow at 90° and the 20 g·mm unbalance, balanced at 1200 rpm with a probe at the disk and the slow roll subtracted. The trial weight gives the influence coefficient 1.33 µm per g·mm, the correction is 1.41 g at 20 mm and 225°, and afterwards the disk reads its 20 µm runout at every speed, where as found it peaked at 293 µm at the critical](images/jeffcott_balancing.png)
 
 Balancing a bowed rotor shows why the slow roll is subtracted first. Relative to its bent shape,
 a bowed shaft sees an unbalance m·δ<sub>b</sub>, so one weight removes every force the bow makes,
 at every speed. What remains is the runout itself, which no weight removes and which makes no
 force.
 
-![Two-plane balancing of a disc at a/L = 0.3 skewed by 0.5°, with the 20 g·mm unbalance, in planes on the disc's faces 40 mm apart, probes at both bearings, balanced at 1200 rpm. The influence matrix's condition number is 27.6, the corrections are 7.27 g at 180° and 6.27 g at 0°, and afterwards both probes read flat at every speed, where as found bearing A peaked at 37 µm at the critical](images/jeffcott_two_plane.png)
+![Two-plane balancing of a disk at a/L = 0.3 skewed by 0.5°, with the 20 g·mm unbalance, in planes on the disk's faces 40 mm apart, probes at both bearings, balanced at 1200 rpm. The influence matrix's condition number is 27.6, the corrections are 7.27 g at 180° and 6.27 g at 0°, and afterwards both probes read flat at every speed, where as found bearing A peaked at 37 µm at the critical](images/jeffcott_two_plane.png)
 
-A skewed disc is a couple unbalance, which one weight can't cancel. Two weights on the disc's
+A skewed disk is a couple unbalance, which one weight can't cancel. Two weights on the disk's
 faces make a force and a couple, the same form as the unbalance and the skew, so they cancel both
 at every speed. Planes on the shaft would cancel the readings only at the balancing speed, and
 planes close together need large weights, which errors in the readings swing.
@@ -307,9 +307,9 @@ itself at the rotor's natural frequency, not at the speed, and no balancing remo
 c<sub>i</sub> = 20 N·s/m the default rotor is stable up to 3910 rpm; with no damping in the
 supports the onset falls to the first critical speed itself.
 
-![Overhung rotor preset at 1250 rpm, just below its forward critical: a 3 kg disc 100 mm past bearing B tilts as it whirls. On the Campbell diagram the first mode fans out from 14.5 Hz at rest, meeting 1X backward at 664 rpm and forward at 1284 rpm, with the ½X line drawn](images/jeffcott_overhung.png)
+![Overhung rotor preset at 1250 rpm, just below its forward critical: a 3 kg disk 100 mm past bearing B tilts as it whirls. On the Campbell diagram the first mode fans out from 14.5 Hz at rest, meeting 1X backward at 664 rpm and forward at 1284 rpm, with the ½X line drawn](images/jeffcott_overhung.png)
 
-An overhung disc tilts as much as it moves, so the gyroscopic moment acts on the first mode
+An overhung disk tilts as much as it moves, so the gyroscopic moment acts on the first mode
 itself: the forward whirl stiffens with speed and the backward one softens. The *Overhung rotor*
 preset's first mode, 870 rpm at rest, becomes critical at 1284 rpm, 48% higher than without the
 gyroscopic moment; only that forward crossing is driven by the unbalance. The *Oil swirl
@@ -320,37 +320,37 @@ bearings themselves: plain journal bearings, far stiffer than the shaft, put the
 1845 rpm, close to the rigid-bearing 1854 rpm, and their film's cross-coupling drives oil whip from
 3576 rpm, a little below twice that, at 30.5 Hz.
 
-![Oil whirl preset at 3500 rpm, stepped with the oil films' whole force: the upright rotor's whirl has settled to a limit cycle at half the speed, 29.2 Hz on the full spectrum, the journals circling close to their 15 µm clearance and the disc whirling 160 µm about the centre](images/jeffcott_oil_whirl.png)
+![Oil whirl preset at 3500 rpm, stepped with the oil films' whole force: the upright rotor's whirl has settled to a limit cycle at half the speed, 29.2 Hz on the full spectrum, the journals circling close to their 15 µm clearance and the disk whirling 160 µm about the center](images/jeffcott_oil_whirl.png)
 
 Stood upright, the same rotor's bearings carry no load, so it whirls at any speed. With the films'
 whole force, below twice its first natural frequency the whirl is oil whirl, at half the speed: the
 film stiffens toward the wall and holds the journals circling close to it, a limit cycle. Past about
 3700 rpm the whirl locks at the natural frequency instead, oil whip, and grows on.
 
-![Magnetic bearings preset at 12,000 rpm, past its 8894 rpm onset: the Magnetic bearing tab plots the bearings' equivalent stiffness and damping against frequency, the damping positive only from 15.7 to 739 Hz (shaded outside), and the disc's forward tilting mode, risen to 778 Hz, sits in the shaded band and grows by e every 0.41 s, the journals held at the centre by the integral](images/jeffcott_magnetic.png)
+![Magnetic bearings preset at 12,000 rpm, past its 8894 rpm onset: the Magnetic bearing tab plots the bearings' equivalent stiffness and damping against frequency, the damping positive only from 15.7 to 739 Hz (shaded outside), and the disk's forward tilting mode, risen to 778 Hz, sits in the shaded band and grows by e every 0.41 s, the journals held at the center by the integral](images/jeffcott_magnetic.png)
 
 On magnetic bearings the stiffness and damping come from a controller, and they change with the
 frequency. In the *Magnetic bearings* preset the amplifier's lag turns the damping negative above
-739 Hz. The disc's forward tilting mode rises with the speed, and at 8894 rpm it crosses into that band
+739 Hz. The disk's forward tilting mode rises with the speed, and at 8894 rpm it crosses into that band
 and goes unstable, exactly where the bearings' damping changes sign.
 
-![Partial rub preset at 4400 rpm: the horizontal rotor sags 378 µm into a 385 µm seal ring and hits its bottom every other turn. The disc's orbit, drawn about the sag with the ring's bottom across it, closes every two revolutions (its keyphasor dots in two places), and the full spectrum's tallest lines are ½X, ±36.7 Hz](images/jeffcott_rub.png)
+![Partial rub preset at 4400 rpm: the horizontal rotor sags 378 µm into a 385 µm seal ring and hits its bottom every other turn. The disk's orbit, drawn about the sag with the ring's bottom across it, closes every two revolutions (its keyphasor dots in two places), and the full spectrum's tallest lines are ½X, ±36.7 Hz](images/jeffcott_rub.png)
 
 A rotor that reaches its seals rubs them. The *Partial rub* preset sags into the bottom of its seal
 ring and, past about 4000 rpm, hits it every other turn: the orbit closes every two revolutions and
 the spectrum shows ½X, the sub-harmonic that flags a rub. The *Full rub* preset's tighter ring holds
-the disc all round, and its friction, pulling the rim backward, flips the whirl at 1545 rpm into
-backward whirl at 227 Hz, the disc's frequency on the ring, rolling round it on an orbit of 7.3 mm.
+the disk all round, and its friction, pulling the rim backward, flips the whirl at 1545 rpm into
+backward whirl at 227 Hz, the disk's frequency on the ring, rolling round it on an orbit of 7.3 mm.
 
-![Newkirk effect preset at 1300 rpm, below the critical: a light rub on a seal set 10 µm low heats the shaft at its high spot and bows it that way. On the Rub tab's polar plot the disc's 1X vector and the thermal bow spiral out together, the 1X from 9.6 µm to 149 µm in 15 s, its lag growing by 26°](images/jeffcott_newkirk.png)
+![Newkirk effect preset at 1300 rpm, below the critical: a light rub on a seal set 10 µm low heats the shaft at its high spot and bows it that way. On the Rub tab's polar plot the disk's 1X vector and the thermal bow spiral out together, the 1X from 9.6 µm to 149 µm in 15 s, its lag growing by 26°](images/jeffcott_newkirk.png)
 
 The rub's heat bows the shaft toward where it rubs. Below the critical speed that pushes the high
 spot further into the rub, and the *Newkirk effect* preset's 1X vector spirals out, turning against
 the spin; above the critical the bow pulls the high spot away, and the same rub heals.
 
-![Bode plot of the disc's 1X response, run up and coasted down between 800 and 2400 rpm at 500 and 5000 rpm/s over the steady-state curve: the steady peak is 217 µm at 1590 rpm; the 500 rpm/s run-up reaches 95% of it at 1672 rpm, the 5000 rpm/s run-up 62% at 1957 rpm, and the coast-downs peak lower and below the critical speed](images/jeffcott_run_up.png)
+![Bode plot of the disk's 1X response, run up and coasted down between 800 and 2400 rpm at 500 and 5000 rpm/s over the steady-state curve: the steady peak is 217 µm at 1590 rpm; the 500 rpm/s run-up reaches 95% of it at 1672 rpm, the 5000 rpm/s run-up 62% at 1957 rpm, and the coast-downs peak lower and below the critical speed](images/jeffcott_run_up.png)
 
-![Cascade of the overhung rotor's disc orbit, run up from rest to 2500 rpm at 200 rpm/s with the disc tapped every 0.5 s: 49 full spectra on a log scale. The taps' peaks follow the first mode's backward whirl down from −14.5 to −5.6 Hz and its forward whirl up to 25.5 Hz, and the 1X ridge peaks at 209 µm at 1350 rpm, just past the forward critical](images/jeffcott_waterfall.png)
+![Cascade of the overhung rotor's disk orbit, run up from rest to 2500 rpm at 200 rpm/s with the disk tapped every 0.5 s: 49 full spectra on a log scale. The taps' peaks follow the first mode's backward whirl down from −14.5 to −5.6 Hz and its forward whirl up to 25.5 Hz, and the 1X ridge peaks at 209 µm at 1350 rpm, just past the forward critical](images/jeffcott_waterfall.png)
 
 A cascade plot stacks the spectra taken through a run-up at their speeds. The unbalance makes a
 ridge along 1X; a tap rings the free whirl frequencies, which move only as the gyroscopic effect
@@ -359,25 +359,25 @@ backward whirl falls and the forward one rises, and the 1X ridge grows where it 
 forward branch. On a full spectrum the backward branch lies on the other side of zero, so 1X
 never meets it, which is why the backward crossing is not a critical speed.
 
-![Long shaft preset at 6700 rpm, just past its second critical speed: a 2 kg disc on a 1 m steel shaft of 2.47 kg bends in its second mode. On the Campbell diagram the critical speeds are 1589 and 6582 rpm, and the dashed branches of the same rotor with a massless shaft put the first at 2146 rpm and have no second](images/jeffcott_shaft_mass.png)
+![Long shaft preset at 6700 rpm, just past its second critical speed: a 2 kg disk on a 1 m steel shaft of 2.47 kg bends in its second mode. On the Campbell diagram the critical speeds are 1589 and 6582 rpm, and the dashed branches of the same rotor with a massless shaft put the first at 2146 rpm and have no second](images/jeffcott_shaft_mass.png)
 
-Jeffcott's shaft has no mass, which is fine while it is light beside the disc: the default
-rotor's steel shaft (0.31 kg under a 1 kg disc) only takes the critical speed from 1584 to 1458
-rpm, about what adding 17/35 of its mass to the disc predicts. But a shaft also has bending modes of its own. In the
-*Long shaft* preset it weighs more than the disc, and the massless model puts the first critical
+Jeffcott's shaft has no mass, which is fine while it is light beside the disk: the default
+rotor's steel shaft (0.31 kg under a 1 kg disk) only takes the critical speed from 1584 to 1458
+rpm, about what adding 17/35 of its mass to the disk predicts. But a shaft also has bending modes of its own. In the
+*Long shaft* preset it weighs more than the disk, and the massless model puts the first critical
 35% too high (2146 rpm, not 1589) and misses the second, at 6582 rpm, altogether. With consistent
 mass the second critical comes down from above as elements are added (7393, 6591 and 6582 rpm
 with 2, 4 and 8); lumped mass has no such bound (8187, 6733 and 6620).
 
-![Two-pole rotor preset (a horizontal shaft 15% stiffer about one axis and 15% softer across it) run up and coasted down between 500 and 1200 rpm at 200 rpm/s, with the Bode plot tracking the disc orbit's 2X: the steady-state 2X peak is 447 µm at 785 rpm, half the critical speeds of 1491 and 1665 rpm, and the sweeps reach 93% and 94% of it](images/jeffcott_asymmetric.png)
+![Two-pole rotor preset (a horizontal shaft 15% stiffer about one axis and 15% softer across it) run up and coasted down between 500 and 1200 rpm at 200 rpm/s, with the Bode plot tracking the disk orbit's 2X: the steady-state 2X peak is 447 µm at 785 rpm, half the critical speeds of 1491 and 1665 rpm, and the sweeps reach 93% and 94% of it](images/jeffcott_asymmetric.png)
 
 A two-pole generator's rotor is stiffer bending one way than the other, so its stiffness turns
 with it. Laid horizontal, its own weight acts on a stiffness that changes twice per revolution
 and drives a 2X whirl, largest where 2Ω meets the natural frequency: the *gravity critical*, at
-half the critical speed. The *Two-pole rotor* preset's disc whirls 447 µm at 2X at 785 rpm,
+half the critical speed. The *Two-pole rotor* preset's disk whirls 447 µm at 2X at 785 rpm,
 more than its mean sag. Balancing does nothing to it.
 
-![Stability tab's asymmetry chart for the same rotor at 785 rpm: the unstable tongue (shaded) between the critical speeds of round shafts as stiff as the soft and the stiff axis (dashed), its tip lifted to Δ = 0.12 by the damping; at Δ = 0.15 the rotor is unstable from 1527 to 1631 rpm. Below, the full spectrum of the disc orbit has its peak at +2X, on the free whirl frequency](images/jeffcott_asymmetry_chart.png)
+![Stability tab's asymmetry chart for the same rotor at 785 rpm: the unstable tongue (shaded) between the critical speeds of round shafts as stiff as the soft and the stiff axis (dashed), its tip lifted to Δ = 0.12 by the damping; at Δ = 0.15 the rotor is unstable from 1527 to 1631 rpm. Below, the full spectrum of the disk orbit has its peak at +2X, on the free whirl frequency](images/jeffcott_asymmetry_chart.png)
 
 Between its two critical speeds, one per axis, the asymmetric shaft is unstable: turning with the
 shaft, the centrifugal force beats the soft axis's stiffness but not the stiff one's, and a whirl
@@ -385,19 +385,19 @@ grows locked to 1X. Undamped, the band runs exactly between the two critical spe
 checks); damping narrows it, and below Δ = 0.123 on the default supports there is none. Above
 it the rotor is stable again, unlike the instabilities from cross-coupling and internal damping.
 
-![Cracked shaft preset (a crack 40% through the shaft at the disc, laid horizontal) run up and coasted down between 400 and 1000 rpm at 100 rpm/s, with the Bode plot tracking the disc orbit's 3X: the steady-state 3X peak is 18.6 µm at 522 rpm, a third of the critical speeds of 1562 and 1574 rpm; the run-up's peak comes at 547 rpm and the coast-down's at 499](images/jeffcott_cracked.png)
+![Cracked shaft preset (a crack 40% through the shaft at the disk, laid horizontal) run up and coasted down between 400 and 1000 rpm at 100 rpm/s, with the Bode plot tracking the disk orbit's 3X: the steady-state 3X peak is 18.6 µm at 522 rpm, a third of the critical speeds of 1562 and 1574 rpm; the run-up's peak comes at 547 rpm and the coast-down's at 499](images/jeffcott_cracked.png)
 
 A crack in a horizontal shaft breathes: the weight opens it as its mouth turns down and shuts it
 half a turn later. Its stiffness then changes once a turn, with 2X and 3X in it, so the weight
 drives a 2X whirl near half the critical speed, as the asymmetric shaft's does, and a 3X near a
-third of it, which the asymmetric shaft has none of. The *Cracked shaft* preset's disc whirls
+third of it, which the asymmetric shaft has none of. The *Cracked shaft* preset's disk whirls
 37.6 µm at 2X at 783 rpm and 18.6 µm at 3X at 522 rpm, and its 1X at the critical is 164 µm
 against 54 µm uncracked. Held open, the crack is an asymmetric shaft: no 3X, and twice the 2X.
 
 ## Rotor builder
 
 Build a rotor the way the Frame builder builds a frame, from parts: a shaft of sections (each a solid or
-hollow tube of steel, aluminium or titanium, cut into beam elements), discs from a library (by material and
+hollow tube of steel, aluminum or titanium, cut into beam elements), disks from a library (by material and
 size) or by their mass and inertias, bearings (springs and dampers, cross-coupled or not and stiffer one way
 than the other; a plain journal bearing's oil film; or an active magnetic bearing under PID control) and
 seals (a direct stiffness and damping, and the cross-coupling λΩc of their swirling fluid). Click the side
@@ -409,13 +409,13 @@ the *Assembly* tab shows them at the speed with the picked part's share tinted, 
 modes at the speed come from the state space, the magnets' controllers included: each one's frequency,
 damping ratio and log decrement, and whether it whirls forward or backward, drawn in 3D on the *Whirl* tab
 with every node's orbit. The trials compare it with Euler's pinned and free beams and with the Jeffcott
-rotor page's model, split a disc's modes by its spin, and part them on anisotropic bearings.
+rotor page's model, split a disk's modes by its spin, and part them on anisotropic bearings.
 
-![Rotor builder page: a stepped compressor rotor, its middle section bored out, with two aluminium impellers between the bearings and a coupling hub overhung, at 6000 rpm; its second pair splits to 199.3 Hz backward and 207.4 Hz forward, and the Whirl tab draws the forward one in 3D with every node's orbit](images/rotor_builder.png)
+![Rotor builder page: a stepped compressor rotor, its middle section bored out, with two aluminum impellers between the bearings and a coupling hub overhung, at 6000 rpm; its second pair splits to 199.3 Hz backward and 207.4 Hz forward, and the Whirl tab draws the forward one in 3D with every node's orbit](images/rotor_builder.png)
 
 Then sweep the speed. The *Campbell* tab plots every branch against it, forward and backward, and marks the
 critical speeds where one meets 1X, each with its amplification factor 1/2ζ (those under 2.5 hollow:
-critically damped) and the running speed's separation margin. Give the discs an unbalance (a library disc
+critically damped) and the running speed's separation margin. Give the disks an unbalance (a library disk
 has 10 µm of its mass) and the *Unbalance* tab plots any node's steady orbit and its lag behind the heavy spot
 through the criticals, exactly in the full model: the overhung fan's peaks at 1003 µm at its forward critical
 and barely shows its backward ones. The rotor can whirl in that response instead of a mode. The *Stability*

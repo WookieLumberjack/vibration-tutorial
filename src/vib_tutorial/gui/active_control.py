@@ -1,7 +1,7 @@
 """Active control page: velocity feedback on the Simulation page's chain, collocated or not, against a TMD.
 
 Left: the sensor and actuator masses, the gain and the actuator's lag, the disturbance and response masses, and a
-tuned mass damper to compare. Centre: the receptance without control, with it, and with the TMD, and each mode's
+tuned mass damper to compare. Center: the receptance without control, with it, and with the TMD, and each mode's
 damping. Right: the root locus as the gain rises (drag a pole along it to set the gain: `DragDot`s), each mode's damping against the gain, skyhook isolation, and the
 Theory (its figures: gui/active_control_figures.py).
 """
@@ -487,7 +487,7 @@ NOTES_HTML = load_notes("active_control", figures=active_control_figures.FIGURES
 
 
 class ActiveControlPage(QtWidgets.QWidget):
-    """Controls on the left, the receptances in the centre, the locus and damping on the right."""
+    """Controls on the left, the receptances in the center, the locus and damping on the right."""
 
     dof_requested = QtCore.Signal(int)
     system_requested = QtCore.Signal(object)
@@ -535,7 +535,7 @@ class ActiveControlPage(QtWidgets.QWidget):
             (self.sensor, self.actuator, self.gain, self.lag, self.inp, self.out, self.tmd, self.ratio), self.redraw
         )
 
-        # --- centre
+        # --- center
         self.frf_plot = plot("|Receptance|", "m/N", "Frequency", "Hz", log_x=True, log_y=True, height=200)
         self.frf_plot.setToolTip(FRF_TIP)
         add_legend(self.frf_plot.getPlotItem(), offset=(-10, 10))

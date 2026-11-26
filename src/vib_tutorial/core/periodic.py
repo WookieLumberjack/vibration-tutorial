@@ -64,7 +64,7 @@ class Forcing:
         odd = (n % 2) == 1
         if self.wave is Wave.SQUARE:  # ±F, rising through 0 at t = 0: Σ (4F/πk) sin kω₀t over odd k
             C[1:] = np.where(odd, -1j * 4 * F / (math.pi * n), 0.0)
-        elif self.wave is Wave.SAWTOOTH:  # rising from −F to F over the period, centred on t = 0
+        elif self.wave is Wave.SAWTOOTH:  # rising from −F to F over the period, centered on t = 0
             C[1:] = -1j * 2 * F * (-1.0) ** (n + 1) / (math.pi * n)
         elif self.wave is Wave.TRIANGLE:  # ±F, rising through 0 at t = 0
             sign = np.where((np.floor((n - 1) / 2) % 2) == 0, 1.0, -1.0)

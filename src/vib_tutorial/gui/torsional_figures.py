@@ -1,5 +1,5 @@
 """The Torsional vibration page's Theory figures (see `figures`): the motor-and-fan preset's one mode, its twist
-along the shaft with the node near the heavier disc; a gear mesh, its spring along the line of action between the
+along the shaft with the node near the heavier disk; a gear mesh, its spring along the line of action between the
 base circles; and the fan's induction motor's speed–torque curve (Kloss's) against the load, from the page's own
 functions."""
 

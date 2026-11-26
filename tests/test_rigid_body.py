@@ -39,7 +39,7 @@ def _points(body: Body, n: int = 40) -> tuple[np.ndarray, np.ndarray]:
 )
 def test_the_inertia_tensor_is_the_sum_over_the_mass(body):
     """The formulas (the shape's own, parallel axes, the point mass's) against a sum over a grid of point masses:
-    Σm(|r|²1 − r rᵀ) about the centre of mass, products of inertia and all."""
+    Σm(|r|²1 − r rᵀ) about the center of mass, products of inertia and all."""
     P, m = _points(body)
     G = (m[:, None] * P).sum(axis=0) / m.sum()
     assert np.allclose(body.centre(), G, atol=1e-4)

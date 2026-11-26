@@ -14,7 +14,7 @@ their speeds and harmonics (unbalance at 1X, misalignment at 2X). The gears leav
 (the number of teeth times the shaft's speed), and the rolling bearings their defect frequencies. Condition
 monitoring reads the spectrum against that list. A fault changes a line, adds new ones, or adds a pattern:
 sidebands, impacts, families of harmonics. This page synthesizes a gearbox's casing acceleration
-<m>x(t)</m> and looks at it four ways. The sections after them cover what a monitoring programme does with
+<m>x(t)</m> and looks at it four ways. The sections after them cover what a monitoring program does with
 the readings: averaging, the common shaft faults, severity limits and trends.</p>
 <p>The machine: a shaft turning at <m>f<sub>r</sub></m> = 29.95 Hz (1797 rpm), a pinion of <m>z</m> = 27
 teeth, a 6205 ball bearing, and an accelerometer on the casing with a resonance at 3 kHz. The record is 4 s
@@ -66,7 +66,7 @@ diameter <m>d</m> on a pitch circle of diameter <m>D</m>, touching the races alo
 </table>
 <p>Where the strikes come follows from rolling without slip. Write <m>r<sub>b</sub> = (d/D)cos α</m>. Then
 the ball's contact with the inner race is at a radius <m>(D/2)(1 − r<sub>b</sub>)</m>, moving at
-<m>2πf<sub>r</sub></m> times that, and its contact with the still outer race doesn't move. A ball's centre
+<m>2πf<sub>r</sub></m> times that, and its contact with the still outer race doesn't move. A ball's center
 moves at the average of its two contact points, so the cage turns at the <b>fundamental train
 frequency</b>:</p>
 <eq>\mathrm{FTF} = \frac{f_r}{2}(1 - r_b)</eq>
@@ -132,7 +132,7 @@ the mode at 40 Hz (2400 rpm), and the 2X at half that speed.</p>
 <h3><a name="severity"></a>Severity and trends</h3>
 <p>How much vibration is too much is set by standards. <b>ISO 20816</b> <cite>iso-20816-3</cite> judges
 machines by the RMS velocity on their bearing housings, over 10 to 1000 Hz. Velocity weights low and high
-frequencies alike in damage, where displacement favours the low and acceleration the high. Readings fall into
+frequencies alike in damage, where displacement favors the low and acceleration the high. Readings fall into
 four zones: A for new machines, B acceptable for long running, C for limited running, and D, damaging. The
 zones' boundaries depend on the machine's size and on its support. For a 15 to 300 kW machine on a rigid
 support they are 1.4, 2.8 and 4.5 mm/s.</p>
@@ -140,7 +140,7 @@ support they are 1.4, 2.8 and 4.5 mm/s.</p>
 RMS. Its 2X adds 0.188 mm/s, the three mesh harmonics 0.139, 0.028 and 0.007 mm/s, and the noise
 0.099 mm/s over 10 to 1000 Hz. Together, as the root of the sum of squares: 1.16 mm/s RMS, zone A. The mesh,
 the largest line in acceleration, hardly counts in velocity.</p>
-<p>A monitoring programme <b>trends</b> what it measures: the overall level, and the bands that mean
+<p>A monitoring program <b>trends</b> what it measures: the overall level, and the bands that mean
 something (1X, 2X, the mesh, the envelope at BPFO). A level in zone B is not the whole story: a steady
 machine whose reading jumps has changed. The standard counts a change of a quarter of the B/C boundary as
 significant, up or down, which is 0.7 mm/s for the machine above. Alarms are set from the machine's own

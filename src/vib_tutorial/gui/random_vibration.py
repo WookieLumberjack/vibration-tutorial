@@ -2,7 +2,7 @@
 
 Left: the input (a force on one mass or every mass, or the base's acceleration, flat over a
 band), the response looked at (a mass's displacement or acceleration, or a spring's force),
-the time record (its length, Welch's block) and things to try. Centre: the input's PSD, the
+the time record (its length, Welch's block) and things to try. Center: the input's PSD, the
 response's PSD (exact H G Hᴴ and the record's Welch estimate) and its cumulative RMS, with
 Miles' estimate. Right: Miles' equation mode by mode, the record itself, its statistics against
 Rice's and the largest peak's (Davenport's, Vanmarcke's), and the notes.
@@ -112,7 +112,7 @@ AMPLITUDE_TIP = (
 PEAKS_TIP = (
     "<p>The heights of the record's peaks (its local maxima), over σ, against Rice's distribution for the "
     "response's irregularity α = ν₀/ν<sub>p</sub>: Rayleigh for a narrow band (α = 1: one peak a cycle, all "
-    "above zero), towards Gaussian for a broad one (many small wiggles, some below zero).</p>"
+    "above zero), toward Gaussian for a broad one (many small wiggles, some below zero).</p>"
 )
 LARGEST_TIP = (
     "<p>How long a stretch to ask the largest peak of. The record is cut into stretches this long, and their "
@@ -167,7 +167,7 @@ TRIALS = (
     _trial(
         "Base shake",
         "The base shaken flat at 0.01 g²/Hz over the chain's modes, the last mass's acceleration: each mode a "
-        "peak, and Miles' equation, mode by mode, within a few per cent of the exact RMS. The record's RMS "
+        "peak, and Miles' equation, mode by mode, within a few percent of the exact RMS. The record's RMS "
         "agrees to its scatter.",
     ),
     _trial(
@@ -180,7 +180,7 @@ TRIALS = (
             "A random force on the last mass, its own acceleration measured. Does Miles' equation, mode by mode, get "
             "its RMS right?",
             (
-                "Yes, within a few per cent",
+                "Yes, within a few percent",
                 "No: it misses what the force does above the modes",
                 "It overestimates, counting the peaks twice",
             ),
@@ -230,7 +230,7 @@ TRIALS = (
             why=(
                 "Lines coarser than the peak can't resolve it: the window smears it, low and wide.",
                 "Smearing lowers and widens a peak; it doesn't raise it. And it keeps the area, so the RMS holds.",
-                "Smearing spreads the peak's area over its neighbours but keeps it: the RMS, the area's root, holds.",
+                "Smearing spreads the peak's area over its neighbors but keeps it: the RMS, the area's root, holds.",
                 '',
             ),
         ),
@@ -332,8 +332,8 @@ def _crossings(rng: np.random.Generator) -> Question:
     nu0, k = pick(rng, (5, 10, 20, 50)), pick(rng, (2, 3, 4))
     rate = 60 * nu0 * math.exp(-0.5 * k * k)
     return Question(
-        f"A Gaussian response crosses zero upwards {sig(nu0, 6)} times a second. How many times a minute, on average, does it "
-        f"cross {sig(k, 6)}σ upwards?",
+        f"A Gaussian response crosses zero upward {sig(nu0, 6)} times a second. How many times a minute, on average, does it "
+        f"cross {sig(k, 6)}σ upward?",
         rate,
         f"Rice: ν<sub>a</sub> = ν₀ e<sup>−a²/2σ²</sup> = {sig(nu0, 6)} × e<sup>−{sig(k * k / 2, 6)}</sup> = "
         f"{number(rate / 60)} a second, {number(rate)} a minute.",
@@ -548,7 +548,7 @@ def four(value: float, unit: str) -> str:
 
 
 class RandomVibrationPage(QtWidgets.QWidget):
-    """Controls on the left, the spectra and the cumulative RMS in the centre, Miles, the record and notes on the right."""
+    """Controls on the left, the spectra and the cumulative RMS in the center, Miles, the record and notes on the right."""
 
     dof_requested = QtCore.Signal(int)  # the user changed N here; the main window owns the system
     system_requested = QtCore.Signal(object)  # a practice problem's chain, for the Simulation page
@@ -625,7 +625,7 @@ class RandomVibrationPage(QtWidgets.QWidget):
         lv.addStretch(1)
         left_scroll = ColumnScroll(left)
 
-        # --- centre: the input's PSD, the response's, the cumulative RMS
+        # --- center: the input's PSD, the response's, the cumulative RMS
         self.input_plot = _plot("Input PSD", None, "Frequency", "Hz")
         self.input_plot.setLogMode(x=True, y=True)
         self.input_plot.setToolTip(INPUT_TIP)

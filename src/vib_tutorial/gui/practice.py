@@ -10,7 +10,7 @@ prediction it's offered only once answered, and checking a prediction runs it on
 A spec is answered on the page itself: tune its controls, and *Check* reads them (the page's `practice_state`)
 and lists each requirement, met or not; once the solution shows, *Show on the page* loads a design that meets it.
 
-The problems are each page module's `PROBLEMS` (core.practice.Problem), so a page needn't be built to practise;
+The problems are each page module's `PROBLEMS` (core.practice.Problem), so a page needn't be built to practice;
 `pages()` finds the pages that have them. The problems solved are kept in the settings.
 """
 
@@ -466,7 +466,7 @@ class PracticeWindow(QtWidgets.QWidget):
 
     # --------------------------------------------------------------- window
     def apply_theme(self) -> None:
-        self._render()  # the verdict's colour, the figure's
+        self._render()  # the verdict's color, the figure's
 
     def save_geometry(self) -> None:
         settings().setValue("practice_window/geometry", self.saveGeometry())

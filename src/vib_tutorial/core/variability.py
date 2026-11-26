@@ -7,8 +7,8 @@ The *Variability & localization* page. Two models:
   and receptance, for bands on the FRF. `sensitivity_sigma` is the first-order estimate of each frequency's spread:
   with φ mass-normalized, spring i's share of the strain energy s_i = k_i (φ_i − φ_{i−1})²/ω² and mass i's of the
   kinetic energy t_i = m_i φ_i², so σ_f/f = ½√(V_k² Σs_i² + V_m² Σt_i²), V the coefficients of variation.
-- A `Ring` of identical blades (a bladed disc): each blade a mass on its own spring k to the disc (held still),
-  neighbours joined by weak springs k_c round the ring. Tuned, its modes are travelling waves with n nodal diameters
+- A `Ring` of identical blades (a bladed disk): each blade a mass on its own spring k to the disk (held still),
+  neighbors joined by weak springs k_c round the ring. Tuned, its modes are traveling waves with n nodal diameters
   in a narrow band; mistuned (each blade's k scattered by a CoV), a weak coupling lets them localize on a few blades
   (`participation`), and an engine-order force (the same on every blade, its phase stepping 2πE/N) can drive one
   blade far harder than the tuned ring would (`amplification`; Whitehead's bound (1 + √N)/2).
@@ -117,7 +117,7 @@ def sensitivity_sigma(system: ChainSystem, scatter: Scatter) -> np.ndarray:
 class Ring:
     blades: int = 12
     mass: float = 1.0  # kg
-    stiffness: float = 1e4  # N/m, each blade to the disc
+    stiffness: float = 1e4  # N/m, each blade to the disk
     coupling: float = 0.05  # k_c / k
     zeta: float = 0.003  # every mode's (a mass-proportional damper)
     mistuning: float = 0.0  # CoV of the blades' k
@@ -143,7 +143,7 @@ class Ring:
         for j in range(n):
             K[j, (j + 1) % n] -= kc
             K[(j + 1) % n, j] -= kc
-        if n == 2:  # the two neighbours are the same blade: one spring, not two
+        if n == 2:  # the two neighbors are the same blade: one spring, not two
             K = np.diag(k * (1 + d) + kc) - kc * (np.ones((2, 2)) - np.eye(2))
         M = self.mass * np.eye(n)
         C = 2 * self.zeta * self.mass * TWO_PI * self.blade_hz * np.eye(n)

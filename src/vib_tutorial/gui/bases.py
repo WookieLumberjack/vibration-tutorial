@@ -118,7 +118,7 @@ class SquarePlot(pg.PlotWidget):
 
 
 class BasesPage(QtWidgets.QWidget):
-    """The masses' controls on the left, the masses, the plane and the coordinates in the centre, the tabs right."""
+    """The masses' controls on the left, the masses, the plane and the coordinates in the center, the tabs right."""
 
     follows_chain = False  # MainWindow: this page has its own model, not the chain
 
@@ -172,7 +172,7 @@ class BasesPage(QtWidgets.QWidget):
         lv.addWidget(self.trials)
         lv.addStretch(1)
 
-        # --- centre: the masses, the plane and its matrices, the run, the coordinates
+        # --- center: the masses, the plane and its matrices, the run, the coordinates
         self.chain = ChainView()
         self.chain.setMinimumHeight(90)
         self.chain.setMaximumHeight(140)

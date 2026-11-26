@@ -33,8 +33,8 @@ elements. Its waves say which of the chain's modes to trust.
   mixed for a string or bar; N<sup>−2</sup> lumped and N<sup>−4</sup> consistent for a beam.
 - **Mode shape and frequencies**: the chosen mode, exact and on each mesh (the nodes and the
   elements' own interpolation between them), and a table of every mode's frequency and error.
-- **Waves** (centre, *Waves* tab): a pulse runs along the continuum and the mesh side by side,
-  travelling right or released at rest. The continuum's is exact: a string's or bar's two
+- **Waves** (center, *Waves* tab): a pulse runs along the continuum and the mesh side by side,
+  traveling right or released at rest. The continuum's is exact: a string's or bar's two
   d'Alembert waves carried along, scattered at the ends in closed form, or a beam's exact modes
   summed. The mesh is stepped by its exact matrix exponential. On it the pulse sheds ripples
   (behind it with lumped mass, ahead with consistent), since its short waves travel at the wrong

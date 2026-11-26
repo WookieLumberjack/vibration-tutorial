@@ -2,11 +2,11 @@
 the mass, and the modal combination rules.
 
 The *Seismic response spectrum* page. The chain is a building: m1 the first floor on the ground through k1, each
-spring a storey's shear stiffness. Every mode is given the damping ratio ζ the spectrum is drawn for (a code's
+spring a story's shear stiffness. Every mode is given the damping ratio ζ the spectrum is drawn for (a code's
 practice; the chain's own dampers are set aside). `design_sa` is an elastic design spectrum in the shape the
 European code uses (a rise to a plateau of 2.5 η a_g S, then 1/T and 1/T² falls, its corners set by the ground
 type). `modal` gives each mode's period, participation Γ = φᵀM1/φᵀMφ, effective mass Γ²φᵀMφ (they add up to the
-total mass) and its peak floor displacements, storey drifts and shears from the spectrum. `combine` adds the
+total mass) and its peak floor displacements, story drifts and shears from the spectrum. `combine` adds the
 modes' peaks by ABS, SRSS, NRL or CQC (Der Kiureghian's correlation, which matters when modes are close).
 `accelerogram` synthesizes a ground motion whose 5 % spectrum matches the design one, and `time_history` steps the
 building on it, mode by mode, exactly, as the check.
@@ -52,7 +52,7 @@ RECORDS = 7  # averaged, as the codes ask for at least seven
 
 
 def building(storeys: int = 5, mass: float = 1e4, stiffness: float = 5e6, zeta1: float = 0.05) -> ChainSystem:
-    """A uniform shear building: `storeys` floors of `mass` kg on storeys of `stiffness` N/m, its dampers in
+    """A uniform shear building: `storeys` floors of `mass` kg on stories of `stiffness` N/m, its dampers in
     proportion to the springs so mode 1 has ζ₁ (on the Simulation page; the spectrum uses its own ζ)."""
     M, _, K = ChainSystem.uniform(storeys, mass, stiffness, 0.0).matrices()
     w = math.sqrt(scipy.linalg.eigh(K, M, eigvals_only=True)[0])
@@ -71,8 +71,8 @@ def with_tank(system: ChainSystem, ratio: float) -> ChainSystem:
 
 
 def rigid_period(system: ChainSystem) -> float:
-    """The period of the whole building as one rigid block on its first storey, T = 2π √(Σm / k₁): a base
-    isolation's period, when k₁ is the bearings under a slab and the storeys above are far stiffer. A chain
+    """The period of the whole building as one rigid block on its first story, T = 2π √(Σm / k₁): a base
+    isolation's period, when k₁ is the bearings under a slab and the stories above are far stiffer. A chain
     with no first spring (a free one, from another page) isn't held: inf."""
     k1 = float(system.stiffness[0])
     return TWO_PI * math.sqrt(float(np.sum(system.masses)) / k1) if k1 > 0 else math.inf
@@ -114,7 +114,7 @@ def design_sa(design: Design, T: np.ndarray) -> np.ndarray:
 @dataclass(frozen=True)
 class Modal:
     """Mode by mode (columns): f (Hz), T (s), φ (mass-normalized), Γ, effective mass, S_a, and the peaks: floor
-    displacements u (floors × modes), storey drifts, storey shears, base shear."""
+    displacements u (floors × modes), story drifts, story shears, base shear."""
 
     f: np.ndarray
     T: np.ndarray
@@ -146,7 +146,7 @@ def modal(system: ChainSystem, design: Design) -> Modal:
     u = phi * D
     drift = np.diff(u, prepend=0.0, axis=0)
     forces = lin.masses[:, None] * phi * gamma * sa
-    shear = np.cumsum(forces[::-1], axis=0)[::-1]  # storey j carries the floors at and above it
+    shear = np.cumsum(forces[::-1], axis=0)[::-1]  # story j carries the floors at and above it
     return Modal(w / TWO_PI, T, phi, gamma, meff, sa, u, drift, shear, shear[0], float(np.sum(lin.masses)))
 
 
@@ -226,7 +226,7 @@ def accelerogram(design: Design, seed: int = 1) -> Accelerogram:
         worst = float(np.max(np.abs(np.log(sa / target))))
         if best is None or worst < best[0]:
             best = (worst, a, sa)
-        amp *= (target / sa) ** 0.8  # a little short of the full step: neighbouring sines interfere
+        amp *= (target / sa) ** 0.8  # a little short of the full step: neighboring sines interfere
     assert best is not None  # at least one round
     _, a, sa = best
     return Accelerogram(t, a, fs, f, sa)
@@ -235,7 +235,7 @@ def accelerogram(design: Design, seed: int = 1) -> Accelerogram:
 @dataclass(frozen=True)
 class History:
     """The building on the ground motion: floor displacements relative to the ground (time × floors), and the peaks
-    of each floor's displacement, each storey's drift and shear, and the base shear."""
+    of each floor's displacement, each story's drift and shear, and the base shear."""
 
     t: np.ndarray
     displacement: np.ndarray

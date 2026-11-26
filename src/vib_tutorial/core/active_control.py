@@ -126,7 +126,7 @@ def tracked_damping(system: ChainSystem, ctrl: Controller, gains: np.ndarray) ->
 
     The poles in the upper half plane, real ones included, are paired with the last step's by least total
     distance (`linear_sum_assignment`), so a mode that turns overdamped keeps its own pole on the real axis
-    instead of taking its neighbour's."""
+    instead of taking its neighbor's."""
     n = system.n
     out = np.full((len(gains), n), np.nan)
     prev = None

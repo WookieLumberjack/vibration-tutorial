@@ -7,7 +7,7 @@ from .style import colors
 
 
 def _element(x1: float, x2: float, y: float, upper: float = 13.0) -> str:
-    """A spring above a damper, side by side between x1 and x2, centred on y."""
+    """A spring above a damper, side by side between x1 and x2, centered on y."""
     fg = colors.foreground
     return "".join(
         [

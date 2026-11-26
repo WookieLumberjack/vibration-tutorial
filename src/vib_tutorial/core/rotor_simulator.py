@@ -22,17 +22,17 @@ them while ramping and through retakes, and the FOH with `foh_discretize`. The s
 the modes coarsely (`FILM_MODE_STEPS`), and the page caps each frame's computing (`step(…, budget)`).
 Everything else (Campbell, stability, steady states) stays linearized.
 
-A stator ring round the disc (`RotorSystem.stator`, a `Stator`; the *Rub* tab, `gui/rotor_rub.py`) is in the
+A stator ring round the disk (`RotorSystem.stator`, a `Stator`; the *Rub* tab, `gui/rotor_rub.py`) is in the
 time response only: `stator_force` gives the ring's push and smoothed-Coulomb drag with its derivatives, and
-`RotorSimulator._rub_steps` adds it to the exact FOH update as a load on the disc, linear over the step,
+`RotorSimulator._rub_steps` adds it to the exact FOH update as a load on the disk, linear over the step,
 solved by Newton (`_rub_solve`), as the films' remainder is. The Rust kernel (`native.RubSteps`, built per
 call from the chunk's Φ, Γ0, Γ1) runs `_rub_steps_reference`'s loop, `stator_force` and the heat included:
 ~0.6 µs a step against 10–60 in the Python; keep them in step (`tests/test_native.py` compares them).
-`step_size` resolves the disc on the ring's mount. Only on a round shaft with the films linearized
+`step_size` resolves the disk on the ring's mount. Only on a round shaft with the films linearized
 (`__post_init__` raises; the page drops the ring and disables its checkbox). Campbell, stability and the
 steady states leave it out. Each advance's `RotorSamples.rub` holds the push; the page's history keeps the
 largest since the last sample kept (`PUSH`). A forward full rub's steady state is a linear one with the ring
-as a cross-coupled spring at the disc; a test checks it. With `thermal_gain` the rub's heat (column 3 of
+as a cross-coupled spring at the disk; a test checks it. With `thermal_gain` the rub's heat (column 3 of
 `rub`) bows the shaft (Newkirk): `RotorSimulator.thermal_bow`, complex from the mark, held over chunks of at
 most τ/`THERMAL_STEPS` and moved on by `_warm` (exact first-order lag), loads the shaft as the residual bow
 does (`bow_load`, in `force`). The page records the spiral (`_record_spiral`) at a steady speed only.
@@ -84,9 +84,9 @@ class RotorSamples:
     q: np.ndarray  # (k, n_dof) displacements
     omega: np.ndarray  # (k,) spin speed (rad/s)
     phase: np.ndarray  # (k,) angle φ of the keyphasor mark (rad, unwrapped)
-    rub: np.ndarray | None = None  # (k, 4) with a stator: its force on the disc (f_x, f_y), the normal force N
+    rub: np.ndarray | None = None  # (k, 4) with a stator: its force on the disk (f_x, f_y), the normal force N
     # and the friction's heat (W)
-    bow: np.ndarray | None = None  # (k,) complex with a thermal bow: the bow at the disc (m), from the mark
+    bow: np.ndarray | None = None  # (k,) complex with a thermal bow: the bow at the disk (m), from the mark
 
 
 class _Films:
@@ -246,7 +246,7 @@ class _Films:
 def _rub_solve(
     stator: Stator, radius: float, yb: np.ndarray, E: np.ndarray, r: np.ndarray, omega: float, tol: float
 ) -> tuple[np.ndarray, float]:
-    """(r, N): the ring's force on the disc at the step's end, where the disc's (x, y, x', y') = yb + E r, by
+    """(r, N): the ring's force on the disk at the step's end, where the disk's (x, y, x', y') = yb + E r, by
     Newton from the guess r (each step cut back until it shrinks the residual), and its normal force."""
 
     def at(r: np.ndarray) -> tuple[np.ndarray, list[float], float]:
@@ -287,7 +287,7 @@ class RotorSimulator:
         self._f_at: dict[float, float] = {}  # with oil films: the highest frequency at each top speed asked
         self._f_still = self._highest_freq(0.0)
         self._films = _Films(self.system) if self.system.whole_films else None
-        self.thermal_bow = 0j  # the rub's thermal bow at the disc (m), turning with the shaft, from the mark
+        self.thermal_bow = 0j  # the rub's thermal bow at the disk (m), turning with the shaft, from the mark
 
     # ------------------------------------------------------------- setup
     def set_system(self, system: RotorSystem) -> None:
@@ -341,7 +341,7 @@ class RotorSimulator:
         self.state = self._rest()
 
     def tap(self, impulse_x: float = 0.0, impulse_y: float = 0.0) -> None:
-        """Hit the disc: an impulse (N·s) in x and y changes the velocities at once, by M^{-1} times it."""
+        """Hit the disk: an impulse (N·s) in x and y changes the velocities at once, by M^{-1} times it."""
         Minv = self.system.mass_inverse
         n = self.system.n_dof
         self.state[n : 2 * n] += Minv[:, XD] * impulse_x + Minv[:, YD] * impulse_y
@@ -407,7 +407,7 @@ class RotorSimulator:
             fmax = max(fmax, self._f_at[top])
         if self._films is not None:
             fmax = max(spin, fmax * FILM_MODE_STEPS / STEPS_PER_PERIOD)
-        if self.system.stator is not None:  # the disc bouncing on the ring
+        if self.system.stator is not None:  # the disk bouncing on the ring
             fmax = math.hypot(fmax, math.sqrt(self.system.stator.stiffness / self.system.disc_mass) / (2.0 * math.pi))
         h = MAX_STEP if fmax <= 0 else min(MAX_STEP, 1.0 / (STEPS_PER_PERIOD * fmax))
         return 2.0 ** math.floor(math.log2(h))
@@ -512,10 +512,10 @@ class RotorSimulator:
         return RotorSamples(ts, qs, ws, phis, rubs, bows)
 
     def _warm(self, span: float, heat: np.ndarray, q: np.ndarray, phase: np.ndarray) -> None:
-        """Move the thermal bow on over `span` s of the rub's `heat` (W) at each step, the disc at q.
+        """Move the thermal bow on over `span` s of the rub's `heat` (W) at each step, the disk at q.
 
-        The heat goes into the shaft where it touches the ring: toward the disc's
-        centre's direction from the ring's, seen on the shaft (from the mark). Its
+        The heat goes into the shaft where it touches the ring: toward the disk's
+        center's direction from the ring's, seen on the shaft (from the mark). Its
         mean over the span drives τ b' = β H - b, exact for it held.
         """
         stator = self.system.stator
@@ -566,16 +566,16 @@ class RotorSimulator:
         out: np.ndarray,
         rubs: np.ndarray,
     ) -> np.ndarray:
-        """Steps with the disc rubbing on the stator; fills out (n, n_dof) and rubs (n, 3), returns the last state.
+        """Steps with the disk rubbing on the stator; fills out (n, n_dof) and rubs (n, 3), returns the last state.
 
-        The ring's force r on the disc goes in as a load, linear over the step as
+        The ring's force r on the disk goes in as a load, linear over the step as
         the FOH takes the loads:
 
             z1 = Φ z0 + Γ0 (u0 + r0) + Γ1 (u1 + r1),
 
         r1 found by Newton, since it depends on z1 (the trapezoidal rule on r: the
         friction's slope, μ N / SLIP, would ring an explicit step). The step resolves
-        the disc bouncing on the ring's stiffness (step_size).
+        the disk bouncing on the ring's stiffness (step_size).
         """
         system = self.system
         n, stator, radius = system.n_dof, system.stator, system.disc_radius

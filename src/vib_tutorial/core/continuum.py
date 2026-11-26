@@ -13,7 +13,7 @@ rectangular section, width × depth; the string's `tension` and `line_density` s
 the bar's EA and ρA.
 
 Each is cut into N equal elements of length h = L/N. The string and the bar get linear
-elements (a spring T/h or EA/h between neighbouring nodes), the beam Hermite cubics (a
+elements (a spring T/h or EA/h between neighboring nodes), the beam Hermite cubics (a
 deflection and a slope at each node). Each element's mass is shared out one of three ways
 (`Scheme`):
 
@@ -35,8 +35,8 @@ which for κh ≪ 1 is c²κ² but stops at κh = π: two elements per wavelengt
 wave a mesh can carry (its cut-off, where the group velocity dω/dκ falls to zero). The
 modes of a string or bar with either end fixed or free are such waves, κ_n from the ends,
 so the mesh's frequencies are exactly the dispersion curve's at κ_n; likewise a pinned–pinned
-beam's. Low modes span many elements and come out nearly right; the high ones crowd towards
-the cut-off and are wrong by tens of per cent.
+beam's. Low modes span many elements and come out nearly right; the high ones crowd toward
+the cut-off and are wrong by tens of percent.
 
 Working on it
 -------------
@@ -293,7 +293,7 @@ def _condense(k: np.ndarray, m: np.ndarray) -> tuple[np.ndarray, np.ndarray | No
 def dispersion(c: Continuum, h: float, scheme: Scheme, kappa: np.ndarray) -> np.ndarray:
     """The endless mesh's frequencies (rad/s) at each wavenumber κ (rad/m), a column per branch, lowest first (the
     beam's consistent and mixed masses give a second, the slopes', branch). From one node's equation with its
-    neighbours a phase e^{±iκh} away (Bloch)."""
+    neighbors a phase e^{±iκh} away (Bloch)."""
     ke, me = element_matrices(c, h, scheme)
     d = c.dofs_per_node
     a, b = slice(0, d), slice(d, 2 * d)
@@ -535,11 +535,11 @@ PRESETS = (
         "Vibraphone bar, free–free",
         Continuum(Kind.BEAM, 0.3, End.FREE, End.FREE, modulus=69e9, density=2700.0, width=0.04, depth=0.012),
         12,
-        "A plain 300 × 12 mm aluminium bar on its nodes: 693 Hz, overtones 2.76 and 5.40 times that "
+        "A plain 300 × 12 mm aluminum bar on its nodes: 693 Hz, overtones 2.76 and 5.40 times that "
         "(a real vibraphone's bars are undercut to bring them to 4 and 10). Two rigid modes: it slides "
         "and tips.",
         predict=Prediction(
-            "An aluminium bar resting on its nodes, free at both ends. How many of its modes are at 0 Hz?",
+            "An aluminum bar resting on its nodes, free at both ends. How many of its modes are at 0 Hz?",
             ("None", "One", "Two"),
             2,
             ordered=True,

@@ -1,4 +1,4 @@
-"""The 3D rigid body page's Theory figures (see `figures`): a box turning about its centre of mass G at ω, one
+"""The 3D rigid body page's Theory figures (see `figures`): a box turning about its center of mass G at ω, one
 of its bits of mass m at r from G and that bit's velocity ω × r, the start of L = Iω."""
 
 from __future__ import annotations

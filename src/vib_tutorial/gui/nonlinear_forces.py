@@ -4,7 +4,7 @@ harmonics it makes), and which force made a measured response (a regularized inv
 Left: the nonlinear element added to the chain (a cubic spring or a gap, alongside one of its springs; the
 chain's own friction counts too), the stepped sine (force and response masses, three force levels, the mode it
 sweeps round), and the force identification (the true force, the sensors and what they measure, the noise, and
-how the inverse is regularized). Centre: the FRF |X/F| at each level, swept up and down, and the identified
+how the inverse is regularized). Center: the FRF |X/F| at each level, swept up and down, and the identified
 force against the true one. Right: the steady response's waveform and harmonics at one point, the L-curve, the
 singular values with the data's coefficients (Picard), and the Theory. The page follows the Simulation page's
 chain.
@@ -447,7 +447,7 @@ NOTES_HTML = load_notes("nonlinear_forces", figures=nonlinear_figures.FIGURES, t
 
 
 class NonlinearForcesPage(QtWidgets.QWidget):
-    """Controls on the left, the FRFs and the identified force in the centre, the details on the right."""
+    """Controls on the left, the FRFs and the identified force in the center, the details on the right."""
 
     dof_requested = QtCore.Signal(int)  # the user changed N here; the main window owns the system
     system_requested = QtCore.Signal(object)  # a trial's chain, for the Simulation page
@@ -553,7 +553,7 @@ class NonlinearForcesPage(QtWidgets.QWidget):
         )
         connect_all((self.method, self.log_lam, self.k), self._on_solve)
 
-        # --- centre
+        # --- center
         self.frf_plot = plot("|X/F|", "m/N", "Frequency", "Hz", log_y=True, height=180)
         self.frf_plot.setToolTip(FRF_TIP)
         self.frf_plot.setMouseEnabled(x=False, y=False)

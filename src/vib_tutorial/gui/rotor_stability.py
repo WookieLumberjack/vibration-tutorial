@@ -1,7 +1,7 @@
 """Stability tab of the Jeffcott rotor page: the stability map and the full spectrum of an orbit.
 
 The stability map draws each lightly damped mode's damping ratio (or log
-decrement) against speed, coloured by whirl direction as on the Campbell
+decrement) against speed, colored by whirl direction as on the Campbell
 diagram, with the unstable region below zero shaded and the onset speed marked.
 The full spectrum transforms x + iy at one station over the strip chart's
 window: forward whirl at positive frequencies, backward at negative, with the
@@ -32,7 +32,7 @@ MEASURES = ("Damping ratio ζ", "Log decrement δ", "Asymmetry chart (Δ against
 FLOOR = 1e-4  # the spectrum's log scale starts this far below its highest line
 
 MAP_TIP = (
-    "<p>The damping of each lightly damped mode against speed, coloured by whirl direction as on the "
+    "<p>The damping of each lightly damped mode against speed, colored by whirl direction as on the "
     "Campbell diagram. Below zero (shaded) a mode grows by itself instead of dying away: the rotor is "
     "unstable. The dashed line marks the onset speed, where the first mode crosses zero.</p>"
     "<p>Cross-coupled bearing stiffness and the shaft's internal damping lower the forward modes' "

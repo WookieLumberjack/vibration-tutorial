@@ -103,7 +103,7 @@ TRIALS = (
         "Released against friction",
         "Plucked from 10 mm, beside the viscous ghost. The ghost's swing falls by the same fraction each cycle, "
         "<m>e<sup>−δ</sup></m> = 0.73, for ever. Friction's falls by the same amount, <m>4F<sub>f</sub>/k</m> = 3.1 mm, "
-        "and stops dead after three cycles, 0.58 mm off centre, where the spring can no longer beat the friction.",
+        "and stops dead after three cycles, 0.58 mm off center, where the spring can no longer beat the friction.",
         model=Model.COULOMB,
         x0_mm=10.0,
         tab=TAB_LOOP,
@@ -195,7 +195,7 @@ def _friction_from_decay(rng: np.random.Generator) -> Question:
         f"A mass on a spring of {sig(k, 6)} N/m rings down in a straight line, its swing falling by {sig(drop, 6)} mm every "
         "cycle. What friction force is it sliding against?",
         friction,
-        f"Each half cycle swings about the point F<sub>f</sub>/k off centre on the side friction pushes to, so the "
+        f"Each half cycle swings about the point F<sub>f</sub>/k off center on the side friction pushes to, so the "
         f"swing loses 2F<sub>f</sub>/k a half cycle, 4F<sub>f</sub>/k a cycle: F<sub>f</sub> = k × drop/4 = "
         f"{sig(k, 6)} × {number(1e-3 * drop)}/4 = {number(friction)} N.",
         unit="N",
@@ -212,11 +212,11 @@ def _friction_swings(rng: np.random.Generator) -> Question:
     swings, _ = coulomb_stop(k, friction, 1e-3 * x0)
     return Question(
         f"A mass on a spring of {sig(k, 6)} N/m slides against a friction force of {sig(friction, 6)} N. Released from rest "
-        f"{number(x0, 2)} mm from centre, how many half cycles (swings from one turn to the next) does it make "
+        f"{number(x0, 2)} mm from center, how many half cycles (swings from one turn to the next) does it make "
         "before it sticks?",
         swings,
         f"F<sub>f</sub>/k = {number(d)} mm. Each swing takes 2F<sub>f</sub>/k = {number(2 * d)} mm off the distance "
-        f"from centre, and it sticks at the first turn within {number(d)} mm of it: {number(x0, 2)} mm takes "
+        f"from center, and it sticks at the first turn within {number(d)} mm of it: {number(x0, 2)} mm takes "
         f"{swings} swings.",
         tolerance=0.01,
     )
@@ -340,21 +340,21 @@ def _friction_spec(rng: np.random.Generator) -> Question:
             kept("The spring", t.stiffness, k, "N/m"),
             kept("The release, X", t.friction_mm, float(x0), "mm"),
             at_most("Swings before it sticks", n, swings),
-            at_most("Where it sticks, off centre", 1e3 * abs(stop), off, "mm"),
+            at_most("Where it sticks, off center", 1e3 * abs(stop), off, "mm"),
         )
 
     return Question(
         f"A 1 kg mass on a spring of {sig(k, 6)} N/m, released from {sig(x0, 6)} mm, is to be stopped by friction alone (the "
         f"Coulomb friction law, plucked from X). It must stick within {swings} swings (half cycles), no more than "
-        f"{number(off, 2)} mm off centre. The page sets the friction by matching it to the damper c at the "
+        f"{number(off, 2)} mm off center. The page sets the friction by matching it to the damper c at the "
         "amplitude X: choose c.",
         0,
-        f"More friction stops it sooner, but further off centre (anywhere within F<sub>f</sub>/k), and too much "
+        f"More friction stops it sooner, but further off center (anywhere within F<sub>f</sub>/k), and too much "
         f"never lets it move. Each swing takes 2F<sub>f</sub>/k off, so {swings} swings need about "
         f"2F<sub>f</sub>/k ≈ {sig(x0, 6)}/{swings} mm. F<sub>f</sub> = πcω<sub>n</sub>X/4 with ω<sub>n</sub> = "
         f"{number(wn)} rad/s: c = {number(c)} N·s/m gives F<sub>f</sub> = {number(design.friction)} N, {n_d} swings, "
-        f"stuck {number(1e3 * abs(end))} mm off centre. Much more friction does too: with F<sub>f</sub>/k just under "
-        "X/2 it makes one swing and sticks near the centre.",
+        f"stuck {number(1e3 * abs(end))} mm off center. Much more friction does too: with F<sub>f</sub>/k just under "
+        "X/2 it makes one swing and sticks near the center.",
         setup=dict(
             model=Model.COULOMB,
             stiffness=k,
@@ -417,7 +417,7 @@ TIPS = {
     "the viscoelastic Zener element. Change it as it runs.</p>",
     "friction_mm": "<p>The amplitude X where friction is matched to c: F<sub>f</sub> = πcω<sub>n</sub>X/4.</p>",
     "relax": "<p>Where the Zener element's loss factor peaks, as a multiple of f<sub>n</sub>.</p>",
-    "ghost": "<p>A viscous mass with the damper c, plucked and driven as this one is: drawn in grey beside it (a grey line on the time plot, a dashed outline on the mass, a dashed curve on the Frequency response).</p>",
+    "ghost": "<p>A viscous mass with the damper c, plucked and driven as this one is: drawn in gray beside it (a gray line on the time plot, a dashed outline on the mass, a dashed curve on the Frequency response).</p>",
     "damping_only": "<p>Ticked, the loops are the damper's force alone. Untick it to add the spring's force kx, "
     "as a test machine measures a part: the loop then leans along the spring's dashed line, the lean the "
     "stiffness and the width the damping.</p>",

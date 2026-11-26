@@ -1,8 +1,8 @@
 """A car's body in bounce and pitch: one rigid body on two springs, its equations in any two coordinates.
 
 The *Deriving the equations* page. A `Car` is a rigid body of mass m and pitch inertia J = m r² about its
-centre of mass G, on a front spring and damper (k_f, c_f) a ahead of G and a rear pair (k_r, c_r) b behind it,
-the wheelbase L = a + b; the tyres and wheels are left out (the Quarter-car page has them). G rises x_G and the
+center of mass G, on a front spring and damper (k_f, c_f) a ahead of G and a rear pair (k_r, c_r) b behind it,
+the wheelbase L = a + b; the tires and wheels are left out (the Quarter-car page has them). G rises x_G and the
 body pitches θ, nose up, so the body above the axles rises
 
     δ_f = x_G + a θ,   δ_r = x_G − b θ,
@@ -13,7 +13,7 @@ each spring measured from the static equilibrium, so gravity drops out. The same
 * `CENTRE`: q = (x_G, θ), T = I. M = diag(m, J) and K = [[k_f + k_r, k_f a − k_r b], [·, k_f a² + k_r b²]]: the
   springs couple bounce and pitch (static coupling), unless k_f a = k_r b.
 * `POINT`: q = (x_P, θ) at a point P a distance e ahead of G, x_G = x_P − e θ. Both M and K couple: M's
-  −m e is dynamic coupling. At P = the elastic centre e* = (k_f a − k_r b)/(k_f + k_r) (`elastic_centre`) a
+  −m e is dynamic coupling. At P = the elastic center e* = (k_f a − k_r b)/(k_f + k_r) (`elastic_centre`) a
   force pushes the body straight, and K is diagonal.
 * `ENDS`: q = (x_f, x_r), the body above each axle: x_G = (b x_f + a x_r)/L, θ = (x_f − x_r)/L. K = diag(k_f,
   k_r), and M couples by (m a b − J)/L², nil when the dynamic index r²/(ab) is 1: the ends then bounce apart.
@@ -61,7 +61,7 @@ RIDE_SETTLE = 4.0  # s the ride runs on after the rear wheel leaves the bump
 
 
 class Coordinates(enum.Enum):
-    CENTRE = "Centre of mass: x_G, θ"
+    CENTRE = "Center of mass: x_G, θ"
     POINT = "A point P: x_P, θ"
     ENDS = "The two ends: x_f, x_r"
 
@@ -229,7 +229,7 @@ class Bump:
     length: float = 3.7  # m
 
     def profile(self, s: np.ndarray) -> np.ndarray:
-        """The road's height at s metres past the bump's start."""
+        """The road's height at s meters past the bump's start."""
         inside = (s >= 0) & (s <= self.length)
         return np.where(inside, 0.5 * self.height * (1.0 - np.cos(TWO_PI * s / self.length)), 0.0)
 

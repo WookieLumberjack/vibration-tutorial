@@ -1,6 +1,6 @@
-"""Shared limits, and the colour themes for the GUI.
+"""Shared limits, and the color themes for the GUI.
 
-Every colour the GUI draws with comes from the current Theme, read through the
+Every color the GUI draws with comes from the current Theme, read through the
 `colors` proxy at the time something is drawn (``colors.mass[i]``,
 ``colors.force``). Switching themes (``set_theme``) swaps the Theme behind the
 proxy; the widgets then redraw with it (see ``MainWindow.set_theme``).
@@ -32,7 +32,7 @@ class Theme:
     foreground: str = "#000000"  # axes, tick labels, plot titles
     muted: str = "#666666"  # secondary text: notes, captions
     faint: str = "#bbbbbb"  # reference lines: zero lines, unit circle, cut lines
-    grey: str = "#888888"  # secondary curves (windows, envelopes), greyed-out entries
+    grey: str = "#888888"  # secondary curves (windows, envelopes), grayed-out entries
     strong: str = "#000000"  # the reference curve: full solution, exact FRF
     structure: str = "#333333"  # springs, dampers, wall, mass outlines
     legend_alpha: int = 215  # legend background: `background` at this alpha
@@ -40,7 +40,7 @@ class Theme:
     diagonal_tint: str = "#f1f3f8"
     band_shade: tuple[int, int, int, int] = (0, 0, 0, 18)  # above the anti-alias passband
     # --- data. One color per mass, used consistently in the animation, time plots and FRF. The first
-    # four stay apart for red-green colour-blind eyes too (no green beside a red).
+    # four stay apart for red-green color-blind eyes too (no green beside a red).
     mass: tuple[str, ...] = ()
     # Mode shapes use a separate palette so they are not confused with masses.
     mode: tuple[str, ...] = ()
@@ -55,7 +55,7 @@ class Theme:
     stab_new: str = "#bbbbbb"  # stabilization diagram: new, stable in f, stable in f and ζ
     stab_freq: str = "#e76f51"
     stab_stable: str = "#264653"
-    mac_high: str = "#264653"  # MAC matrix colour at 1 (0 is the background)
+    mac_high: str = "#264653"  # MAC matrix color at 1 (0 is the background)
     block_tints: dict[tuple[str, str], str] = field(default_factory=dict)  # CMS matrix partitions
     dim_tint: str = "#f4f4f4"  # CMS matrix: discarded columns
     line_scale: float = 1.0  # every pen's width times this (`plot_patches`): the projector's 2–3 px lines
@@ -268,7 +268,7 @@ NORD = Theme(
     dim_tint="#353a45",
 )
 
-# A projector washes out thin and pale lines: Light's colours, its greys darker, every line twice as wide and
+# A projector washes out thin and pale lines: Light's colors, its grays darker, every line twice as wide and
 # every marker 40 % larger.
 PROJECTOR = replace(
     LIGHT, name="Projector", muted="#444444", faint="#8a8a8a", grey="#5f5f5f", line_scale=2.0, marker_scale=1.4
@@ -279,7 +279,7 @@ SYSTEM = "System"  # follow the desktop: Light or Dark
 
 
 class _Current:
-    """The current theme's colours: ``colors.force``, ``colors.mass[i]``."""
+    """The current theme's colors: ``colors.force``, ``colors.mass[i]``."""
 
     theme: Theme = LIGHT
 
@@ -304,7 +304,7 @@ def rgb(color: str) -> tuple[int, int, int]:
 
 
 def luminance(color: str) -> float:
-    """WCAG relative luminance of a #rrggbb colour."""
+    """WCAG relative luminance of a #rrggbb color."""
 
     def lin(v: int) -> float:
         s = v / 255
@@ -315,7 +315,7 @@ def luminance(color: str) -> float:
 
 
 def contrast(a: str, b: str) -> float:
-    """WCAG contrast ratio of two #rrggbb colours (1 to 21)."""
+    """WCAG contrast ratio of two #rrggbb colors (1 to 21)."""
     la, lb = sorted((luminance(a), luminance(b)), reverse=True)
     return (la + 0.05) / (lb + 0.05)
 
@@ -326,12 +326,12 @@ def text_on(fill: str) -> str:
 
 
 def role(name: str, theme: Theme | None = None) -> str:
-    """A colour by its theme role's name, as a view model gives it (#478 item 9): "force", "energy.kinetic" (a
+    """A color by its theme role's name, as a view model gives it (#478 item 9): "force", "energy.kinetic" (a
     dict's entry), "mass.0" (a tuple's). The current theme's unless `theme`."""
     field_name, _, part = name.partition(".")
     value = getattr(theme or current(), field_name)
     if part:
         value = value[int(part)] if isinstance(value, tuple) else value[part]
     if not isinstance(value, str):
-        raise KeyError(f"{name!r} isn't a colour role")
+        raise KeyError(f"{name!r} isn't a color role")
     return value

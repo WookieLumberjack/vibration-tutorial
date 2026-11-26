@@ -15,7 +15,7 @@ The pages in the order the app's tabs take them.
 
 A car's body in bounce and pitch, one rigid body on a front and a rear spring, derived two ways with the
 page's own numbers written in: free-body diagrams (forces, and moments about G or another point) and
-Lagrange's equations (T, V and Rayleigh's D, then their derivatives). The coordinates can be the centre
+Lagrange's equations (T, V and Rayleigh's D, then their derivatives). The coordinates can be the center
 of mass, any point P on the body, or the two ends: M, C and K change (static coupling in K, dynamic in
 M, the free-body diagram's rows not symmetric until mixed), the frequencies don't. The car swings in each
 mode about its node, the modes are swept against the rear spring, and it rides a speed hump to show
@@ -49,7 +49,7 @@ one arrow can be kept, turned and given back its partner, each change booked in 
 ## 3D rigid body
 
 A body free to turn any way, with no gravity and no support: a box, a cylinder or a sphere, with a point
-mass that can sit anywhere on it. Its inertia tensor about the centre of mass comes from the shape's own
+mass that can sit anywhere on it. Its inertia tensor about the center of mass comes from the shape's own
 moved there by parallel axes plus the point mass's, products of inertia and all, and its eigenvectors are
 the principal axes (the *Inertia* tab writes both out). Spun about one of them, L is along ω; about any
 other they point apart, L fixed in space and ω wandering round it. The notes derive L = Iω, the transport

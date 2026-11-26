@@ -2517,7 +2517,7 @@ def test_seismic_worked_example():
     # within the limit for partitions that don't feel it (0.010h), not for brittle (0.005h) or ductile (0.0075h) ones
     assert quoted("seismic", "0.005") < quoted("seismic", "0.0075") < nu * drift[0] / 3 < quoted("seismic", "0.010")
     assert 230 / 3 == pytest.approx(77, abs=0.5)
-    # a soft storey
+    # a soft story
     soft = ChainSystem(np.full(5, 1e4), np.array([1e6] + [5e6] * 4), np.zeros(5))
     ms = modal(soft, d)
     rs = correlation(ms.f, d.zeta)
@@ -3334,7 +3334,7 @@ def test_fluid_structure_worked_example():
     assert am.Body(
         am.Shape.CYLINDER, 0.025, outer=0.025 * quoted("fluid_structure", "1.2")
     ).coefficient == pytest.approx(5.55, abs=0.005)
-    # the rod: 15.41 kg and 1.963 kg a metre, 18.84 Hz
+    # the rod: 15.41 kg and 1.963 kg a meter, 18.84 Hz
     rod = am.Body(am.Shape.CYLINDER, 0.025, 7850.0)
     assert rod.mass == pytest.approx(quoted("fluid_structure", "15.41"), abs=0.005)
     assert rod.added_mass == pytest.approx(quoted("fluid_structure", "1.963"), abs=0.0005)
@@ -3629,7 +3629,7 @@ def test_active_control_worked_example():
 
 
 def test_gyroscope_worked_example():
-    """The Gyroscope page's worked example: the opening top (0.5 kg disc, r 40 mm, l 30 mm, 1500 rpm, let go at
+    """The Gyroscope page's worked example: the opening top (0.5 kg disk, r 40 mm, l 30 mm, 1500 rpm, let go at
     rest at 30°)."""
     import scipy.special
 
@@ -3819,7 +3819,7 @@ def test_deriving_trials():
     level = replace(car, k_rear=32e3)
     assert level.k_front * level.front == pytest.approx(level.k_rear * level.rear) == pytest.approx(48e3)
     assert hz(level) == pytest.approx((quoted("deriving", "1.23"), 1.27), abs=0.005)
-    # the elastic centre
+    # the elastic center
     assert car.elastic_centre() == pytest.approx(-quoted("deriving", "0.15"))
     at = matrices(car, Coordinates.POINT, -0.15)
     assert abs(at.K[0, 1]) < 1e-9 and at.M[0, 1] == pytest.approx(180.0)
@@ -4712,7 +4712,7 @@ def test_rotor_equations_of_motion():
     ei = s.youngs * inertia
     assert round(ei, 2) == quoted("rotor_notes", "98.17")
     assert (s.ip, s.id) == (1.25e-3, quoted("rotor_notes", "6.25") * 1e-4)
-    # The disc's own tilt on rigid bearings: k_θ = 12EI/L, the θx entry of K_shaft.
+    # The disk's own tilt on rigid bearings: k_θ = 12EI/L, the θx entry of K_shaft.
     k_theta = 12 * ei / L
     ks = s.shaft_stiffness()
     assert round(k_theta) == 2356 and ks[2, 2] == pytest.approx(k_theta)
@@ -4740,7 +4740,7 @@ def test_rotor_equations_of_motion():
     assert [round(ks[i, j] / 1e3, 3) for i, j in ((0, 0), (1, 1), (0, 2), (2, 2))] == [18.85, 37.699, 4.712, 2.356]
     assert round(ks[1, 1]) == round(48 * ei / L**3) == 37699
     assert round(ks[1, 1] / 1e3, 2) == quoted("rotor_notes", "37.70")  # on x_D, in kN/m
-    # the ramp's gyroscopic term I_p Ω̇ θ left out, against the disc's tilt stiffness, at 5000 rpm/s
+    # the ramp's gyroscopic term I_p Ω̇ θ left out, against the disk's tilt stiffness, at 5000 rpm/s
     assert round(100 * s.ip * 5000 * rpm / k_theta, 2) == quoted("rotor_notes", "0.03 %")
     assert np.allclose(ks @ [1, 1, 0, 1], 0.0, atol=1e-9)
     # The beam elements on the defaults with shaft mass.
@@ -4848,7 +4848,7 @@ def test_rotor_worked_example():
         X = synchronous_response(s, np.array([speed / rpm]))[0, XD]
         assert round(abs(X) * 1e6, 2 if page_amp < 10 else 1) == page_amp
         if speed == 500:
-            assert round(abs(X) * 1e6, 1) == quoted("rotor_notes", "2.2")  # "the disc whirls 2.2 µm at 500 rpm"
+            assert round(abs(X) * 1e6, 1) == quoted("rotor_notes", "2.2")  # "the disk whirls 2.2 µm at 500 rpm"
         assert round(-math.degrees(np.angle(X)), 1) == page_lag
     assert round(e / (2 * zeta)) == 216
     X = synchronous_response(s, np.array([1584 / rpm]))[0, XD]
@@ -5159,7 +5159,7 @@ def test_rigid_body_euler_rates_trial():
 
 
 def test_rigid_body_worked_example():
-    """The worked example: the start's ω, L, |L|, energy and their angles (the readout's), and the off-centre mass's
+    """The worked example: the start's ω, L, |L|, energy and their angles (the readout's), and the off-center mass's
     G, I_xx, I_xy (the Inertia tab's) and principal moments and axis."""
     from vib_tutorial.core.rigid_body import Body
     from vib_tutorial.gui import rigid_body as page

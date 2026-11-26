@@ -1,5 +1,5 @@
 """The Rotor builder page's Theory figure (see `figures`): a stepped shaft cut into sections and elements, its
-nodes, a disc of radii R and r and thickness t_d, the bearings as springs and dampers to the ground, and a
+nodes, a disk of radii R and r and thickness t_d, the bearings as springs and dampers to the ground, and a
 seal."""
 
 from __future__ import annotations
@@ -10,7 +10,7 @@ from .style import colors
 
 def model_svg() -> str:
     """A rotor as the page builds it: three sections (the middle one bored, D and d), each cut into elements
-    between nodes; a disc at a node; a bearing at each end; a seal."""
+    between nodes; a disk at a node; a bearing at each end; a seal."""
     fg, muted, faint = colors.foreground, colors.muted, colors.faint
     shaft, disc, spring = colors.mass[0], colors.mass[1], colors.force
     cy = 96.0
@@ -26,7 +26,7 @@ def model_svg() -> str:
     parts.append(fig.line(110, cy + 8, 230, cy + 8, shaft, 1.0, "4,3"))
     for z in sorted(nodes):
         parts.append(fig.circle(z, cy, 2.8, fg, fg))
-    # the disc at z = 190
+    # the disk at z = 190
     parts += [
         fig.rect(184, cy - 58, 12, 116, disc, disc, 1.5, 0.35),
         fig.text(190, cy - 64, "disc", fg),

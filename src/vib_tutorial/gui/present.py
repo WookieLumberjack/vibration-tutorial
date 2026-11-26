@@ -5,7 +5,7 @@ steps every page through three levels (`LEVELS`), and back:
 
 - 0, *all panes*: as usual;
 - 1, *no controls*: the left pane (the parameters, trials and challenges) hidden, so the plots take its room;
-- 2, *centre only*: the right pane (the tabs, the notes) hidden too, the main plots the whole width.
+- 2, *center only*: the right pane (the tabs, the notes) hidden too, the main plots the whole width.
 
 A page whose outermost splitter has only two panes loses its left one at level 1 and keeps the other. A hidden
 pane gives its minimum width back, so the window's minimum shrinks with the level: a larger *Size* fits a
@@ -24,7 +24,7 @@ from PySide6 import QtCore, QtWidgets
 
 from . import theming
 
-LEVELS = ("all panes", "no controls", "centre only")
+LEVELS = ("all panes", "no controls", "center only")
 KEY = "display/present"
 
 

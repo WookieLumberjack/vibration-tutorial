@@ -48,7 +48,7 @@ EQUIVALENT_TIP = (
     "forward, dashed backward: a lightly damped one in a shaded band goes unstable.</p>"
 )
 INPUT_TIPS = {
-    "gap": "<p>Air gap h<sub>0</sub> between each magnet's poles and the journal, with the journal centred. "
+    "gap": "<p>Air gap h<sub>0</sub> between each magnet's poles and the journal, with the journal centered. "
     "Half of it is the backup (touchdown) bearing's clearance: the journal lands there first.</p>",
     "bias": "<p>Bias current i<sub>0</sub> in every coil. The control current is added to one magnet of a "
     "pair and taken from the other. A larger bias gives more force per ampere (k<sub>i</sub> ∝ i<sub>0</sub>) "
@@ -56,12 +56,12 @@ INPUT_TIPS = {
     "area": "<p>Area A<sub>p</sub> of each of a magnet's two pole faces.</p>",
     "turns": "<p>Turns N<sub>c</sub> of each magnet's coil. Across a gap h the magnet pulls with Λi²/h², "
     "Λ = μ<sub>0</sub>N<sub>c</sub>²A<sub>p</sub>/4.</p>",
-    "kp": "<p>Proportional gain k<sub>p</sub>: amperes per metre the journal is off centre. "
+    "kp": "<p>Proportional gain k<sub>p</sub>: amperes per meter the journal is off center. "
     "k<sub>i</sub>k<sub>p</sub> has to beat the magnets' pull k<sub>m</sub>, and what is left over is "
     "the bearing's stiffness.</p>",
-    "ki": "<p>Integral gain k<sub>I</sub>: a steady load cannot hold the journal off centre, since the "
+    "ki": "<p>Integral gain k<sub>I</sub>: a steady load cannot hold the journal off center, since the "
     "current keeps growing until it is back. Its lag makes the damping negative at low frequency.</p>",
-    "kd": "<p>Derivative gain k<sub>d</sub>: amperes per metre per second. k<sub>i</sub>k<sub>d</sub> is "
+    "kd": "<p>Derivative gain k<sub>d</sub>: amperes per meter per second. k<sub>i</sub>k<sub>d</sub> is "
     "the damping, below the filter and the amplifier.</p>",
     "filter": "<p>The derivative's low-pass filter, f<sub>lp</sub>: a pure derivative would amplify the "
     "sensor's noise without limit. Above it the derivative's phase lead fades.</p>",
@@ -335,7 +335,7 @@ class MagnetPanel(QtWidgets.QWidget):
                 f"<p><b>Actuator</b>: Λ = μ<sub>0</sub>N<sub>c</sub>²A<sub>p</sub>/4 = {sig(m.force_constant)} N·m²/A²; negative stiffness "
                 f"k<sub>m</sub> = 4Λi<sub>0</sub>²/h<sub>0</sub>³ = {_si(ks, 'N/m')}; current gain k<sub>i</sub> = "
                 f"4Λi<sub>0</sub>/h<sub>0</sub>² = {sig(ki)} N/A; load capacity k<sub>i</sub>i<sub>0</sub> = "
-                f"{sig(m.capacity)} N; backup bearing {_si(m.touchdown, 'm')} off centre.</p>"
+                f"{sig(m.capacity)} N; backup bearing {_si(m.touchdown, 'm')} off center.</p>"
             )
         ]
         if net <= 0.0:
@@ -363,7 +363,7 @@ class MagnetPanel(QtWidgets.QWidget):
         parts.append(self._rotor_html(m))
         self.readout.setText("".join(parts))
         self.note.setText(
-            "Linearized about the centred journal and the bias, with the sensor at the journal (collocated). "
+            "Linearized about the centered journal and the bias, with the sensor at the journal (collocated). "
             "Current saturation and the backup bearings' contact are left out: the page pauses when a journal "
             "reaches its backup bearing."
             if self.system is not None

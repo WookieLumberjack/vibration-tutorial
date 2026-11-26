@@ -34,7 +34,7 @@ def run(sim: RotorSimulator, duration: float) -> RotorSamples:
 
 
 def orbit_peak(system: RotorSystem, order: int, w: np.ndarray) -> tuple[float, int]:
-    """(the disc's orbit's largest steady amplitude of this order in µm, to 0.1, and its speed in rpm)."""
+    """(the disk's orbit's largest steady amplitude of this order in µm, to 0.1, and its speed in rpm)."""
     v = np.abs(probe(steady_vectors(system, w, order)[:, 1], "orbit"))
     i = int(np.argmax(v))
     return round(v[i] * 1e6, 1), round(w[i] * RPM)

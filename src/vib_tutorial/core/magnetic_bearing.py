@@ -1,7 +1,7 @@
 """Active magnetic bearing: an electromagnet pair under PID control, linearized about its bias.
 
 Each axis (x or y) of a journal sits between two electromagnets facing each
-other across it, each with an air gap s0 when the journal is centred. A magnet
+other across it, each with an air gap s0 when the journal is centered. A magnet
 pulls the journal toward itself with F = k i² / s², k = μ0 N² A / 4 (N turns,
 A the area of each of its two pole faces, the iron's reluctance and the poles'
 angle left out). Both carry a bias current i0, and the control current i is
@@ -16,7 +16,7 @@ is a negative stiffness: left alone the journal falls onto one of them. The
 linear force reaches its greatest, k_i i0 = k_m s0, where one magnet's current
 runs out (i = i0): the load capacity. So for the same negative stiffness, only a
 wider gap carries more. Its weight is held by a steady current of
-W / k_i on top of the bias; the model stays linearized about the centred
+W / k_i on top of the bias; the model stays linearized about the centered
 journal and the bias, so that should stay well below i0.
 
 A sensor at the journal measures x, and a controller sets the current from it,
@@ -32,7 +32,7 @@ back with -K_b(s) x, its dynamic stiffness
 At a frequency ω its real part is the bearing's equivalent stiffness k_b(ω)
 and its imaginary part over ω the equivalent damping c_b(ω). The
 proportional gain has to beat the magnets first (k_i k_p > k_m), the derivative
-gives the damping, and the integral pulls the journal back to the centre
+gives the damping, and the integral pulls the journal back to the center
 under a steady load (at ω = 0 the stiffness is infinite). Up the frequency the
 derivative's filter and the amplifier lag the force behind the motion: past
 some frequency c_b turns negative, and a mode there is driven, not damped.
@@ -51,7 +51,7 @@ with a filtered derivative behind a first-order amplifier, `gain(s)` in closed f
 axis (tests check they agree). On the rotor (`Bearing.magnet`) its -k_m is in K and the controllers' states
 follow q and q' in the state: size states from `system.n_states` (2 n_dof + `n_control`), take velocities as
 `state[n:2n]`, not `state[n:]`. The steady states add the magnets' k_i G(ikΩ) at each harmonic
-(`support_stiffness`, `dynamic_solve`); with integral action the 0X row pins the journals at the centre, and
+(`support_stiffness`, `dynamic_solve`); with integral action the 0X row pins the journals at the center, and
 the rest state comes from `static_state` (A z + B f = 0). Their slow integrator roots are near-repeated and
 split by a hair, so `whirl_modes` counts a root with |Im λ| < `OVERDAMPED` |Re λ| as not oscillating, and
 reports the fastest such growth as `drift` (a magnet too weak for k_m diverges without oscillating);
@@ -72,7 +72,7 @@ MU0 = 4e-7 * math.pi  # H/m, the permeability of free space
 class MagneticBearing:
     """A radial active magnetic bearing: two magnet pairs (x and y), each under its own PID. SI units."""
 
-    gap: float = 1e-3  # m, s0: each magnet's air gap with the journal centred
+    gap: float = 1e-3  # m, s0: each magnet's air gap with the journal centered
     bias: float = 1.0  # A, i0: the bias current in every coil
     area: float = 4e-4  # m², A: each of a magnet's two pole faces
     turns: int = 200  # N, of each magnet's coil

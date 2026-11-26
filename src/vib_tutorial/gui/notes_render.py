@@ -50,7 +50,7 @@ def equation(latex: str, px: float, color: str) -> QtGui.QImage:
 
 
 def text_width(s: str, italic: bool, size: float) -> float:
-    """How wide `s` sets in Qt (its markup dropped), in px: the UI's font, or the maths font in italic."""
+    """How wide `s` sets in Qt (its markup dropped), in px: the UI's font, or the math font in italic."""
     font = QtGui.QFont(maths.FONT) if italic else QtGui.QFont()
     font.setItalic(italic)
     font.setPixelSize(max(1, round(size)))

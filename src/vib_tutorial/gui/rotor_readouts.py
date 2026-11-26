@@ -1,7 +1,7 @@
 """The Jeffcott rotor page's readout texts, plain functions of the rotor and its analysis: no widgets, so they can
 be checked without building the page (#218 C2: split from `rotor.py`).
 
-`shaft_note` is the note under the Shaft and disc box (EI, the shaft's stiffness at the disc and how it is
+`shaft_note` is the note under the Shaft and disk box (EI, the shaft's stiffness at the disk and how it is
 worked out, the asymmetry, the crack, the shaft's mass and the static sag); `instability_causes` and
 `onset_text` make the Stability tab's note; `fmt_len` writes a length in mm, µm or nm.
 
@@ -26,7 +26,7 @@ def fmt_len(meters: float) -> str:
 
 
 def shaft_note(system: RotorSystem) -> str:
-    """The note under the Shaft and disc box."""
+    """The note under the Shaft and disk box."""
     ks = 48.0 * system.ei / system.length**3
     if system.overhung:
         formula = f" = 3EI/(c²(L + c)), overhung by c = {sig(system.overhang * 1e3, 4)} mm"
@@ -35,7 +35,7 @@ def shaft_note(system: RotorSystem) -> str:
     else:
         formula = f" (48EI/L³ = {ks:,.0f} N/m at midspan)"
     return (
-        f"EI = {sig(system.ei, 4)} N·m²; shaft stiffness at the disc (bearings rigid) "
+        f"EI = {sig(system.ei, 4)} N·m²; shaft stiffness at the disk (bearings rigid) "
         f"{system.disc_stiffness:,.0f} N/m"
         + formula
         + _asymmetry(system)
@@ -72,7 +72,7 @@ def _crack(system: RotorSystem) -> str:
     return (
         f"<br>Crack {crack.depth:.0%} deep at z = {sig(system.crack_z * 1e3, 4)} mm ({state}): compliance "
         f"{sig(c_open)} rad/(N·m) opening it, {sig(c_across)} across; on average over a turn it takes "
-        f"{loss[0]:.2%} and {loss[1]:.2%} off the disc's stiffness along and across its mouth"
+        f"{loss[0]:.2%} and {loss[1]:.2%} off the disk's stiffness along and across its mouth"
     )
 
 
@@ -87,7 +87,7 @@ def _shaft_mass(system: RotorSystem) -> str:
         else f"no modes with the stations held below {MODE_LIMIT:,.0f} Hz"
     )
     return (
-        f"<br>Shaft {sig(system.shaft_mass)} kg ({system.shaft_mass / system.disc_mass:.0%} of the disc), "
+        f"<br>Shaft {sig(system.shaft_mass)} kg ({system.shaft_mass / system.disc_mass:.0%} of the disk), "
         f"{system.nodes.size - 1} elements, reduced to the stations and {held}"
     )
 
@@ -96,7 +96,7 @@ def _sag(system: RotorSystem) -> str:
     if not system.gravity:
         return ""
     q = system.static_deflection(0.0)
-    return f"<br>Static sag at rest: disc {fmt_len(-q[YD])}, journals {fmt_len(-q[YA])} (A) and {fmt_len(-q[YB])} (B)"
+    return f"<br>Static sag at rest: disk {fmt_len(-q[YD])}, journals {fmt_len(-q[YA])} (A) and {fmt_len(-q[YB])} (B)"
 
 
 def instability_causes(s: RotorSystem) -> str:

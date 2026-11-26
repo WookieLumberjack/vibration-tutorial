@@ -23,7 +23,7 @@ def ellipse_axes() -> list[np.ndarray]:
 
 
 def ellipse_svg() -> str:
-    """The three placements' one-σ noise ellipses for modes 1 and 2, centred on the true coordinates: a circle with
+    """The three placements' one-σ noise ellipses for modes 1 and 2, centered on the true coordinates: a circle with
     a sensor on every mass, a little larger and tilted with EfI's three, long and thin with three bunched at the
     ground, where modes 1 and 2 look alike."""
     fg, muted = colors.foreground, colors.muted

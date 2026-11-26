@@ -25,7 +25,7 @@ MIN_AUTO_PEAK = 1e-6  # m
 # target, so letting go does not rescale the view.
 MAX_DRAG = MAX_SWING
 # Magnification when a mass is grabbed at rest: a full drag is then 30 mm,
-# rather than the micrometres the auto-scale grows to while nothing moves.
+# rather than the micrometers the auto-scale grows to while nothing moves.
 DRAG_GAIN = 10.0  # display units per meter
 DRAG_TIP = (
     "<p><b>Pluck:</b> drag any mass sideways with the mouse and let go.</p>"
@@ -146,7 +146,7 @@ class ChainView(Grabbable, pg.PlotWidget):
         self.apply_theme()
 
     def apply_theme(self) -> None:
-        """Draw in the current theme's colours."""
+        """Draw in the current theme's colors."""
         self._pen = pg.mkPen(colors.structure, width=2)
         self._wall[0].setPen(pg.mkPen(colors.structure, width=4))
         self._wall[1].setPen(self._pen)
@@ -161,7 +161,7 @@ class ChainView(Grabbable, pg.PlotWidget):
             item.setPen(pg.mkPen(colors.grey, width=1))
         for i, (rect, label) in enumerate(zip(self._rects, self._labels)):
             if i in self._recovered:
-                # Hollow, with a dashed outline in the mass's colour: a derived result.
+                # Hollow, with a dashed outline in the mass's color: a derived result.
                 fill = pg.mkColor(colors.mass[i])
                 fill.setAlpha(60)
                 rect.setBrush(pg.mkBrush(fill))
@@ -199,7 +199,7 @@ class ChainView(Grabbable, pg.PlotWidget):
             # Set both axes in one call: with the aspect ratio locked, separate
             # setXRange/setYRange calls let the second one shrink the first,
             # cropping the chain once it's wider than the widget's shape.
-            # Down to -0.7: the scale's text, centred at -0.55, is ~0.18 tall in a 120 px view (its descenders cut at -0.6).
+            # Down to -0.7: the scale's text, centered at -0.55, is ~0.18 tall in a 120 px view (its descenders cut at -0.6).
             self.setRange(QtCore.QRectF(-0.25, -0.7, n * SPACING + 0.85, 1.45), padding=0)
             self._scale_bar.setData([0.05, 0.05 + MAX_SWING], [-0.55, -0.55])
             self._scale_text.setPos(0.1 + MAX_SWING, -0.55)

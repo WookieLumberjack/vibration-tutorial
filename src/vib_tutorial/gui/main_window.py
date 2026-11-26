@@ -107,7 +107,7 @@ def _follows_chain(page: QtWidgets.QWidget) -> TypeGuard[ChainPage]:
 
 
 THEME_TIP = (
-    "<p>Colours of the whole app: plots, animation and controls.</p>"
+    "<p>Colors of the whole app: plots, animation and controls.</p>"
     "<p><b>System</b> follows the desktop's light or dark setting, and switches with it.</p>"
 )
 SIZE_TIP = (
@@ -206,7 +206,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.theory_button.clicked.connect(self.show_theory)
         about = QtWidgets.QToolButton()
         about.setText("About")
-        about.setToolTip("Version, disclaimer and licence.")
+        about.setToolTip("Version, disclaimer and license.")
         about.clicked.connect(self._about)
         self.theory_window_button = QtWidgets.QToolButton()
         self.theory_window_button.setText("Theory window")
@@ -585,7 +585,7 @@ class MainWindow(QtWidgets.QMainWindow):
         box.exec()
 
     def hold_curves(self) -> None:
-        """Hold the curves on every plot the page showing shows, in grey, to compare a change against (H)."""
+        """Hold the curves on every plot the page showing shows, in gray, to compare a change against (H)."""
         page = self.pages.currentWidget()
         assert page is not None, "a page always shows"
         plot_export.hold_showing(page)
@@ -726,7 +726,7 @@ class MainWindow(QtWidgets.QMainWindow):
             if window is not None:
                 window.apply_theme()
         for browser in self.findChildren(NotesBrowser):
-            browser.refresh()  # their equations and figures, in the new colours
+            browser.refresh()  # their equations and figures, in the new colors
 
     # --------------------------------------------------------------- events
     def event(self, event: QtCore.QEvent) -> bool:

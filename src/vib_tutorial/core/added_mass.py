@@ -61,7 +61,7 @@ class Body:
 
     @property
     def volume(self) -> float:
-        """m³ (per metre of length for a cylinder)."""
+        """m³ (per meter of length for a cylinder)."""
         R = self.radius
         return 4 / 3 * math.pi * R**3 if self.shape == Shape.SPHERE else math.pi * R**2
 

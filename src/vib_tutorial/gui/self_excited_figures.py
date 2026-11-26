@@ -1,6 +1,6 @@
 """The Self-excited vibration page's Theory figures (see `figures`): a square section galloping across a wind, the
 wind it sees tilted by its own motion and the force that pushes it on; and the flutter page's typical section, its
-quarter chord, elastic axis and centre of mass where the page's defaults put them (`Flutter`), on its plunge and
+quarter chord, elastic axis and center of mass where the page's defaults put them (`Flutter`), on its plunge and
 pitch springs."""
 
 from __future__ import annotations
@@ -46,7 +46,7 @@ def gallop_svg() -> str:
 
 def section_svg() -> str:
     """The typical section, leading edge to the left: the lift L at the quarter chord, the elastic axis e
-    semichords behind it on its plunge spring k_h and pitch spring k_θ, the centre of mass x_cg semichords
+    semichords behind it on its plunge spring k_h and pitch spring k_θ, the center of mass x_cg semichords
     further back; plunge h down, pitch θ nose up."""
     fg, muted, mass, force = colors.foreground, colors.muted, colors.mass[0], colors.force
     m = Flutter()

@@ -48,7 +48,7 @@ def _notes_in(module: str) -> list[str]:
     return found
 
 
-# ------------------------------------------------------------------ inline maths
+# ------------------------------------------------------------------ inline math
 def test_inline_maths_sets_variables_in_italic():
     html = maths.inline("T = |F<sub>floor</sub>| ≈ cos Ωt/ω<sub>n</sub> + 15 Hz &lt; x<sub>k+1</sub>, <rm>d</rm>x")
     assert html.startswith(f"<span class=\"m\" style=\"font-family:'{maths.FONT}'; white-space:nowrap\">")
@@ -175,7 +175,7 @@ def test_every_figure_named_in_the_notes_exists():
 
 
 def test_figures_follow_the_theme(app):
-    """The figures are SVG drawn from the theme's colours, rendered as the notes are laid out, in the fonts the app
+    """The figures are SVG drawn from the theme's colors, rendered as the notes are laid out, in the fonts the app
     bundles (a generic family, `sans-serif`, made Qt search the Mac's aliases and draw in the system's)."""
     from PySide6 import QtCore, QtGui
 
@@ -193,7 +193,7 @@ def test_figures_follow_the_theme(app):
                 families = set(re.findall(r"font-family=['\"]([^'\"]+)", svg))
                 assert families <= {font_metrics.SANS_FAMILY, maths.FONT}, f"{name} asks for {families}"
                 assert theme.background in svg and theme.foreground in svg
-                assert theme.mass[0] in svg or theme.force in svg, f"{name} draws its subject in the plots' colour"
+                assert theme.mass[0] in svg or theme.force in svg, f"{name} draws its subject in the plots' color"
                 image = browser.loadResource(QtGui.QTextDocument.ResourceType.ImageResource, QtCore.QUrl(name))
                 assert isinstance(image, QtGui.QImage) and not image.isNull()
                 assert 300 < image.deviceIndependentSize().width() <= 560
@@ -206,7 +206,7 @@ def test_figures_follow_the_theme(app):
 
 def test_a_figures_labels_are_measured_without_qt_as_qt_would(app):
     """`font_metrics` has every character a figure's labels use, and measures a label as Qt does with the same
-    fonts (#316 D7): within 1 % for the bundled maths font, and for the sans-serif on the machine that generated
+    fonts (#316 D7): within 1 % for the bundled math font, and for the sans-serif on the machine that generated
     the tables (another machine's UI font may differ: in the app, Qt measures)."""
     from PySide6 import QtGui
 
@@ -271,7 +271,7 @@ def test_notes_browser_redraws_its_equations_in_a_new_colour(app):
         style.set_theme(replace(style.DARK, text="#ff0000"))
         browser.refresh()
         assert 0xFF0000 in ink()
-        # Inline maths is a little larger than the text round it.
+        # Inline math is a little larger than the text round it.
         sheet = browser.document().defaultStyleSheet()
         assert f"font-size: {round(browser.text_px() * maths.INLINE_SIZE)}px" in sheet
     finally:
@@ -282,7 +282,7 @@ def test_notes_browser_redraws_its_equations_in_a_new_colour(app):
 
 def test_fonts_are_bundled_with_their_licence():
     names = sorted(p.name for p in maths.FONTS.iterdir())
-    # STIX Two Text (the maths, OFL.txt) and IBM Plex Sans (the UI, #316 D10), four faces each
+    # STIX Two Text (the math, OFL.txt) and IBM Plex Sans (the UI, #316 D10), four faces each
     assert {"OFL.txt", "OFL-IBMPlexSans.txt"} <= set(names)
     for family in ("STIXTwoText", "IBMPlexSans"):
         faces = [n for n in names if n.startswith(family + "-") and n.endswith(".otf")]
@@ -306,7 +306,7 @@ def test_the_app_sets_its_text_in_the_bundled_ui_font(app):
 
 
 def test_a_typeset_equation_is_kept_and_read_back_in_any_colour(tmp_path, monkeypatch):
-    """`equation_svg` typesets once, keeps it in the cache (`VIB_CACHE`), and reads it back in any colour."""
+    """`equation_svg` typesets once, keeps it in the cache (`VIB_CACHE`), and reads it back in any color."""
     from vib_tutorial.gui import maths
 
     monkeypatch.setenv(maths.CACHE_ENV, str(tmp_path))

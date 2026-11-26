@@ -259,7 +259,7 @@ def _state_space_modes(system: ChainSystem) -> list[ComplexMode]:
 def modal_coordinate_map(system: ChainSystem, result: ModalResult, complex_modes: bool = False) -> np.ndarray:
     """Real matrix P, shape (2N, m), mapping states to modal coordinates: y = z @ P.
 
-    z holds states [x, v] as rows. Each coordinate is scaled to metres: it is
+    z holds states [x, v] as rows. Each coordinate is scaled to meters: it is
     the mode's contribution to the displacement of the mass the mode moves
     most (the mass where its normalized shape is 1).
 

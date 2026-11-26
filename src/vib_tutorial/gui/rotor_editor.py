@@ -1,4 +1,4 @@
-"""The Jeffcott rotor page's parameters: the *Shaft and disc* and *Bearing supports* boxes, and the rotor they
+"""The Jeffcott rotor page's parameters: the *Shaft and disk* and *Bearing supports* boxes, and the rotor they
 describe (#218 C2: split from `rotor.py`).
 
 `RotorEditor` owns the boxes and the ties between them (isotropic supports, B the same as A, a film's or a
@@ -45,7 +45,7 @@ from .rotor_tips import (
 SUPPORTS = ("Springs and dampers", "Oil-film journal bearings", "Magnetic bearings")
 SPRINGS, FILMS, MAGNETS = range(len(SUPPORTS))
 BEARING_WIDTHS = (56, 56, 50, 50, 46, 56, 40)  # px, the bearing table's columns: kx, ky, cx, cy, m, kxy, λ
-BEARING_GAP = 0.02  # of the span: the closest the disc may be put to a bearing
+BEARING_GAP = 0.02  # of the span: the closest the disk may be put to a bearing
 GRAVITY = 9.81  # m/s²
 
 
@@ -58,7 +58,7 @@ ANGLE_NOTE = (
 
 
 class RotorEditor(QtWidgets.QWidget):
-    """The rotor's boxes: Shaft and disc, then Bearing supports (see the module's docstring)."""
+    """The rotor's boxes: Shaft and disk, then Bearing supports (see the module's docstring)."""
 
     changed = QtCore.Signal()
 
@@ -71,7 +71,7 @@ class RotorEditor(QtWidgets.QWidget):
     ) -> None:
         super().__init__(parent)
         self.bearing_panel, self.magnet_panel, self.rub_panel = bearing_panel, magnet_panel, rub_panel
-        self.weights: tuple[complex, ...] = ()  # balance weights on the disc (kg·m)
+        self.weights: tuple[complex, ...] = ()  # balance weights on the disk (kg·m)
         self.plane_weights: tuple[PlaneWeight, ...] = ()  # weights in balancing planes
         self.hidden: dict[str, float] | None = None  # RotorSystem fields kept out of the boxes (SI)
         layout = QtWidgets.QVBoxLayout(self)
@@ -84,7 +84,7 @@ class RotorEditor(QtWidgets.QWidget):
 
     def _rotor_box(self) -> QtWidgets.QGroupBox:
         s = RotorSystem()
-        box = QtWidgets.QGroupBox("Shaft and disc")
+        box = QtWidgets.QGroupBox("Shaft and disk")
         form = form_layout(box)
         self.length = spin(0.05, 5.0, s.length, 3, " m")
         self.length.setToolTip("Bearing span L")
@@ -95,26 +95,26 @@ class RotorEditor(QtWidgets.QWidget):
         self.position = PositionBox()
         self.position.setValue(s.position)
         self.position.setToolTip(
-            "<p>Where the disc sits, a/L from bearing A. At 0.5 (midspan) with identical bearings the "
-            "disc's translation and tilt are uncoupled, so the spin's gyroscopic moment never shows in "
-            "the translational whirl: the classic Jeffcott rotor. Move it off centre and the disc tilts "
-            "as it whirls.</p><p>Above 1 the disc overhangs bearing B (below 0, bearing A): an "
-            "<i>overhung</i> rotor, like a fan or a pump impeller. The disc then tilts as much as it "
+            "<p>Where the disk sits, a/L from bearing A. At 0.5 (midspan) with identical bearings the "
+            "disk's translation and tilt are uncoupled, so the spin's gyroscopic moment never shows in "
+            "the translational whirl: the classic Jeffcott rotor. Move it off center and the disk tilts "
+            "as it whirls.</p><p>Above 1 the disk overhangs bearing B (below 0, bearing A): an "
+            "<i>overhung</i> rotor, like a fan or a pump impeller. The disk then tilts as much as it "
             "moves, and the gyroscopic moment moves even the first critical speed.</p>"
         )
         self.disc_mass = spin(0.01, 1000.0, s.disc_mass, 3, " kg")
         self.ip = spin(1e-6, 100.0, s.ip, 6, " kg·m²")
         self.ip.setToolTip(
-            "Polar moment of inertia I<sub>p</sub>, about the spin axis (a thin disc of radius r<sub>d</sub>: m r<sub>d</sub>²/2)"
+            "Polar moment of inertia I<sub>p</sub>, about the spin axis (a thin disk of radius r<sub>d</sub>: m r<sub>d</sub>²/2)"
         )
         self.id = spin(1e-6, 100.0, s.id, 6, " kg·m²")
         self.id.setToolTip(
-            "Diametral moment of inertia I<sub>d</sub>, about a diameter (a thin disc: m r<sub>d</sub>²/4 = I<sub>p</sub>/2)"
+            "Diametral moment of inertia I<sub>d</sub>, about a diameter (a thin disk: m r<sub>d</sub>²/4 = I<sub>p</sub>/2)"
         )
         self.unbalance = spin(0.0, 1e6, s.unbalance * 1e6, 1, " g·mm")
         self.unbalance.setToolTip(
-            "<p>Mass unbalance U = m e: the disc's mass times the distance e of its centre of mass from "
-            "the shaft's axis. 20 g·mm on a 1 kg disc is e = 20 µm, about balance grade G6.3 at "
+            "<p>Mass unbalance U = m e: the disk's mass times the distance e of its center of mass from "
+            "the shaft's axis. 20 g·mm on a 1 kg disk is e = 20 µm, about balance grade G6.3 at "
             "3000 rpm (e Ω = 6.3 mm/s).</p>"
         )
         form.addRow("Span L:", self.length)
@@ -123,7 +123,7 @@ class RotorEditor(QtWidgets.QWidget):
         self.shaft_mass = QtWidgets.QCheckBox("Shaft mass, ρ")
         self.shaft_mass.setToolTip(SHAFT_MASS_TIP)
         self.density = spin(100.0, 30000.0, STEEL, 0, " kg/m³")
-        self.density.setToolTip("The shaft's density (steel ≈ 7850 kg/m³, aluminium ≈ 2700)")
+        self.density.setToolTip("The shaft's density (steel ≈ 7850 kg/m³, aluminum ≈ 2700)")
         row = QtWidgets.QHBoxLayout()
         row.addWidget(self.shaft_mass)
         row.addWidget(self.density, 1)
@@ -145,8 +145,8 @@ class RotorEditor(QtWidgets.QWidget):
         self.mass_matrix.setAccessibleName("Mass matrix")
         self.shaft_mass.toggled.connect(self._emit)
         self.mass_matrix.currentIndexChanged.connect(self._emit)
-        form.addRow("Disc position a/L:", self.position)
-        form.addRow("Disc mass m:", self.disc_mass)
+        form.addRow("Disk position a/L:", self.position)
+        form.addRow("Disk mass m:", self.disc_mass)
         form.addRow("Polar inertia I<sub>p</sub>:", self.ip)
         form.addRow("Diametral inertia I<sub>d</sub>:", self.id)
         self.unbalance_angle = spin(-180.0, 180.0, math.degrees(s.unbalance_angle), 0, "°")
@@ -167,7 +167,7 @@ class RotorEditor(QtWidgets.QWidget):
         for size, angle, tip, label in (
             (self.unbalance, self.unbalance_angle, None, "Unbalance m·e:"),
             (self.bow, self.bow_angle, BOW_TIP, "Shaft bow δ<sub>b</sub>:"),
-            (self.skew, self.skew_angle, SKEW_TIP, "Disc skew τ:"),
+            (self.skew, self.skew_angle, SKEW_TIP, "Disk skew τ:"),
             (self.asymmetry, self.asymmetry_angle, ASYMMETRY_TIP, "Asymmetry ±Δ:"),
             (self.crack_depth, self.crack_angle, CRACK_TIP, "Crack depth a<sub>c</sub>/d:"),
         ):
@@ -287,8 +287,8 @@ class RotorEditor(QtWidgets.QWidget):
         self.same_bearings = QtWidgets.QCheckBox("B same as A")
         self.same_bearings.setChecked(True)
         self.same_bearings.setToolTip(
-            "<p>Untick to give the two bearings different supports. Like an off-centre disc, unequal "
-            "supports couple the disc's translation and tilt, so the gyroscopic moment shows.</p>"
+            "<p>Untick to give the two bearings different supports. Like an off-center disk, unequal "
+            "supports couple the disk's translation and tilt, so the gyroscopic moment shows.</p>"
         )
         self.supports = QtWidgets.QComboBox()
         self.supports.setAccessibleName("Supports")
@@ -474,7 +474,7 @@ class RotorEditor(QtWidgets.QWidget):
             w.blockSignals(False)
 
     def set_weights(self, weights: tuple[complex, ...], plane_weights: tuple[PlaneWeight, ...] = ()) -> None:
-        """Put these balance weights on the disc (kg·m each) and in these planes, in place of any there."""
+        """Put these balance weights on the disk (kg·m each) and in these planes, in place of any there."""
         self.weights = tuple(weights)
         self.plane_weights = tuple(plane_weights)
 
@@ -489,7 +489,7 @@ class RotorEditor(QtWidgets.QWidget):
         }
 
     def hide_unbalance(self, unbalance: float, angle: float, skew: tuple[float, float] | None = None) -> None:
-        """Give the disc this unbalance (kg·m at `angle` rad) without showing it: a balancing exercise.
+        """Give the disk this unbalance (kg·m at `angle` rad) without showing it: a balancing exercise.
 
         With `skew` (τ, its angle in rad), hide a couple unbalance too; otherwise the skew stays as set.
         """
@@ -537,7 +537,7 @@ def _bearing(
 
 
 class PositionBox(NumberBox):
-    """The disc's position a/L: between the bearings or overhung past either, stepping over the bearings."""
+    """The disk's position a/L: between the bearings or overhung past either, stepping over the bearings."""
 
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)
@@ -553,7 +553,7 @@ class PositionBox(NumberBox):
 
 
 def _off_bearing(position: float) -> float:
-    """a/L moved off a bearing: the disc cannot sit on one (it would have no shaft on one side)."""
+    """a/L moved off a bearing: the disk cannot sit on one (it would have no shaft on one side)."""
     for bearing in (0.0, 1.0):
         if abs(position - bearing) < BEARING_GAP:
             inward = 0.5 - bearing  # toward midspan, if it is right on the bearing

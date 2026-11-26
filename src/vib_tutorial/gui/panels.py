@@ -242,7 +242,7 @@ class ParameterPanel(QtWidgets.QGroupBox):
         self.apply_theme()
 
     def apply_theme(self) -> None:
-        """Each row's swatch in its mass's colour."""
+        """Each row's swatch in its mass's color."""
         for i, row in enumerate(self.rows):
             row[0].setText(f"<b style='color:{colors.mass[i]}'>■</b> {i + 1}")
 
