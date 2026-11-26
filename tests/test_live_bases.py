@@ -9,7 +9,7 @@ from dataclasses import replace
 import numpy as np
 import pytest
 
-from vib_tutorial.core.bases import TWO_PI, TwoMass, direction, rayleigh_hz
+from vib_tutorial.core.bases import TWO_PI, TwoMass, direction, rayleigh_hz, unit
 from vib_tutorial.view_models import bases as view
 from vib_tutorial.view_models.live_bases import COL, LiveBases, energy_view
 
@@ -214,3 +214,29 @@ def test_the_bars_add_the_pieces_and_the_cross_term_up_to_the_stored_energy():
     assert modal.bars[2].top == pytest.approx(modal.bars[2].bottom, abs=1e-12 + 1e-9 * stored.top)
     rail = view.energy_sum(view.shares(s, np.eye(2), True, x, v))
     assert [b.name for b in rail.bars] == ["along v₁", "stored"]
+
+
+def test_the_energy_triangles_close_on_the_whole_energy_and_are_right_angled_along_the_modes():
+    """`energy_triangles`: ½|a|², ½|b|² the pieces' energies, a·b the cross term (VᵀMV's and VᵀKV's off-diagonal
+    term times the coordinates), ½|a + b|² the whole; the angle between the scaled arrows is the basis's alone."""
+    s = TwoMass(m2=2.0)
+    M, _, K = s.matrices()
+    live = plucked(system=s)
+    live.advance(0.53)
+    _, y = live.record.window(10.0)
+    x, v = y[:, COL["x1"] : COL["x2"] + 1], y[:, COL["v1"] : COL["v2"] + 1]
+    V = np.column_stack([unit(np.array([1.0, 0.3])), unit(np.array([0.2, 1.0]))])
+    kin, pot = view.energy_triangles(s, V, False, x, v)
+    q, qd = np.linalg.solve(V, x[-1]), np.linalg.solve(V, v[-1])
+    assert kin.cross == pytest.approx((V.T @ M @ V)[0, 1] * qd[0] * qd[1])
+    assert pot.cross == pytest.approx((V.T @ K @ V)[0, 1] * q[0] * q[1])
+    whole = np.add(kin.a, kin.b)
+    assert 0.5 * whole @ whole == pytest.approx(0.5 * v[-1] @ M @ v[-1])
+    whole = np.add(pot.a, pot.b)
+    assert 0.5 * whole @ whole == pytest.approx(0.5 * x[-1] @ K @ x[-1])
+    axes = view.energy_triangles(s, np.eye(2), False, x, v)
+    assert axes[0].apart == pytest.approx(90.0) and axes[1].apart > 90.0, "M diagonal; the spring couples"
+    modes = view.energy_triangles(s, s.modes()[1], False, x, v)
+    assert [t.apart for t in modes] == pytest.approx([90.0, 90.0])
+    one = view.energy_triangles(s, np.eye(2), True, x, v)
+    assert one[0].apart is None and one[0].b == (0.0, 0.0) and one[0].cross == 0.0
