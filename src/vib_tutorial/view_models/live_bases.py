@@ -13,7 +13,8 @@ booked as its own term:
   carries the point round at the same s and the impulse keeps u′ᵀMv. Taken away (`set_rail(None)`), x = us and
   v = us' run on free, with no jump. The rail's jumps are the hand's work on it (`rail_work`).
 - `hold(x)` then `let_go()`: a hand holds the masses still at x (on a rail, at the nearest place on it); the clock
-  stops while held, and its work is `released`.
+  stops while held, and its work is `released`. `hold_state(x, v)` holds a whole state, velocities too (State-space
+  modes sets a pair of coordinates), let go moving.
 - `advance(duration)`: step on (nothing while held), the samples into `record`. The part of a step left over is
   carried to the next (`Steps`' `StepClock`): it's a `stepping.Stepper`.
 
@@ -179,6 +180,16 @@ class LiveBases:
         s = x.copy() if self.rail is None else np.array([float(self.rail @ x)])
         self.held = self.basis @ s
         self._restart(s, np.zeros_like(s))
+        self.books["released"] += self.stored() - before
+
+    def hold_state(self, x: np.ndarray, v: np.ndarray) -> None:
+        """A hand holds the masses at x moving at v, frozen there (the clock stopped) until `let_go`: the state set
+        whole, its velocities too (State-space modes' planes set a pair of coordinates). Free only."""
+        if self.rail is not None:
+            raise ValueError("a state is held whole only off the rail")
+        before = self.stored()
+        self.held = np.asarray(x, dtype=float).copy()
+        self._restart(self.held.copy(), np.asarray(v, dtype=float).copy())
         self.books["released"] += self.stored() - before
 
     def let_go(self) -> None:
