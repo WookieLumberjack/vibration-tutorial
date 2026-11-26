@@ -91,15 +91,30 @@ RAIL_TIP = (
     "Rayleigh's quotient for every angle, the two natural frequencies and the modes' angles.</p>"
 )
 MATRICES_TIP = (
-    "<p>The mass and stiffness matrices in the basis the arrows make, VᵀMV and VᵀKV. Their off-diagonal terms are "
-    "the coupling between the coordinates (in color while they aren't zero). Their frequencies, the roots of "
-    "det(VᵀKV − ω²VᵀMV) = 0, are the same in every basis.</p>"
+    "<p>The steps from the masses' own matrices, M, K and C, to the matrices in the basis the arrows make: "
+    "VᵀMV, VᵀKV and VᵀCV, V times the matrix times V's columns again. Their off-diagonal terms are the coupling "
+    "between the coordinates (in color while they aren't zero). The frequencies, the roots of "
+    "det(VᵀKV − ω²VᵀMV) = 0, are the same in every basis. The modes make VᵀMV and VᵀKV diagonal, but VᵀCV only "
+    "for some dampers.</p>"
 )
 ENERGY_TIP = (
     "<p>Where the energy went: what your hand put in (a pluck), what keeping or turning one arrow did, what each change cost or "
     "added (a spring changed at a stretch, mass caught or dropped), what the dampers took out, and what's stored "
     "now. Put in, less taken out, with the changes, is what's stored, at every instant.</p>"
 )
+
+
+class SquarePlot(pg.PlotWidget):
+    """A plot as tall as it is wide (an energy triangle's): the height it doesn't need goes to the plots above."""
+
+    def hasHeightForWidth(self) -> bool:
+        return True
+
+    def heightForWidth(self, width: int) -> int:
+        return width
+
+    def sizeHint(self) -> QtCore.QSize:
+        return QtCore.QSize(160, 160)
 
 
 class BasesPage(QtWidgets.QWidget):
@@ -202,11 +217,11 @@ class BasesPage(QtWidgets.QWidget):
         cv.setContentsMargins(0, 0, 0, 0)
         cv.addWidget(self.chain, 1)
         mid = QtWidgets.QHBoxLayout()
-        mid.addWidget(self.plane, 3)
+        mid.addWidget(self.plane, 1)
         side = QtWidgets.QVBoxLayout()
         side.addWidget(self.matrices)
         side.addStretch(1)
-        mid.addLayout(side, 2)
+        mid.addLayout(side, 1)  # the steps run three matrices across
         cv.addLayout(mid, 4)
         cv.addWidget(self.plane_note)
         cv.addLayout(row)
@@ -244,7 +259,7 @@ class BasesPage(QtWidgets.QWidget):
         tri_row = QtWidgets.QHBoxLayout()
         for title in ("Kinetic, through M", "Potential, through K"):
             column = QtWidgets.QVBoxLayout()
-            tp = pg.PlotWidget()
+            tp = SquarePlot()
             tp.setAccessibleName(f"The energy triangle: {title.lower()}")
             tp.setToolTip(TRIANGLE_TIP)
             tp.setTitle(title)
@@ -254,15 +269,17 @@ class BasesPage(QtWidgets.QWidget):
             tp.hideAxis("left")
             tp.hideAxis("bottom")
             tp.setAspectLocked(True)
-            tp.setMinimumSize(60, 110)  # two side by side mustn't widen the pane (the window fits 1280 px)
-            tp.setSizePolicy(QtWidgets.QSizePolicy.Policy.Ignored, QtWidgets.QSizePolicy.Policy.Expanding)
+            tp.setMinimumSize(60, 60)  # two side by side mustn't widen the pane (the window fits 1280 px)
+            policy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Ignored, QtWidgets.QSizePolicy.Policy.Fixed)
+            policy.setHeightForWidth(True)
+            tp.setSizePolicy(policy)
             # the scaled arrows' lines (faint, still), then a, b from a's tip, a + b
             items = [pg.PlotDataItem() for _ in range(5)]
             for item in items:
                 tp.addItem(item, ignoreBounds=True)
             note = LiveLabel(wrap=True)
             mute(note)
-            column.addWidget(tp, 1)
+            column.addWidget(tp)
             column.addWidget(note)
             tri_row.addLayout(column, 1)
             self.tri_plots.append(tp)
@@ -270,7 +287,7 @@ class BasesPage(QtWidgets.QWidget):
             self.tri_notes.append(note)
         pv.addWidget(self.shares_plot, 2)
         pv.addWidget(self.sum_plot, 1)
-        pv.addLayout(tri_row, 2)
+        pv.addLayout(tri_row)
         pv.addWidget(self.shares_note)
 
         rails = QtWidgets.QWidget()
@@ -627,7 +644,7 @@ class BasesPage(QtWidgets.QWidget):
 
     @staticmethod
     def _matrices_html(m: view.MatricesView) -> str:
-        """The steps in pairs, a row each: M and K, then V and Vᵀ, then VᵀMV and VᵀKV (VᵀCV under them)."""
+        """The steps, a row each: M, K and C, then V and Vᵀ, then VᵀMV, VᵀKV and VᵀCV, then the frequencies."""
         c = colors
 
         def one(mat: view.Matrix, square: bool) -> str:
@@ -641,10 +658,10 @@ class BasesPage(QtWidgets.QWidget):
                     tds.append(f'<td align="right" style="color:{colour}; font-weight:{weight}">{e}</td>')
                 rows.append("<tr>" + "".join(tds) + "</tr>")
             unit = f" ({mat.unit})" if mat.unit else ""
-            return f"<b>{mat.symbol}</b>{unit}<table cellspacing='3'>{''.join(rows)}</table>"
+            return f"<b>{mat.symbol}</b>{unit}<table cellspacing='2'>{''.join(rows)}</table>"
 
         def pair(mats: Sequence[view.Matrix], square: bool) -> str:
-            tds = "".join(f"<td style='padding-right:14px' valign='top'>{one(x, square)}</td>" for x in mats)
+            tds = "".join(f"<td style='padding-right:10px' valign='top'>{one(x, square)}</td>" for x in mats)
             return f"<tr>{tds}</tr>"
 
         def step(text: str) -> str:
@@ -654,12 +671,10 @@ class BasesPage(QtWidgets.QWidget):
         products = list(m.matrices)
         rows = [step("1. The system, in x₁ and x₂"), pair(m.given, True)]
         rows += [step(f"2. The arrows as columns: x = {v}q"), pair(m.basis, False)]
-        if products:
-            rows += [step(f"3. Multiply by {v}"), pair(m.halfway, False)]
-            rows += [step(f"4. Then by {v}ᵀ: the matrices in q")]
-            rows += [pair(products[i : i + 2], True) for i in range(0, len(products), 2)]
+        if products:  # MV, KV, CV between, shown once, took 65 px a window 800 px tall hadn't
+            rows += [step(f"3. Multiply by {v}, then by {v}ᵀ: the matrices in q"), pair(products, True)]
         sums = "".join(f"<br>{line}" for line in m.sums)
-        last = f"<p>5. The frequencies{sums}</p>" if m.sums else ""
+        last = f"<p>4. The frequencies{sums}</p>" if m.sums else ""
         return f"<table cellspacing='2'>{''.join(rows)}</table>{last}"
 
     @coalesce.coalesced(covers=("_draw_live",))
@@ -726,7 +741,7 @@ class BasesPage(QtWidgets.QWidget):
             whole.setData([0.0, ax + bx], [0.0, ay + by])
             shown = self.tri_span[k]
             if not shown or tri.span > shown or tri.span < 0.5 * shown:  # steady: re-ranged only when it must
-                self.tri_span[k] = 1.15 * tri.span
+                self.tri_span[k] = 1.05 * tri.span
                 r = self.tri_span[k]
                 self.tri_plots[k].setRange(QtCore.QRectF(-r, -r, 2 * r, 2 * r), padding=0)
             if tri.apart is None:
