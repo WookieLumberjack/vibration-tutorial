@@ -50,12 +50,17 @@ show in <i>State-space modes</i>.</p>
 Sizes tab's log axis. Its halving time is <m>ln 2/|σ|</m>.</p>
 
 <h3><a name="change"></a>Changing the state's basis</h3>
-<p>Any basis of the state is four columns in a matrix <m>T</m>, and the coordinates in it are
-<m>w = T<sup>−1</sup>z</m>. Then <m>ẇ = T<sup>−1</sup>ATw</m>: the matrix in the new basis is
-<m>T<sup>−1</sup>AT</m> <cite>strang</cite>. The last page used <m>VᵀMV</m> instead. That worked because the
-energies <m>½ẋᵀMẋ</m> and <m>½xᵀKx</m> are quadratic forms, and a quadratic form changes by the transpose on both
-sides. <m>A</m> isn't a quadratic form, and it isn't symmetric: it is a map from the state to its rate of change,
-and a map changes by <m>T<sup>−1</sup></m> on the left. Either way, the eigenvalues are the same in every basis:
+<p>This is the last page's move, made on the state. There, two arrows were the columns of <m>V</m> and
+<m>x = Vq</m>; here four state vectors are the columns of <m>T</m> and <m>z = Tw</m>. <m>T</m> plays
+<m>V</m>'s part and <m>w</m> plays <m>q</m>'s, with their own letters because the page also uses the last page's
+<m>V</m> and <m>q</m> (they build the second basis). Put <m>z = Tw</m> into <m>ż = Az</m>:</p>
+<eq>T\dot w = A T w \quad\Rightarrow\quad \dot w = T^{-1} A T\, w</eq>
+<p>The matrix in the new basis is <m>T<sup>−1</sup>AT</m> <cite>strang</cite>. Why the inverse here, when the
+last page multiplied by <m>Vᵀ</m>? There, <m>MVq̈ + CVq̇ + KVq = 0</m> holds multiplied by any invertible matrix,
+and <m>Vᵀ</m> was the choice that keeps the matrices symmetric, the energies' own. Here there's no choice: the
+equation has to say what <m>ẇ</m> is, so <m>ẇ</m> must stand alone on the left, and only <m>T<sup>−1</sup></m>
+does that. (Had the last page wanted <m>q̈</m> alone it would have needed <m>(VᵀMV)<sup>−1</sup></m> too.) Either
+way, the eigenvalues are the same in every basis:
 <m>det(T<sup>−1</sup>AT − λI) = det(A − λI)</m>. The page lists each mode's <m>λ</m>, frequency and damping ratio
 under the matrices, and they never move when the basis changes.</p>
 <p>The page keeps each basis's columns in pairs, one pair to a plane, so <m>T<sup>−1</sup>AT</m> splits into four

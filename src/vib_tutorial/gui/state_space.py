@@ -66,8 +66,9 @@ COORDS_TIP = (
 )
 MATRICES_TIP = (
     "<p>The steps from the masses' matrices to the state's: M, C and K make A, the state matrix of ż = Az. The basis "
-    "T has the basis's state vectors as its columns, two to a plane, and A in it is T⁻¹AT, not TᵀAT, as A isn't "
-    "symmetric. Its 2×2 blocks off the diagonal are the coupling between the pairs, in red where it isn't zero. "
+    "T has the basis's state vectors as its columns, two to a plane (the last page's V, for the state): z = Tw, "
+    "so Tẇ = ATw, and ẇ alone takes T⁻¹: T⁻¹AT. The last page's Vᵀ was a choice (any matrix on the left keeps "
+    "MVq̈ + CVq̇ + KVq = 0 true, and Vᵀ keeps it symmetric); here there's none. Its 2×2 blocks off the diagonal are the coupling between the pairs, in red where it isn't zero. "
     "The modes' λ, frequencies and damping ratios underneath are the same in every basis.</p>"
 )
 SIZES_TIP = (
@@ -545,7 +546,10 @@ class StateSpacePage(QtWidgets.QWidget):
             + side_by_side(*(one(g) for g in m.given))
             + step("2. The state z = (x₁, x₂, ẋ₁, ẋ₂): ż = Az")
             + one(m.state)
-            + step("3. The basis's state vectors as T's columns, z = Tw, and A in it, T⁻¹AT")
+            + step(
+                "3. The basis's state vectors as T's columns, z = Tw (the last page's x = Vq, for the state). Then "
+                "Tẇ = ATw, and ẇ alone takes T⁻¹: T⁻¹AT"
+            )
             + (side_by_side(one(m.basis), one(m.product)) if wide else one(m.basis) + "<br>" + one(m.product))
             + f"<p>4. The modes, the same in every basis{lines}</p>"
         )

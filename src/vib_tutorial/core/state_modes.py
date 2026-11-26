@@ -7,8 +7,9 @@ The two masses' M ẍ + C ẋ + K x = 0 is written first order in the state z = 
 A **basis** of the state is a 4×4 matrix B whose columns are four state vectors, and the coordinates in it are
 w = B⁻¹z, so ẇ = (B⁻¹AB) w. Every basis here keeps its columns in **pairs**, one pair a plane the page draws, so
 B⁻¹AB is four 2×2 blocks: the diagonal ones each pair's own motion, the off-diagonal ones the coupling between them.
-A is not symmetric, so the matrix in a new basis is B⁻¹AB, not BᵀAB: the transpose works for M and K only because
-they are symmetric and the basis is used on both sides of the energy.
+It's B⁻¹AB, not BᵀAB: Bẇ = ABw must be solved for ẇ, which takes B⁻¹; Coordinates & bases' second-order
+equations hold multiplied by any invertible matrix, and there Vᵀ was chosen to keep them symmetric. (The page and
+its notes call B T, and w its coordinates: Coordinates & bases' V and q for the state.)
 
 Three bases (`BASES`), each made by a function:
 
