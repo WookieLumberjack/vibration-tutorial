@@ -298,6 +298,23 @@ def _live_bases(trial: str, tab: str):
     return setup
 
 
+def _live_state(trial: str, tab: str):
+    """State-space modes' trial `trial`, live (its frame loop steps the masses), on tab `tab` (a
+    `view_models.state_space` TAB_ name), at 1× (#478 Phase 4)."""
+
+    def setup(w):
+        from vib_tutorial.gui import state_space
+        from vib_tutorial.view_models import state_space as view
+
+        page = w.state_page
+        w.pages.setCurrentWidget(page)
+        page.load_trial(next(i for i, t in enumerate(state_space.TRIALS) if t.name.startswith(trial)))
+        page.tabs.setCurrentIndex(getattr(view, tab))
+        return page, 1.0
+
+    return setup
+
+
 def _turning_arrows(trial: str, tab: str):
     """`_live_bases`, with v₁ held and turned the whole time as a drag turns it (the page's own `_on_arrow_moved`,
     about once a frame), so the plane and the coordinates' whole window are described again each step."""
@@ -430,6 +447,16 @@ SCENARIOS = (
         "Coordinates & bases: one arrow along x₁, One arrow tab",
         "one arrow, a reduced basis, its frequency measured as it runs (#478 Phase 4)",
         _live_bases("One arrow along", "TAB_RAIL"),
+    ),
+    Scenario(
+        "State-space modes: started in mode 2 of M and K, Sizes tab",
+        "the masses, three planes' paths, the four coordinates and both bases' sizes every frame (#478 Phase 4)",
+        _live_state("The modes of M and K leak", "TAB_SIZES"),
+    ),
+    Scenario(
+        "State-space modes: m₁ pulled, each mass's coordinates, Matrices tab",
+        "the masses, three planes' paths and the four coordinates every frame (#478 Phase 4)",
+        _live_state("Each mass", "TAB_MATRICES"),
     ),
     Scenario(
         "Quarter-car: driven over its road",

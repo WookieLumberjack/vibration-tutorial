@@ -57,6 +57,7 @@ Each page in the course's order (`links.COURSE`): its GUI module and the core mo
 - Equations:
   - Deriving the equations (`deriving_page`): `gui/deriving.py`; core `bounce_pitch`, `double_pendulum`, `pendulum`
   - Coordinates & bases (`bases_page`): `gui/bases.py` (#478 Phase 4's new page, live: its view model `view_models/bases.py`, stepping `view_models/live_bases.py`; `bases_trials.py`, its trials, problems and notes; `bases_view.py`, the two masses drawn with their grips; `bases_plane.py`, the (x₁, x₂) plane with the basis's arrows; the Energy tab `live_parts.py`'s); core `bases`
+  - State-space modes (`state_page`): `gui/state_space.py` (#478 Phase 4, live, after Coordinates & bases on its masses: its view model `view_models/state_space.py`, stepping `view_models/live_bases.py`; `state_space_trials.py`, its trials, problems and notes; `state_planes.py`, the (x₁, x₂) plane with the modes' shapes and the coordinate pairs' planes; the masses drawn by `bases_view.py`); core `bases`, `state_modes`
   - 3D rigid body (`rigid_body_page`): `gui/rigid_body.py` (with `equations_snapshot.py`; `components_tab.py`, the Components tab it shares with the Gyroscope); core `rigid_body`, `rotation`
 - Modes:
   - Simulation & modal analysis (`sim_page`): `gui/simulation_page.py`; core `simulator`, `modal`, `model`, `forcing`, `energy`, `presets`

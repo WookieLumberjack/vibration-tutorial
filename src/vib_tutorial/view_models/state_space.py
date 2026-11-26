@@ -11,13 +11,13 @@ the last page's `live_bases.LiveBases` (free, no rail), and each panel has a fun
 - `pairs(B, x, v)`: the four coordinates w = B⁻¹z for each sample, in mm, a plane a pair.
 - `x_plane(s)`: the (x₁, x₂) plane's still parts: each state-space mode's displacements, Re ψ and Im ψ as arrows,
   and the ellipse a mode alone traces (a line when ψ is real).
-- `matrices_view(s, basis)`: the steps, M, C and K, then A, then the basis B, then B⁻¹AB with its coupling (the
+- `matrices_view(s, basis)`: the steps, M, C and K, then A, then the basis T, then T⁻¹AT with its coupling (the
   off-diagonal blocks' entries that aren't zero) marked, and the modes' λ, f and ζ, the same in every basis.
 - `sizes(s, x, v)`: the **Sizes** tab: each pair's size, √(w₁² + w₂²), against time, in the undamped modes and in the
   state-space modes, so the dampers' leak between the undamped modes shows beside the state-space modes' clean
   decays (straight lines on its log axis).
-- `shapes_view(s)`: the **Shapes** tab: each mode's ψ as phasors, one a mass, beside the undamped mode's φ, and the
-  phase between the masses.
+- `shapes_view(s)`: the **Shapes** tab: each mode's ψ as phasors, one a mass, turned so m₁'s lies along the real
+  axis (then m₂'s angle is the phase between them), beside the undamped mode's φ.
 - `start_state(s, start)`: where a start puts the masses (x, v).
 
 Working on it: Qt-free (the package's docstring). `tests/test_state_space_view.py` checks the views.
@@ -201,19 +201,20 @@ class Grid:
 class MatricesView:
     given: tuple[Grid, ...]  # M, C, K
     state: Grid  # A
-    basis: Grid  # B
-    product: Grid  # B⁻¹AB
+    basis: Grid  # T (the notes' name for the code's B: B is the input matrix on later pages)
+    product: Grid  # T⁻¹AT
     modes: tuple[str, ...]  # a line a mode: λ, f, ζ
     coupled: bool
     note: str
 
 
-def _grid(symbol: str, unit: str, A: np.ndarray, blocks: bool = False) -> Grid:
+def _grid(symbol: str, unit: str, A: np.ndarray, blocks: bool = False, coupling: bool = True) -> Grid:
     scale = float(np.abs(A).max()) or 1.0
     n = A.shape[0]
     entries = tuple(tuple("0" if abs(float(a)) < ZERO * scale else sig(float(a), 3) for a in row) for row in A)
     marked = tuple(
-        tuple(blocks and i // 2 != j // 2 and abs(float(A[i, j])) >= ZERO * scale for j in range(n)) for i in range(n)
+        tuple(coupling and blocks and i // 2 != j // 2 and abs(float(A[i, j])) >= ZERO * scale for j in range(n))
+        for i in range(n)
     )
     return Grid(symbol, unit, entries, marked, blocks)
 
@@ -261,8 +262,8 @@ def matrices_view(s: TwoMass, which: int) -> MatricesView:
     return MatricesView(
         given,
         _grid("A", "", A),
-        _grid("B", "", B, blocks=True),
-        _grid("B⁻¹AB", "", Ab, blocks=True),
+        _grid("T", "", B, blocks=True, coupling=False),
+        _grid("T⁻¹AT", "", Ab, blocks=True),
         tuple(mode_line(r, m) for r, m in enumerate(ms)),
         coupled,
         note,
@@ -333,9 +334,10 @@ def shapes_view(s: TwoMass) -> tuple[Phasors, ...]:
     _, V = undamped_modes(M, K)
     out = []
     for r, m in enumerate(modes(s)):
-        p = m.shape
+        p = m.shape * np.exp(-1j * np.angle(m.shape[0]))  # turned so m₁'s phasor is along +Re: m₂'s angle is the phase
         masses = ((float(p[0].real), float(p[0].imag)), (float(p[1].real), float(p[1].imag)))
-        phi = ((float(V[0, r]), 0.0), (float(V[1, r]), 0.0))
+        sign = 1.0 if V[0, r] >= 0 else -1.0
+        phi = ((float(sign * V[0, r]), 0.0), (float(sign * V[1, r]), 0.0))
         if not m.swings:
             note = "Overdamped: no swing, so no phase. Its shape is real, and so is its second's."
         else:

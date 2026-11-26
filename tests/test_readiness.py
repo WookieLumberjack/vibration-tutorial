@@ -230,7 +230,49 @@ def _bases() -> Ready:
     )
 
 
-READY = {r.page: r for r in (_isolation(), _duffing(), _sdof(), _pendulum(), _bases())}
+def _state_views(state):
+    import numpy as np
+
+    from vib_tutorial.view_models import live_bases as lb
+    from vib_tutorial.view_models import state_space as v
+
+    s = v.system(state)
+    live = lb.LiveBases(s)
+    x0, v0 = v.start_state(s, 1)
+    live.hold_state(x0, v0)
+    live.let_go()
+    live.advance(1.0)
+    _, y = live.since_change()
+    x, xd = y[:, lb.COL["x1"] : lb.COL["x2"] + 1], y[:, lb.COL["v1"] : lb.COL["v2"] + 1]
+    T = v.basis_of(s, state.basis)
+    return (
+        v.labels(s, state.basis),
+        v.pairs(T, x, xd),
+        v.place(T, np.zeros(4), 0, 1.0, 2.0),
+        v.x_plane(s),
+        v.matrices_view(s, state.basis),
+        v.sizes(s, x, xd),
+        v.shapes_view(s),
+        lb.energy_view(*live.since_change()),
+    )
+
+
+def _state() -> Ready:
+    from vib_tutorial.gui import state_space_trials
+    from vib_tutorial.view_models.state_space import StateTrial
+
+    return Ready(
+        "state_page",
+        lambda: StateTrial("", ""),
+        lambda setup: StateTrial("", "", **setup),
+        _state_views,
+        lambda: state_space_trials.TRIALS,
+        lambda: state_space_trials.PROBLEMS,
+        qt_free_notes=True,
+    )
+
+
+READY = {r.page: r for r in (_isolation(), _duffing(), _sdof(), _pendulum(), _bases(), _state())}
 QT_FREE_NOTES = ["glossary", *(name for name, r in READY.items() if r.qt_free_notes)]
 
 

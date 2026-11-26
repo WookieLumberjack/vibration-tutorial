@@ -5325,3 +5325,91 @@ def test_bases_trials():
     says("One arrow along x₁", "500 N/m", "3.559 Hz")
     says("One arrow along x₁", "11.8 %", "3.183 Hz", "0.3 % at 38.7°")
     assert rayleigh_hz(direction(38.7), M, K) / rayleigh_hz(direction(45.0), M, K) - 1 == pytest.approx(0.003, abs=5e-4)
+
+
+def test_state_space_worked_example():
+    """The figures State-space modes' notes quote, on the page's defaults, and from the rounded figures they show."""
+    import math
+
+    from vib_tutorial.core.bases import TWO_PI, Steps, TwoMass, state_matrix
+    from vib_tutorial.core.state_modes import in_basis, own_frequency, state_modes, undamped_basis, undamped_modes
+    from vib_tutorial.view_models import state_space as v
+
+    s = v.system(v.StateTrial("", ""))
+    assert s == TwoMass(1.0, 2.0, 400.0, 100.0, 400.0, 1.0)
+    M, C, K = s.matrices()
+    A = state_matrix(M, C, K)
+    assert A[2:, :2].tolist() == [[-500.0, 100.0], [50.0, -250.0]]
+    assert A[2:, 2:].tolist() == [[-2.0, 1.0], [quoted("state_space", "0.5"), -1.0]]
+    assert own_frequency(M, K, 0) == pytest.approx(quoted("state_space", "22.4"), abs=0.05)
+    assert own_frequency(M, K, 1) == pytest.approx(quoted("state_space", "15.8"), abs=0.05)
+    omega, V = undamped_modes(M, K)
+    assert omega / TWO_PI == pytest.approx([quoted("state_space", "2.421"), quoted("state_space", "3.624")], abs=5e-4)
+    assert (V.T @ C @ V)[0, 1] == pytest.approx(-quoted("state_space", "0.51"), abs=5e-3)
+    Ab = in_basis(undamped_basis(M, K), A)
+    assert Ab[1, 3] == pytest.approx(quoted("state_space", "0.41"), abs=5e-3)
+    assert Ab[3, 1] == pytest.approx(quoted("state_space", "0.333"), abs=5e-4)
+    one, two = state_modes(M, C, K)
+    assert one.sigma == pytest.approx(-quoted("state_space", "0.358"), abs=5e-4)
+    assert one.omega == pytest.approx(quoted("state_space", "15.21"), abs=5e-3)
+    assert two.sigma == pytest.approx(-quoted("state_space", "1.14"), abs=5e-3)
+    assert two.omega == pytest.approx(quoted("state_space", "22.74"), abs=5e-3)
+    assert two.omega / TWO_PI == pytest.approx(quoted("state_space", "3.619"), abs=5e-4)
+    assert 100 * one.zeta == pytest.approx(quoted("state_space", "2.35 %"), abs=5e-3)
+    assert 100 * two.zeta == pytest.approx(quoted("state_space", "5.02 %"), abs=5e-3)
+    assert -one.phase == pytest.approx(quoted("state_space", "4.51"), abs=5e-3)
+    assert -two.phase == pytest.approx(quoted("state_space", "173.29"), abs=5e-3)
+    assert 180 - 173.29 == pytest.approx(quoted("state_space", "6.71"), abs=1e-9)
+    assert two.sigma == pytest.approx(-quoted("state_space", "1.142"), abs=5e-4)
+    assert math.log(2) / 1.142 == pytest.approx(quoted("state_space", "0.607"), abs=5e-4)
+    assert math.log(2) / 0.358 == pytest.approx(quoted("state_space", "1.94"), abs=5e-3)
+    # The leak: started 30 mm out in mode 2 of M and K, mode 1's pair climbs to 1.48 mm in 0.41 s.
+    x, xd = v.start_state(s, 1)
+    assert np.abs(x).max() * 1e3 == pytest.approx(30.0)
+    ts, zs, _ = Steps(M, C, K, np.concatenate([x, xd])).advance(2.0)
+    leak = v.sizes(s, zs[:, :2], zs[:, 2:]).undamped[0]
+    i = int(np.argmax(leak))
+    assert leak[i] == pytest.approx(quoted("state_space", "1.48"), abs=5e-3)
+    assert ts[i] == pytest.approx(0.41, abs=5e-3)
+    # Mode 2 overdamped past 18.8 N·s/m on each damper (m₂ = 2 kg).
+    assert all(m.swings for m in state_modes(*TwoMass(m2=2.0, c=18.8).matrices()))
+    assert not state_modes(*TwoMass(m2=2.0, c=18.9).matrices())[1].swings
+    assert quoted("state_space", "18.8") == 18.8
+
+
+def test_state_space_trials():
+    """The numbers State-space modes' Things to try quote."""
+    from vib_tutorial.core.bases import TWO_PI, Steps
+    from vib_tutorial.core.state_modes import state_modes
+    from vib_tutorial.gui.state_space_trials import TRIALS
+    from vib_tutorial.view_models import state_space as v
+
+    def trial(name: str):
+        return next(t for t in TRIALS if t.name.startswith(name))
+
+    def says(name: str, *numbers: str) -> None:
+        for n in numbers:
+            assert n in trial(name).note, (name, n)
+
+    def leak_peak(c: float) -> tuple[float, float]:
+        s = v.system(v.StateTrial("", "", c=c))
+        M, C, K = s.matrices()
+        x, xd = v.start_state(s, 1)
+        ts, zs, _ = Steps(M, C, K, np.concatenate([x, xd])).advance(2.0)
+        leak = v.sizes(s, zs[:, :2], zs[:, 2:]).undamped[0]
+        return float(leak.max()), float(ts[int(np.argmax(leak))])
+
+    peak, at = leak_peak(1.0)
+    says("The modes of M and K leak", f"{peak:.2f} mm", f"{at:.2f} s")
+    assert f"{leak_peak(2.0)[0]:.2f}" == "2.28" and "2.28 mm" in trial("The modes of M and K leak").predict.why[1]
+    s = v.system(trial("The same start"))
+    x, xd = v.start_state(s, 1)
+    sz = v.sizes(s, x[None, :], xd[None, :])
+    says("The same start", f"{sz.state[0][0]:.2f} mm", "−0.358 /s", "−1.14 /s")
+    one, two = state_modes(*v.system(trial("One state-space mode")).matrices())
+    says("One state-space mode", f"{two.omega / TWO_PI:.3f} Hz", "−1.14 /s")
+    one, _ = state_modes(*v.system(trial("Heavier dampers")).matrices())
+    says("Heavier dampers", f"{-one.phase:.1f}°")
+    one, two = state_modes(*v.system(trial("Mode 2 overdamped")).matrices())
+    a, b = (e.real for e in two.eigenvalues)
+    says("Mode 2 overdamped", f"−{-a:.1f}", f"−{-b:.1f} /s", f"{one.omega / TWO_PI:.3f} Hz", "18.8 N·s/m")

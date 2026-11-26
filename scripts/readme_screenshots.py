@@ -1096,6 +1096,22 @@ def coordinates_bases():
     save(w, "coordinates_bases")
 
 
+def state_space_modes():
+    """1 and 2 kg masses started in mode 2 of M and K: in those coordinates mode 1's pair climbs from zero, and T⁻¹AT
+    keeps one red term in each velocity row."""
+    from vib_tutorial.gui import state_space
+
+    w = window()
+    page = w.state_page
+    w.pages.setCurrentWidget(page)
+    page.loop.enabled = False
+    page.load_trial(next(i for i, t in enumerate(state_space.TRIALS) if t.name.startswith("The modes of M and K")))
+    page.step(1.5)
+    page.tabs.setCurrentIndex(0)  # the Matrices, its red terms
+    settle()
+    save(w, "state_space_modes")
+
+
 def periodic_forcing():
     lesson("periodic_page", 1, "periodic_forcing")  # resonance through the third harmonic
 
@@ -1412,6 +1428,7 @@ SHOTS = [
     deriving_equations,
     deriving_pendulum,
     coordinates_bases,
+    state_space_modes,
     rigid_body,
     energy_methods,
     beams_plates,
