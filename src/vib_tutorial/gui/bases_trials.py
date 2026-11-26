@@ -65,7 +65,7 @@ TRIALS = (
         "The same pluck, described along the modes: <m>v<sub>1</sub></m> at 45°, in phase, and "
         "<m>v<sub>2</sub></m> at 135°, opposed. Both matrices are diagonal, <m>VᵀMV</m> = 1 kg and <m>VᵀKV</m> = "
         "400 and 600 N/m on the diagonal, and each coordinate's trace is one clean sine: 3.183 Hz and 3.898 Hz. "
-        "On the Coupling tab the energy in each mode stays there, and none passes across. The motion is the same; "
+        "On the Coupling tab the cross term is zero: the energy in each mode stays there, and none passes across. The motion is the same; "
         "only its description changed.",
         v1=IN_PHASE,
         v2=OPPOSED,

@@ -64,24 +64,31 @@ directions are the <b>modes</b>, the solutions of</p>
 is exactly the two off-diagonal terms vanishing <cite>thomson</cite>. It isn't the same as being at right
 angles in the plane: with <m>m<sub>1</sub> = m<sub>2</sub></m> the modes are perpendicular, but with
 <m>m<sub>2</sub> = 2m<sub>1</sub></m> they are 80.1° apart. Drag an arrow near a mode and it snaps onto
-it; snap both, and both matrices show nought off the diagonal.</p>
+it; snap both, and both matrices show zero off the diagonal.</p>
 <p>When the system is symmetric (<m>m<sub>1</sub> = m<sub>2</sub></m>, <m>k<sub>1</sub> = k<sub>3</sub></m>),
 symmetry fixes the modes at ±45° whatever the coupling spring: in phase, the coupling spring isn't
 stretched, <m>ω<sub>1</sub>² = k<sub>1</sub>/m</m>; opposed, it's stretched twice as much on each mass,
 <m>ω<sub>2</sub>² = (k<sub>1</sub> + 2k<sub>2</sub>)/m</m>. Unequal masses or walls turn the modes, and
-then the coupling spring turns them too: a stiffer one pulls mode 1 towards moving together.</p>
+then the coupling spring turns them too: a stiffer one pulls mode 1 toward moving together.</p>
 
 <h3><a name="energy"></a>The energy along each arrow</h3>
-<p>The stored energy, written in the coordinates, splits into the energy of the motion along each arrow,
-<m>E<sub>1</sub></m> and <m>E<sub>2</sub></m> (what it would be with the other coordinate held at nought), and
-the <b>coupled energy</b>, the rest:</p>
+<p>The arrows split the motion into two pieces, <m>q<sub>1</sub>v<sub>1</sub></m> and
+<m>q<sub>2</sub>v<sub>2</sub></m>, moving with velocities <m>q̇<sub>1</sub>v<sub>1</sub></m> and
+<m>q̇<sub>2</sub>v<sub>2</sub></m>. Each piece alone has its own energy, <m>E<sub>1</sub></m> and
+<m>E<sub>2</sub></m>. But the energy of a sum isn't the sum of the energies. It's like the length of a sum of
+two vectors, <m>|a + b|² = |a|² + |b|² + 2a·b</m>: there is a <b>cross term</b>, zero only when
+<m>a</m> and <m>b</m> are at right angles. Energy is a square too, <m>½ẋᵀMẋ + ½xᵀKx</m>, so</p>
 <eq>E = E_1 + E_2 + \tilde m_{12}\dot q_1 \dot q_2 + \tilde k_{12} q_1 q_2</eq>
 <eq>E_i = \tfrac12 \tilde m_{ii}\dot q_i^2 + \tfrac12 \tilde k_{ii} q_i^2</eq>
-<p>with <m>m̃ = VᵀMV</m> and <m>k̃ = VᵀKV</m>. The Coupling tab draws the three as it runs (<m>E<sub>1</sub></m> as "along
-<m>v<sub>1</sub></m>", <m>E<sub>2</sub></m> as "along <m>v<sub>2</sub></m>"). Where the
-coordinates are coupled, energy passes from the motion along one arrow to the motion along the other through
-the last two terms: pluck one mass and the energy drains from its motion into the other's and back, the
-<b>beat</b>. In the modes the coupling terms are nought, and the energy in each mode stays there for ever (less
+<p>with <m>m̃ = VᵀMV</m> and <m>k̃ = VᵀKV</m>. The last two terms are the cross term, and they are made of
+exactly the off-diagonal terms of the matrices beside the plane: the coupling. The Coupling tab draws the three
+as they run (<m>E<sub>1</sub></m> as "along <m>v<sub>1</sub></m>", <m>E<sub>2</sub></m> as "along
+<m>v<sub>2</sub></m>"), and under them adds them up as bars, each stacked on the last, with the stored energy
+beside them. The stored energy stays put; the pieces don't. The cross term swings above and below zero, and
+as it does, energy passes from the motion along one arrow to the motion along the other: pluck one mass and the
+energy drains from its motion into the other's and back, the <b>beat</b>. In the modes the cross term is
+zero, the pieces are "at right angles" as the energy measures them (that is what orthogonal through
+<m>M</m> and <m>K</m> means), and the energy in each mode stays there forever (less
 what the dampers take). Change the arrows and the tab redraws the
 past too, in the new coordinates: the same motion, described again.</p>
 
@@ -123,7 +130,7 @@ with <m>φ<sub>r</sub></m> the modes' arrows. Their orthogonality leaves</p>
 (3). <i>Show the theory</i> draws <m>R</m> through your points.</p>
 <p><b>The conclusion</b>, and the reason it's on this page: a reduced basis holds the system to fewer shapes than
 it has, which can only stiffen it, so <b>its lowest frequency is never below the true one</b>, and a
-reasonable guess at the shape gives a frequency very nearly right. More arrows can only bring it down towards
+reasonable guess at the shape gives a frequency very nearly right. More arrows can only bring it down toward
 the truth. This is the <b>Rayleigh–Ritz method</b>, and it's how large models are solved: in a few good
 shapes, not in all their coordinates. The modes are the basis where it's exact. Later pages (energy methods,
 modal coupling, substructuring) build their reduced models this way.</p>
