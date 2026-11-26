@@ -28,6 +28,8 @@ def test_the_page_opens_on_dampers_the_undamped_modes_cant_uncouple():
         "Mode 1: λ = -0.358 ± 15.21i /s: f = 2.421 Hz, ζ = 2.35 %",
         "Mode 2: λ = -1.14 ± 22.74i /s: f = 3.619 Hz, ζ = 5.02 %",
     )
+    assert m.product.rows == ("q₁", "q̇₁/ω₁", "q₂", "q̇₂/ω₂") and m.state.cols == ("x₁", "x₂", "ẋ₁", "ẋ₂")
+    assert m.product.row_groups == ("i", "i", "b", "b") and m.given[0].rows == ("x₁", "x₂")
     s = v.matrices_view(DEFAULT, v.STATE)
     assert s.product.entries[0] == ("-0.358", "15.2", "0", "0") and not s.coupled
 

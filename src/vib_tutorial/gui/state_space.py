@@ -27,7 +27,7 @@ import time
 
 import numpy as np
 import pyqtgraph as pg
-from PySide6 import QtCore, QtWidgets
+from PySide6 import QtCore, QtGui, QtWidgets
 
 from ..core.bases import TwoMass
 from ..core.stepping import FRAME_BUDGET, Budget
@@ -42,6 +42,7 @@ from .frame_loop import FrameLoop
 from .layouts import FlowLayout
 from .lesson import Form, LiveLabel, TrialBox, plot, theory, three_panes
 from .live_parts import ChangeMarks, run_row
+from .matrix_table import side_by_side, table_html
 from .scrub import Scrub
 from .state_planes import PairPlane, ShapePlane
 from .state_space_trials import NOTES_HTML, PROBLEMS, TIPS, TRIALS
@@ -78,6 +79,33 @@ SHAPES_TIP = (
     "real shape, dashed. The angle between the masses' arrows is the phase between them: 0° or 180° when the shape "
     "is real, other angles when the dampers make it complex.</p>"
 )
+
+
+class MatricesLabel(LiveLabel):
+    """The matrices' steps, with T and T⁻¹AT side by side where they fit and one above the other where they don't
+    (the state-space basis's T at 1280 px): `set_variants(wide, tall)`, picked again as it's resized."""
+
+    def __init__(self) -> None:
+        super().__init__(wrap=True)
+        self._variants = ("", "")
+        self._measure = QtGui.QTextDocument(self)
+        self._measure.setDocumentMargin(0)
+
+    def set_variants(self, wide: str, tall: str) -> None:
+        self._variants = (wide, tall)
+        self._pick()
+
+    def _pick(self) -> None:
+        wide, tall = self._variants
+        self._measure.setDefaultFont(self.font())
+        self._measure.setHtml(wide)
+        text = wide if self._measure.idealWidth() <= self.width() else tall
+        if text != self.text():
+            self.setText(text)
+
+    def resizeEvent(self, event: QtGui.QResizeEvent) -> None:
+        super().resizeEvent(event)
+        self._pick()
 
 
 def _square(plot_: pg.PlotWidget) -> None:
@@ -209,7 +237,7 @@ class StateSpacePage(QtWidgets.QWidget):
         # --- right: Matrices, Sizes, Shapes, Theory
         matrices = QtWidgets.QWidget()
         mv = QtWidgets.QVBoxLayout(matrices)
-        self.matrices = LiveLabel(wrap=True)
+        self.matrices = MatricesLabel()
         self.matrices.setToolTip(MATRICES_TIP)
         self.matrices_note = LiveLabel(wrap=True)
         mute(self.matrices_note)
@@ -270,7 +298,12 @@ class StateSpacePage(QtWidgets.QWidget):
 
         self.notes = theory(NOTES_HTML)
         self.tabs = QtWidgets.QTabWidget()
-        self.tabs.addTab(matrices, "Matrices")
+        scroll = QtWidgets.QScrollArea()  # up and down, never sideways: a tall step goes below, not off the edge
+        scroll.setWidget(matrices)
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QtWidgets.QFrame.Shape.NoFrame)
+        scroll.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.tabs.addTab(scroll, "Matrices")
         self.tabs.addTab(sizes, "Sizes")
         self.tabs.addTab(shapes, "Shapes")
         self.tabs.addTab(self.notes, "Theory")
@@ -500,7 +533,7 @@ class StateSpacePage(QtWidgets.QWidget):
             plane.set_labels(labels)
         m = view.matrices_view(s, which)
         self.plane_note.setText(xp.note)
-        self.matrices.setText(self._matrices_html(m))
+        self.matrices.set_variants(self._matrices_html(m, True), self._matrices_html(m, False))
         self.matrices_note.setText(m.note)
         self.sizes_note.setText(view.sizes_note(s))
         circle = np.linspace(0.0, 2 * np.pi, 97)
@@ -525,44 +558,29 @@ class StateSpacePage(QtWidgets.QWidget):
             self.w_legend.addItem(item, name)
 
     @staticmethod
-    def _matrices_html(m: view.MatricesView) -> str:
-        """The steps: M, C and K; A; T and T⁻¹AT, their blocks apart; the modes."""
+    def _matrices_html(m: view.MatricesView, wide: bool = True) -> str:
+        """The steps: M, C and K; A; T and T⁻¹AT (side by side if `wide`, else one above the other); the modes. Each matrix a table as the Substructuring page's are
+        (`matrix_table`): its rows and columns labeled with their coordinates, its blocks tinted, a coupling term
+        bold in color."""
         c = colors
 
         def one(g: view.Grid) -> str:
-            rows = []
-            n = len(g.entries)
-            for i, row in enumerate(g.entries):
-                if g.blocks and i == n // 2:
-                    rows.append(f"<tr><td colspan='{n + 1}' style='font-size:4px'>&nbsp;</td></tr>")
-                tds = []
-                for j, e in enumerate(row):
-                    if g.blocks and j == n // 2:
-                        tds.append("<td width='6'></td>")
-                    off = g.blocks and i // 2 != j // 2
-                    colour = c.force if g.marked[i][j] else (c.muted if off else c.foreground)
-                    weight = "bold" if g.marked[i][j] else "normal"
-                    style = f"color:{colour}; font-weight:{weight}; white-space:nowrap"
-                    tds.append(f'<td align="right" style="{style}">{e}</td>')
-                rows.append("<tr>" + "".join(tds) + "</tr>")
-            unit = f" ({g.unit})" if g.unit else ""
-            return f"<b>{g.symbol}</b>{unit}<table cellspacing='2'>{''.join(rows)}</table>"
-
-        def across(*grids: view.Grid) -> str:
-            tds = "".join(f"<td style='padding-right:12px' valign='top'>{one(g)}</td>" for g in grids)
-            return f"<table><tr>{tds}</tr></table>"
+            title = f"{g.symbol}<br><span style='font-weight:normal'>{g.unit}</span>" if g.unit else g.symbol
+            return table_html(
+                g.entries, g.rows, g.cols, g.row_groups, g.col_groups, title, nowrap=True, marked=g.marked
+            )
 
         def step(text: str) -> str:
-            return f"<p style='color:{c.muted}; margin-top:6px; margin-bottom:0px'>{text}</p>"
+            return f"<p style='color:{c.muted}; margin-top:8px; margin-bottom:2px'>{text}</p>"
 
         lines = "".join(f"<br>{line}" for line in m.modes)
         return (
             step("1. The system, in x₁ and x₂")
-            + across(*m.given)
+            + side_by_side(*(one(g) for g in m.given))
             + step("2. The state z = (x₁, x₂, ẋ₁, ẋ₂): ż = Az")
-            + across(m.state)
-            + step("3. The basis's state vectors as columns, z = Tw, and A in it")
-            + across(m.basis, m.product)
+            + one(m.state)
+            + step("3. The basis's state vectors as T's columns, z = Tw, and A in it, T⁻¹AT")
+            + (side_by_side(one(m.basis), one(m.product)) if wide else one(m.basis) + "<br>" + one(m.product))
             + f"<p>4. The modes, the same in every basis{lines}</p>"
         )
 

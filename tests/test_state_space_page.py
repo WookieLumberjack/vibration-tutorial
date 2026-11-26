@@ -121,6 +121,14 @@ def test_the_matrices_mark_the_coupling_by_basis(page):
         marked[b] = page.matrices.text().count("font-weight:bold")
     # the springs' and dampers' terms in each velocity row; the dampers' alone; none
     assert marked == {view.MASS: 4, view.UNDAMPED: 2, view.STATE: 0}
+    page.tabs.setCurrentIndex(view.TAB_MATRICES)
+    html = page.matrices.text()
+    assert "<th style='white-space:nowrap'>ẋ₁</th>" in html and "<th style='white-space:nowrap'>w₄</th>" in html
+    wide, tall = page.matrices._variants
+    page.matrices.resize(2000, page.matrices.height())
+    assert page.matrices.text() == wide  # room: T and T⁻¹AT side by side
+    page.matrices.resize(300, page.matrices.height())
+    assert page.matrices.text() == tall  # none: one above the other, nothing cut off
     page.m2.setValue(1.0)  # a symmetric pair: the modes of M and K uncouple the dampers too
     page.basis.setCurrentIndex(view.UNDAMPED)
     assert "font-weight:bold" not in page.matrices.text()
