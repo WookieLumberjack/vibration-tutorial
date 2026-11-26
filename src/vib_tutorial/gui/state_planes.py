@@ -21,13 +21,14 @@ import math
 
 import numpy as np
 import pyqtgraph as pg
-from PySide6 import QtCore, QtWidgets
+from PySide6 import QtCore, QtGui, QtWidgets
 
 from ..view_models.state_space import MM, REACH, PlaneLabels, XPlane
 from .drag import Grabbable
 from .lesson import Dot
 from .style import colors
 
+MIN_SIDE = 120  # px: a plane's smallest side
 SMALLEST = 1.0  # mm: a pair's plane zooms in no further than ±this
 
 PAIR_TIP = (
@@ -44,6 +45,47 @@ SHAPE_TIP = (
 )
 
 
+class PlaneRow(QtWidgets.QWidget):
+    """The three planes side by side, as tall as one is wide, so each is square and the height they don't need goes
+    to the masses above. A plot in a row doesn't get height-for-width from its layout, and a widget with a layout
+    answers it from the layout, so the row places its planes itself (`resizeEvent`) and answers it itself."""
+
+    GAP = 6  # px between the planes
+
+    def __init__(self, planes: list[QtWidgets.QWidget]) -> None:
+        super().__init__()
+        self.planes = planes
+        for p in planes:
+            p.setParent(self)
+        policy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Preferred, QtWidgets.QSizePolicy.Policy.Preferred)
+        policy.setHeightForWidth(True)
+        self.setSizePolicy(policy)
+
+    def _side(self, width: int) -> int:
+        n = len(self.planes)
+        return max((width - self.GAP * (n - 1)) // n, MIN_SIDE)
+
+    def hasHeightForWidth(self) -> bool:
+        return True
+
+    def heightForWidth(self, width: int) -> int:
+        return self._side(width)
+
+    def sizeHint(self) -> QtCore.QSize:
+        return QtCore.QSize(3 * 220 + 2 * self.GAP, 220)
+
+    def minimumSizeHint(self) -> QtCore.QSize:
+        return QtCore.QSize(3 * MIN_SIDE + 2 * self.GAP, MIN_SIDE)
+
+    def resizeEvent(self, event: QtGui.QResizeEvent) -> None:
+        super().resizeEvent(event)
+        side = min(self._side(self.width()), self.height())
+        n = len(self.planes)
+        left = (self.width() - n * side - (n - 1) * self.GAP) // 2  # centered, if the row is shorter than square
+        for i, p in enumerate(self.planes):
+            p.setGeometry(left + i * (side + self.GAP), 0, side, side)
+
+
 class _Plane(Grabbable, pg.PlotWidget):
     grabbed = QtCore.Signal()
     pulled = QtCore.Signal(float, float)
@@ -51,6 +93,7 @@ class _Plane(Grabbable, pg.PlotWidget):
 
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)
+        self.setSizePolicy(QtWidgets.QSizePolicy.Policy.Ignored, QtWidgets.QSizePolicy.Policy.Ignored)
         self.setMouseTracking(True)
         self.setMenuEnabled(False)
         self.setMouseEnabled(x=False, y=False)
