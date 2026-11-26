@@ -267,7 +267,7 @@ def matrices_view(s: TwoMass, V: np.ndarray, rail: bool) -> MatricesView:
         f = alone[0]
         low = float(s.modes()[0][0])
         m, k = float(Mt[0, 0]), float(Kt[0, 0])
-        sums = (
+        sums: tuple[str, ...] = (
             f"ω² = v₁ᵀKv₁ / v₁ᵀMv₁ = {sig(k, 4)} / {sig(m, 4)} = {sig(k / m, 4)} (rad/s)²",
             f"f = √{sig(k / m, 4)} / 2π = {sig(f, 4)} Hz",
         )
