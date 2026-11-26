@@ -355,6 +355,42 @@ def test_a_live_label_lays_the_page_out_again_only_when_it_needs_more_room(app, 
     page.close()
 
 
+def test_a_live_line_sized_to_its_text_stops_asking_once_it_is_wide_enough(app):
+    """A clock in a row, as wide as its text: its digits differ in width, and sized to each text it grew, was
+    laid out narrower, and grew again, a layout pass nearly every frame. It keeps the widest it has been."""
+    from vib_tutorial.gui.lesson import LiveLabel
+
+    page = QtWidgets.QWidget()
+    row = QtWidgets.QHBoxLayout(page)
+    label = LiveLabel("t = 1.111 s")
+    row.addWidget(label)
+    row.addStretch()
+    page.resize(400, 40)
+    page.show()
+    app.processEvents()
+    asked: list[int] = []
+
+    class Watch(QtCore.QObject):
+        def eventFilter(self, obj, event):
+            if event.type() == QtCore.QEvent.Type.LayoutRequest:
+                asked.append(1)
+            return False
+
+    texts = ("t = 4.888 s", "t = 1.111 s", "t = 8.044 s", "t = 1.171 s")
+    for text in texts:  # once round: each wider than any before may ask
+        label.setText(text)
+        app.processEvents()
+    watch = Watch()
+    page.installEventFilter(watch)
+    for _ in range(3):
+        for text in texts:
+            label.setText(text)
+            app.processEvents()
+    assert asked == [], "every width already met: no layout"
+    page.removeEventFilter(watch)
+    page.close()
+
+
 def test_the_quarter_car_drives_over_its_road(main_window, app):
     from vib_tutorial.core.quarter_car import drive
     from vib_tutorial.gui.quarter_car import DRIVE_S, TAB_DRIVE, TRIALS, WINDOW_S

@@ -42,18 +42,19 @@ from .bases_view import ChainView
 from .bindings import Bindings
 from .frame_loop import FrameLoop
 from .layouts import FlowLayout
-from .lesson import Form, LiveLabel, TrialBox, note_label, plot, theory, three_panes
+from .lesson import Form, LiveLabel, TrialBox, plot, theory, three_panes
 from .live_parts import ChangeMarks, EnergyTab, run_row
 from .plots import decimate
 from .scrub import Scrub
 from .style import colors
-from .theming import add_legend
+from .theming import add_legend, mute
 from .transport import Transport
 
 __all__ = ["NOTES_HTML", "PROBLEMS", "TRIALS", "BasesPage"]
 
 STRIP_SECONDS = 10.0  # the coordinates' and the Coupling tab's window: seven beats of the pair as it opens
 TRAIL_SECONDS = 3.0  # the plane's path
+MATRICES_EVERY = 0.1  # s: the matrices' steps redrawn at most this often while an arrow's dragged as it runs
 MEASURE_EVERY = 0.2  # s of run between the rail's looks
 PLAYED_AFTER = 2.0  # s of run after the reader's first change: they've handled it, predictions on
 SYSTEM_FIELDS = ("m1", "m2", "k1", "k2", "k3", "c")
@@ -163,7 +164,8 @@ class BasesPage(QtWidgets.QWidget):
         self.matrices = LiveLabel(wrap=True)
         self.matrices.setToolTip(MATRICES_TIP)
         self.matrices.setMinimumWidth(170)
-        self.plane_note = note_label()
+        self.plane_note = LiveLabel(wrap=True)  # rewritten as it runs: a QLabel lays the page out each time
+        mute(self.plane_note)
         row, self.speed, self.run_button, self.reset_button, self.clock = run_row(self)
         self.run_button.toggled.connect(self._on_run)
         self.reset_button.setToolTip("<p>Back to rest at t = 0; the angles measured are kept.</p>")
@@ -209,7 +211,8 @@ class BasesPage(QtWidgets.QWidget):
         for item in self.share_items:
             self.shares_plot.addItem(item)
         decimate(self.shares_plot)
-        self.shares_note = note_label()
+        self.shares_note = LiveLabel(wrap=True)  # rewritten as it runs: a QLabel lays the page out each time
+        mute(self.shares_note)
         pv.addWidget(self.shares_plot, 1)
         pv.addWidget(self.shares_note)
 
@@ -238,7 +241,8 @@ class BasesPage(QtWidgets.QWidget):
         self.now_mark = pg.InfiniteLine(angle=90)
         for line in (*self.levels, *self.mode_marks, self.now_mark):
             self.rail_plot.addItem(line, ignoreBounds=True)
-        self.rail_note = note_label()
+        self.rail_note = LiveLabel(wrap=True)  # rewritten as it runs: a QLabel lays the page out each time
+        mute(self.rail_note)
         rv.addWidget(self.rail_plot, 1)
         rv.addWidget(self.rail_note)
 
@@ -261,6 +265,9 @@ class BasesPage(QtWidgets.QWidget):
         self.bindings.write(BasesTrial("", ""))
         self.bindings.changed.connect(self._on_field)
 
+        self._still_due = False  # an arrow moved since the last frame drew the plane
+        self._matrices_at = -1.0  # when the matrices were last drawn (monotonic s)
+        self._matrices_late = False  # a drag held them back: drawn when it lets go
         self.loop = FrameLoop(self, "Coordinates & bases", self._tick, self._runs, self._sim_t)
         self.apply_theme()
         self._push_system()
@@ -352,12 +359,27 @@ class BasesPage(QtWidgets.QWidget):
         self._handled()
         if i == 0 and self.rail.isChecked():
             self.live.set_rail(np.array(v))  # the rail turned, as it runs
+        if self.running:
+            # drawn in the next frame: a drag's moves come up to 120 a second, and each drawn at once repainted
+            # the plane and the matrices between frames as well as in them
+            self._still_due = True
+            return
         self._draw_still()
-        if not self.running:
-            self._draw_live()
+        self._draw_live()
 
     def _on_arrow_released(self, _i: int) -> None:
+        self._flush_still()
         self._draw_rail()
+
+    def _flush_still(self) -> None:
+        """The arrow a running drag left for the next frame, drawn now (let go, paused); the matrices too, if a
+        drag held them back."""
+        let_go = self._matrices_late and type(self.plane.held) is not int
+        if self._still_due or let_go:
+            self._still_due = False
+            if let_go:
+                self._matrices_at = -1.0  # drawn now, not when they're next due
+            self._draw_still()
 
     def _on_point_grabbed(self) -> None:
         self.scrub.hide()
@@ -387,6 +409,7 @@ class BasesPage(QtWidgets.QWidget):
             self.scrub.hide()
             self.loop.start()
         else:
+            self._flush_still()
             self._show_scrub()
 
     def _run(self, on: bool) -> None:
@@ -418,6 +441,7 @@ class BasesPage(QtWidgets.QWidget):
             self._budget.spent(time.perf_counter() - start, self.live.t - before)
         self._measure()
         self._played()
+        self._flush_still()
         self._draw_live(frame=True)
 
     def _played(self) -> None:
@@ -431,6 +455,7 @@ class BasesPage(QtWidgets.QWidget):
             self.live.advance(min(MEASURE_EVERY, end - self.live.t) + 1e-12)
             self._measure()
         self._played()
+        self._flush_still()
         self._draw_live()
 
     # ------------------------------------------------------------- the rail, built by hand
@@ -519,9 +544,23 @@ class BasesPage(QtWidgets.QWidget):
         s, V, rail = self.live.system, self.basis, self.rail.isChecked()
         p = view.plane_view(s, V, rail, self.modes.isChecked())
         self.plane.set_still(p)
+        now = time.monotonic()
+        if self._still_due_matrices(now):
+            return
+        self._matrices_at = now
         m = view.matrices_view(s, V, rail)
         self.plane_note.setText(f"{m.note} {p.note}")  # under the plane, the whole width: the panel is full
         self.matrices.setText(self._matrices_html(m))
+
+    def _still_due_matrices(self, now: float) -> bool:
+        """True while a running drag's matrices wait: drawn at most `MATRICES_EVERY` apart then (their rich text
+        took 2 ms a frame to set and more to paint, faster than anyone reads), and exactly on letting go."""
+        arrow_held = type(self.plane.held) is int  # an arrow's index (False, not held, is a bool)
+        if self.running and arrow_held and now - self._matrices_at < MATRICES_EVERY:
+            self._matrices_late = True
+            return True
+        self._matrices_late = False
+        return False
 
     @staticmethod
     def _matrices_html(m: view.MatricesView) -> str:

@@ -18,7 +18,11 @@ class LiveLabel(QtWidgets.QWidget):
     out again, every frame: the Waves tab's status took 6.5 ms a frame that way, the Playback clock ~2.7. This
     draws its own text (a QTextDocument) and asks for a layout only when the text needs more room: a `wrap`ped
     paragraph another line (or one fewer), a line a wider box than it has. Otherwise a new text repaints the
-    label alone. `text()` is the rich text last set."""
+    label alone. `text()` is the rich text last set.
+
+    A line keeps the widest it has been as its width (`_widest`): a clock's digits differ in width, and sized to
+    each text it grew on one frame, was laid out narrower again, and grew on the next, a layout pass nearly
+    every frame (Coordinates & bases' clock, 2026-11-26)."""
 
     def __init__(self, text: str = "", wrap: bool = False, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)
@@ -27,6 +31,7 @@ class LiveLabel(QtWidgets.QWidget):
         self._doc.setDocumentMargin(0)
         self._text = ""
         self._height = -1
+        self._widest = 0  # a line's: it never asks to be narrower
         policy = QtWidgets.QSizePolicy(
             QtWidgets.QSizePolicy.Policy.Preferred,
             QtWidgets.QSizePolicy.Policy.Preferred if wrap else QtWidgets.QSizePolicy.Policy.Fixed,
@@ -49,7 +54,9 @@ class LiveLabel(QtWidgets.QWidget):
             grow = height != self._height
             self._height = height
         else:
-            grow = self._line().width() > self.width() or self._line().height() != self.height()
+            line = self._line()
+            grow = line.width() > self._widest or line.height() != self.height()
+            self._widest = max(self._widest, line.width())
         if grow:
             self.updateGeometry()
         self.setAccessibleDescription(self._doc.toPlainText())
@@ -70,11 +77,13 @@ class LiveLabel(QtWidgets.QWidget):
 
     def sizeHint(self) -> QtCore.QSize:
         line = self._line()
+        if not self.wrap:
+            return QtCore.QSize(max(line.width(), self._widest), line.height())
         return QtCore.QSize(line.width(), self.heightForWidth(line.width()))
 
     def minimumSizeHint(self) -> QtCore.QSize:
         if not self.wrap:
-            return self._line()
+            return self.sizeHint()
         return QtCore.QSize(0, self.heightForWidth(max(self.width(), 1)))
 
     def changeEvent(self, event: QtCore.QEvent) -> None:
@@ -82,6 +91,7 @@ class LiveLabel(QtWidgets.QWidget):
         if event.type() == QtCore.QEvent.Type.FontChange:
             self._doc.setDefaultFont(self.font())
             self._height = -1
+            self._widest = 0
             self.updateGeometry()
 
     def resizeEvent(self, event: QtGui.QResizeEvent) -> None:
