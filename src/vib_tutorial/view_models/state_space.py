@@ -195,6 +195,10 @@ class Grid:
     entries: tuple[tuple[str, ...], ...]
     marked: tuple[tuple[bool, ...], ...]  # a coupling term (off the diagonal blocks, not zero)
     blocks: bool  # drawn as 2×2 blocks (a matrix in a paired basis)
+    rows: tuple[str, ...] = ()  # what each row and column is (a coordinate's name)
+    cols: tuple[str, ...] = ()
+    row_groups: tuple[str, ...] = ()  # the block each row and column is in, for its tint (`matrix_table`'s groups)
+    col_groups: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -208,7 +212,16 @@ class MatricesView:
     note: str
 
 
-def _grid(symbol: str, unit: str, A: np.ndarray, blocks: bool = False, coupling: bool = True) -> Grid:
+def _grid(
+    symbol: str,
+    unit: str,
+    A: np.ndarray,
+    rows: tuple[str, ...],
+    cols: tuple[str, ...],
+    groups: tuple[tuple[str, ...], tuple[str, ...]],
+    blocks: bool = False,
+    coupling: bool = True,
+) -> Grid:
     scale = float(np.abs(A).max()) or 1.0
     n = A.shape[0]
     entries = tuple(tuple("0" if abs(float(a)) < ZERO * scale else sig(float(a), 3) for a in row) for row in A)
@@ -216,7 +229,19 @@ def _grid(symbol: str, unit: str, A: np.ndarray, blocks: bool = False, coupling:
         tuple(coupling and blocks and i // 2 != j // 2 and abs(float(A[i, j])) >= ZERO * scale for j in range(n))
         for i in range(n)
     )
-    return Grid(symbol, unit, entries, marked, blocks)
+    return Grid(symbol, unit, entries, marked, blocks, rows, cols, *groups)
+
+
+X = ("x₁", "x₂")
+STATE_NAMES = ("x₁", "x₂", "ẋ₁", "ẋ₂")
+BY_MASS = ("i", "b")  # M, C, K: a block a mass
+BY_HALF = ("i", "i", "b", "b")  # A: displacements, then velocities; T⁻¹AT: a block a pair
+PLAIN = ("q", "q", "q", "q")  # T: one tint, it's a basis, not a map
+
+
+def names(s: TwoMass, which: int) -> tuple[str, ...]:
+    """The four coordinates' short names in the basis `which`, pairs adjacent (the planes' axes)."""
+    return tuple(n for p in labels(s, which) for n in (p.x, p.y.split("  ")[0]))
 
 
 def mode_line(r: int, m: StateMode) -> str:
@@ -235,7 +260,13 @@ def matrices_view(s: TwoMass, which: int) -> MatricesView:
     A = state_matrix(M, C, K)
     B = basis_of(s, which)
     Ab = in_basis(B, A)
-    given = (_grid("M", "kg", M), _grid("C", "N·s/m", C), _grid("K", "N/m", K))
+    mass_groups = (BY_MASS, BY_MASS)
+    given = (
+        _grid("M", "kg", M, X, X, mass_groups),
+        _grid("C", "N·s/m", C, X, X, mass_groups),
+        _grid("K", "N/m", K, X, X, mass_groups),
+    )
+    w = names(s, which)
     coupled = coupling(Ab) >= ZERO
     ms = modes(s)
     if which == MASS:
@@ -261,9 +292,9 @@ def matrices_view(s: TwoMass, which: int) -> MatricesView:
         )
     return MatricesView(
         given,
-        _grid("A", "", A),
-        _grid("T", "", B, blocks=True, coupling=False),
-        _grid("T⁻¹AT", "", Ab, blocks=True),
+        _grid("A", "", A, STATE_NAMES, STATE_NAMES, (BY_HALF, BY_HALF)),
+        _grid("T", "", B, STATE_NAMES, w, (PLAIN, PLAIN), blocks=True, coupling=False),
+        _grid("T⁻¹AT", "", Ab, w, w, (BY_HALF, BY_HALF), blocks=True),
         tuple(mode_line(r, m) for r, m in enumerate(ms)),
         coupled,
         note,
