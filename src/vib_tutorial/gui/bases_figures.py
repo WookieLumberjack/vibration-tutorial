@@ -7,26 +7,30 @@ from .style import colors
 
 
 def two_masses_svg() -> str:
-    """Two masses between two walls: k₁ to the left wall, the coupling k₂ between them, k₃ to the right; x₁, x₂."""
+    """Two masses between two walls: k₁ to the left wall, the coupling k₂ between them, k₃ to the right, a damper c beneath each; x₁, x₂."""
     fg, muted = colors.foreground, colors.muted
     a, b = colors.mass[0], colors.mass[1]
     left_wall, right_wall, top, bottom, floor = 20.0, 360.0, 50.0, 110.0, 122.0
     m1, m2, side = 105.0, 215.0, 60.0
     mid = (top + bottom) / 2
+    up, down = mid - 12, mid + 13  # each spring with its damper beneath it
     parts = [
         fig.ground(left_wall, 30, floor, muted),
         fig.ground(right_wall, 30, floor, muted, side=1),
         fig.line(left_wall, floor, right_wall, floor, muted, 1.0),
-        fig.spring(left_wall, m1, mid, fg, coils=4),
-        fig.math_label((left_wall + m1) / 2, mid - 14, "k<sub>1</sub>", fg),
+        fig.spring(left_wall, m1, up, fg, coils=4, amplitude=6.0),
+        fig.math_label((left_wall + m1) / 2, up - 10, "k<sub>1</sub>", fg),
+        fig.damper(left_wall, m1, down, fg, half=6.0),
         fig.rect(m1, top, side, bottom - top, a, a, 2.0, opacity=0.2),
         fig.math_label(m1 + side / 2, mid + 6, "m<sub>1</sub>", fg),
-        fig.spring(m1 + side, m2, mid, fg, coils=4),
-        fig.math_label((m1 + side + m2) / 2, mid - 14, "k<sub>2</sub>", fg),
+        fig.spring(m1 + side, m2, up, fg, coils=4, amplitude=6.0),
+        fig.math_label((m1 + side + m2) / 2, up - 10, "k<sub>2</sub>", fg),
+        fig.damper(m1 + side, m2, down, fg, half=6.0),
         fig.rect(m2, top, side, bottom - top, b, b, 2.0, opacity=0.2),
         fig.math_label(m2 + side / 2, mid + 6, "m<sub>2</sub>", fg),
-        fig.spring(m2 + side, right_wall, mid, fg, coils=4),
-        fig.math_label((m2 + side + right_wall) / 2, mid - 14, "k<sub>3</sub>", fg),
+        fig.spring(m2 + side, right_wall, up, fg, coils=4, amplitude=6.0),
+        fig.math_label((m2 + side + right_wall) / 2, up - 10, "k<sub>3</sub>", fg),
+        fig.damper(m2 + side, right_wall, down, fg, half=6.0),
     ]
     for x, label in ((m1, "x<sub>1</sub>"), (m2, "x<sub>2</sub>")):
         parts += [
@@ -34,7 +38,7 @@ def two_masses_svg() -> str:
             fig.arrow(x + side / 2, 24, x + side / 2 + 40, 24, fg, 1.5),
             fig.math_label(x + side / 2 + 50, 29, label, fg, "start"),
         ]
-    parts.append(fig.text(190, 145, "a damper c beside each spring", muted))
+    parts.append(fig.text(190, 145, "each damper c, beneath its spring", muted))
     return fig.svg(380, 155, "".join(parts))
 
 

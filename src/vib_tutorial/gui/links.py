@@ -209,7 +209,7 @@ COURSE = (
                 "bases_page",
                 "Coordinates && bases",
                 "two masses whose motion is a point in a plane: any basis, the coupling it brings, the modes that "
-                "remove it, and Rayleigh's quotient on a rail",
+                "remove it, and Rayleigh's quotient from one arrow",
             ),
             (
                 "rigid_body_page",

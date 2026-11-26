@@ -253,7 +253,7 @@ def energy_view(t: np.ndarray, y: np.ndarray) -> EnergyView | None:
     residual = float(put_in[-1] + changes[-1] - taken_out[-1] - stored[-1])
     rows = (
         EnergyRow("Put in by your hand", float(end[c["released"]]), "muted"),
-        EnergyRow("Moving the rail", float(end[c["rail_work"]]), "force"),
+        EnergyRow("Keeping one arrow", float(end[c["rail_work"]]), "force"),
         EnergyRow("Changing the springs", float(end[c["spring_work"]]), "energy.potential"),
         EnergyRow("Lost capturing mass", -float(end[c["capture_loss"]]), "energy.added"),
         EnergyRow("Carried off by mass", -float(end[c["carried_off"]]), "energy.added"),

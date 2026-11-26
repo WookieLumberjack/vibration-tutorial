@@ -5,9 +5,12 @@
 
 - **Pluck:** press on a mass and drag it sideways, the other held where it is: `grabbed(i)`, `pulled(i, x)` (m,
   the mass's displacement) as it moves, `released()`.
-- **Grips** (rings): on each mass's corner (up or right: heavier) and each spring (up: stiffer):
-  `grip_taken(name)`, `grip_moved(name, distance)` (display units since it was taken, + to grow),
-  `grip_released(name)`; the names are `GRIPS`' (m1, m2, k1, k2, k3).
+- **Grips** (rings): on each mass's corner (up or right: heavier), each spring (up: stiffer) and the middle
+  damper (up: more damping; the three share one c): `grip_taken(name)`, `grip_moved(name, distance)` (display
+  units since it was taken, + to grow), `grip_released(name)`; the names are `GRIPS`' (m1, m2, k1, k2, k3, c).
+
+Each spring has its damper beneath it (`SPRING_Y`, `DAMPER_Y`: close enough to the middle that both meet the
+lightest mass drawn), the dashpot's piston following the two ends as the Single oscillator's does.
 
 The motion is drawn magnified, `GAIN` display units a metre, the same as the plane's reach always: the plane beside
 it is in mm and never rescales, so neither does this.
@@ -27,7 +30,7 @@ from ..view_models.bases import PLUCK
 from ..view_models.grips import body_size
 from ..view_models.text import fmt
 from ..view_models.text import number as sig
-from .animation import spring_path
+from .animation import damper_path, spring_path
 from .drag import Grabbable
 from .style import colors, text_on
 
@@ -36,12 +39,16 @@ REST = (1.2, 2.4)  # the masses' centres at rest (display units)
 SIDE = 0.4  # the 1 kg mass's side
 GAIN = 6.0  # display units a metre: 50 mm is 0.3
 GRIP_R = 0.06
+SPRING_Y, DAMPER_Y = 0.07, -0.07  # the lightest mass drawn is 0.16 tall: both meet it
+LABEL_GAP = 0.07
+K_LABEL_Y = 0.25  # above a 1 or 2 kg mass's top and its corner grip, which a label lower down ran into
 TIP = (
     "<p>The two masses between their walls, moving as they run (magnified). The coupling spring k₂ is the one "
     "between them.</p>"
     "<p><b>Pluck:</b> drag a mass sideways and let go (the other stays where it is), or drag the point on the plane "
-    "below. <b>Change them as they run:</b> drag the ring on a mass's corner up for a heavier one, or the ring on a "
-    "spring up for a stiffer one. The motion carries on from where it is.</p>"
+    "below. <b>Change them as they run:</b> drag the ring on a mass's corner up for a heavier one, the ring on a "
+    "spring up for a stiffer one, or the ring on the middle damper up for more damping (the three dampers share "
+    "one c). The motion carries on from where it is.</p>"
 )
 
 
@@ -70,7 +77,7 @@ class ChainView(Grabbable, pg.PlotWidget):
         self._grab_dx = 0.0
         self.x = (0.0, 0.0)
         self.sides = [SIDE, SIDE]
-        self.values = {"m1": 1.0, "m2": 1.0, "k1": 400.0, "k2": 100.0, "k3": 400.0}
+        self.values = {"m1": 1.0, "m2": 1.0, "k1": 400.0, "k2": 100.0, "k3": 400.0, "c": 0.0}
 
         def add(item, z: float = 0.0):
             item.setZValue(z)
@@ -79,11 +86,13 @@ class ChainView(Grabbable, pg.PlotWidget):
 
         self.walls = add(pg.PlotDataItem(connect="finite"))
         self.springs = [add(pg.PlotDataItem()) for _ in range(3)]
+        self.dampers = [add(pg.PlotDataItem(connect="finite")) for _ in range(3)]
         self.blocks = [add(QtWidgets.QGraphicsRectItem(), 5) for _ in range(2)]
         self.mass_labels = [add(pg.TextItem(anchor=(0.5, 0.5)), 6) for _ in range(2)]
-        self.k_labels = [add(pg.TextItem(anchor=(0.5, 0.0)), 6) for _ in range(3)]
+        self.k_labels = [add(pg.TextItem(anchor=(0.5, 1.0)), 6) for _ in range(3)]  # above the springs
+        self.c_labels = [add(pg.TextItem(anchor=(0.5, 0.0)), 6) for _ in range(3)]  # below the dampers
         self.rests = add(pg.PlotDataItem(connect="finite"))
-        self.grips = {name: add(QtWidgets.QGraphicsEllipseItem(), 8) for name in ("m1", "m2", "k1", "k2", "k3")}
+        self.grips = {name: add(QtWidgets.QGraphicsEllipseItem(), 8) for name in ("m1", "m2", "k1", "k2", "k3", "c")}
         self._draw_walls()
         self.apply_theme()
         self.show_at((0.0, 0.0))
@@ -105,27 +114,29 @@ class ChainView(Grabbable, pg.PlotWidget):
     def apply_theme(self) -> None:
         pen = pg.mkPen(colors.structure, width=2)
         self.walls.setPen(pg.mkPen(colors.structure, width=2))
-        for spring in self.springs:
-            spring.setPen(pen)
+        for item in self.springs + self.dampers:
+            item.setPen(pen)
         self.rests.setPen(pg.mkPen(colors.grey, width=1))
         for i, block in enumerate(self.blocks):
             block.setBrush(pg.mkBrush(colors.mass[i]))
             block.setPen(pg.mkPen(colors.structure, width=1.5))
             self.mass_labels[i].setColor(text_on(colors.mass[i]))
-        for label in self.k_labels:
+        for label in self.k_labels + self.c_labels:
             label.setColor(colors.muted)
         for grip in self.grips.values():
             grip.setBrush(pg.mkBrush(colors.background))
             grip.setPen(pg.mkPen(colors.strong, width=2))
 
     # ------------------------------------------------------------- drawing
-    def set_values(self, m1: float, m2: float, k1: float, k2: float, k3: float) -> None:
-        self.values = {"m1": m1, "m2": m2, "k1": k1, "k2": k2, "k3": k3}
+    def set_values(self, m1: float, m2: float, k1: float, k2: float, k3: float, c: float) -> None:
+        self.values = {"m1": m1, "m2": m2, "k1": k1, "k2": k2, "k3": k3, "c": c}
         self.sides = [SIDE * body_size(m, 1.0) * 0.8 for m in (m1, m2)]
         for i, m in enumerate((m1, m2)):
             self.mass_labels[i].setText(f"{sig(m)} kg")
         for i, k in enumerate((k1, k2, k3)):
             self.k_labels[i].setText(f"k{'₁₂₃'[i]} = {fmt(k, 'N/m', largest='M', smallest='m')}")
+        for label in self.c_labels:
+            label.setText(f"c = {fmt(c, 'N·s/m', largest='M', smallest='m')}")
         # drawn at the next `show_at`: the page's next draw (a trial's sets each curve once)
 
     def show_at(self, x: Sequence[float] | np.ndarray) -> None:
@@ -137,12 +148,23 @@ class ChainView(Grabbable, pg.PlotWidget):
             s = self.sides[i]
             self.blocks[i].setRect(QtCore.QRectF(left, -s / 2, s, s))
             self.mass_labels[i].setPos(centres[i], 0.0)
-        spans = ((WALL_L, edges[0][0]), (edges[0][1], edges[1][0]), (edges[1][1], WALL_R))
-        for i, (a, b) in enumerate(spans):
-            self.springs[i].setData(*spring_path(a, b, 0.0, coils=5))
-            self.k_labels[i].setPos((a + b) / 2, -0.08)
+        for i, ((a, b), gap) in enumerate(zip(self._spans(edges), self._rest_gaps())):
+            self.springs[i].setData(*spring_path(a, b, SPRING_Y, coils=5, amp=0.04))
+            self.dampers[i].setData(*damper_path(a, b, DAMPER_Y, gap, h=0.035))
+            self.k_labels[i].setPos((a + b) / 2, K_LABEL_Y)
+            self.c_labels[i].setPos((a + b) / 2, DAMPER_Y - LABEL_GAP)
         for name, (gx, gy) in self._grip_spots().items():
             self.grips[name].setRect(QtCore.QRectF(gx - GRIP_R, gy - GRIP_R, 2 * GRIP_R, 2 * GRIP_R))
+
+    @staticmethod
+    def _spans(edges: list[tuple[float, float]]) -> tuple[tuple[float, float], ...]:
+        """The three gaps a spring and its damper bridge: wall to m₁, m₁ to m₂, m₂ to wall."""
+        return ((WALL_L, edges[0][0]), (edges[0][1], edges[1][0]), (edges[1][1], WALL_R))
+
+    def _rest_gaps(self) -> list[float]:
+        """The gaps at rest, which size each dashpot (its cylinder rides on the left end, its rod on the right)."""
+        edges = [(REST[i] - s / 2, REST[i] + s / 2) for i, s in enumerate(self.sides)]
+        return [b - a for a, b in self._spans(edges)]
 
     def _centre(self, i: int) -> float:
         return REST[i] + GAIN * self.x[i]
@@ -151,13 +173,13 @@ class ChainView(Grabbable, pg.PlotWidget):
         c = [self._centre(i) for i in range(2)]
         s = self.sides
         edges = [(c[i] - s[i] / 2, c[i] + s[i] / 2) for i in range(2)]
-        return {
-            "m1": (edges[0][1], s[0] / 2),
-            "m2": (edges[1][1], s[1] / 2),
-            "k1": ((WALL_L + edges[0][0]) / 2, 0.0),
-            "k2": ((edges[0][1] + edges[1][0]) / 2, 0.0),
-            "k3": ((edges[1][1] + WALL_R) / 2, 0.0),
-        }
+        spans = self._spans(edges)
+        spots = {"m1": (edges[0][1], s[0] / 2), "m2": (edges[1][1], s[1] / 2)}
+        for i, (a, b) in enumerate(spans):
+            spots[f"k{i + 1}"] = ((a + b) / 2, SPRING_Y)
+        a, _ = spans[1]
+        spots["c"] = (a + 0.4 * self._rest_gaps()[1], DAMPER_Y)  # on the middle dashpot's cylinder, riding on m₁
+        return spots
 
     # ------------------------------------------------------------- the hand
     def grip_at(self, pos: QtCore.QPointF) -> str | None:

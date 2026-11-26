@@ -42,8 +42,8 @@ TRIALS = (
         "Only <m>m<sub>1</sub></m> pulled 50 mm and let go. The point traces a box on the plane, and the masses "
         "trade their swing: after 0.699 s <m>m<sub>1</sub></m> has nearly stopped and <m>m<sub>2</sub></m> swings "
         "with the energy, and it comes back every 1.398 s, <m>1/(f<sub>2</sub> − f<sub>1</sub>)</m>. The "
-        "Coupling tab shows the energy pass between the coordinates <m>x<sub>1</sub></m> and "
-        "<m>x<sub>2</sub></m>, through the coupling spring.",
+        "Coupling tab shows the energy pass from the motion of <m>m<sub>1</sub></m> to the motion of "
+        "<m>m<sub>2</sub></m> and back, through the coupling spring.",
         pluck=(0.05, 0.0),
         tab=TAB_COUPLING,
         predict=Prediction(
@@ -65,7 +65,7 @@ TRIALS = (
         "The same pluck, described along the modes: <m>v<sub>1</sub></m> at 45°, in phase, and "
         "<m>v<sub>2</sub></m> at 135°, opposed. Both matrices are diagonal, <m>VᵀMV</m> = 1 kg and <m>VᵀKV</m> = "
         "400 and 600 N/m on the diagonal, and each coordinate's trace is one clean sine: 3.183 Hz and 3.898 Hz. "
-        "On the Coupling tab each keeps its energy, and nothing passes between them. The motion is the same; "
+        "On the Coupling tab the energy in each mode stays there, and none passes across. The motion is the same; "
         "only its description changed.",
         v1=IN_PHASE,
         v2=OPPOSED,
@@ -117,24 +117,27 @@ TRIALS = (
         pluck=(0.05, 0.0),
     ),
     BasesTrial(
-        "On a rail along x₁",
-        "One arrow, along <m>x<sub>1</sub></m>, and the masses held to its line: only <m>m<sub>1</sub></m> "
-        "moves, on a stiffness of 500 N/m, at 3.559 Hz. That is Rayleigh's quotient for <m>v</m> = (1, 0), and it "
-        "lands on the Rail tab. Turn the rail by dragging its arrow and let each new angle land its frequency.",
+        "One arrow along x₁",
+        "One arrow, <m>v<sub>1</sub></m> along <m>x<sub>1</sub></m>, a reduced basis: the masses are held to its "
+        "line, so only <m>m<sub>1</sub></m> moves, on 500 N/m, at 3.559 Hz. That is Rayleigh's quotient of "
+        "<m>v</m> = (1, 0), 11.8 % above the system's lowest frequency, 3.183 Hz. Turn the arrow and let each "
+        "angle land its frequency on the One arrow tab: none comes in below 3.183 Hz, the lowest is along mode 1 "
+        "(45°), and near it the error is tiny, 0.3 % at 38.7°. A reduced basis errs high, and a rough shape is "
+        "nearly right.",
         rail=True,
         pluck=(0.05, 0.0),
         tab=TAB_RAIL,
         predict=Prediction(
-            "The rail turned from along x₁ to 45°, so both masses move together on it. It swings…",
+            "The one arrow turned from along x₁ to 45°, so both masses move together. They swing…",
             ("slower", "at the same rate", "faster"),
             0,
             ordered=True,
             why=(
                 "",
-                "On the rail the stiffness is vᵀKv over the mass vᵀMv, and both change with the rail's angle: at "
+                "With one arrow the stiffness is vᵀKv over the mass vᵀMv, and both change with its angle: at "
                 "45° the coupling spring isn't stretched.",
                 "Along x₁ the coupling spring is stretched by m₁ alone; at 45° the masses move together and it's "
-                "idle: less stiffness for the mass, so slower, 3.183 Hz, the slowest any rail can be.",
+                "idle: less stiffness for the mass, so slower, 3.183 Hz, the slowest one arrow can give.",
             ),
         ),
     ),
@@ -268,8 +271,8 @@ PROBLEMS = tuple(
     Problem(key, title, "bases_page", f"See {page_link('bases_page', anchor, section)}.", make)
     for key, title, anchor, section, make in (
         ("symmetric-pair", "A symmetric pair", "modes", "The modes", _symmetric_pair),
-        ("beat-time", "The energy passing across", "energy", "The energy in each coordinate", _beat_time),
-        ("rail-frequency", "On a rail", "rail", "On a rail: Rayleigh's quotient", _rail_frequency),
+        ("beat-time", "The energy passing across", "energy", "The energy along each arrow", _beat_time),
+        ("rail-frequency", "One arrow", "rail", "One arrow: a reduced basis, and Rayleigh's quotient", _rail_frequency),
         ("coupling-kind", "Which coupling?", "coupling", "Coupling belongs to the description", _coupling_kind),
     )
 )
@@ -282,12 +285,12 @@ TIPS = {
     "k2": "<p>The coupling spring between the masses: with none, each mass would swing on its own.</p>",
     "k3": "<p>The spring from m₂ to the right wall.</p>",
     "c": "<p>A viscous damper beside each of the three springs, each this strong.</p>",
-    "rail": "<p>Take v₂ away and hold the masses to the line along v₁, as if the point slid on a rail. Put on as it "
-    "runs, the point is moved to the nearest place on the rail; drag the arrow to turn the rail.</p>",
+    "rail": "<p>Keep v₁ alone, a reduced basis: with one coordinate the masses can only move along v₁'s line, and "
+    "they swing at its Rayleigh's quotient. Ticked as it runs, the point is moved to the nearest place on the "
+    "line; drag the arrow to turn it.</p>",
     "modes": "<p>Draw the two mode directions on the plane. Arrows dragged near a mode (or an axis) snap onto it "
     "either way.</p>",
-    "theory": "<p>Draw Rayleigh's quotient for every rail's angle over the points, with f₁ and f₂ and the modes' "
-    "angles.</p>",
+    "theory": "<p>Draw Rayleigh's quotient for every angle over the points, with f₁ and f₂ and the modes' angles.</p>",
 }
 
 NOTES_HTML = load_notes("bases", figures=bases_figures.FIGURES, trials=trials_html(TRIALS))

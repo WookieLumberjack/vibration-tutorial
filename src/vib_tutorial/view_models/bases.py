@@ -1,17 +1,19 @@
 """Coordinates & bases' view model (#478 Phase 4): its state, and what each panel shows, without Qt.
 
 The page's state is a `BasesTrial` (its trials, `practice_state()` and `load_setup` all use one): the two masses
-(`system`), the basis's two arrows v₁, v₂ (`basis`: x = Vq), whether the masses run on a rail along v₁, and what's
-shown. The page runs a `live_bases.LiveBases` built from it, and each panel has a function here:
+(`system`), the basis's two arrows v₁, v₂ (`basis`: x = Vq), whether the masses run on a rail along v₁ (the
+code's word: the page calls it *one arrow*, a reduced basis), and what's shown. The page runs a
+`live_bases.LiveBases` built from it, and each panel has a function here:
 
 - `plane_view(V, rail, modes, shown)`: the (x₁, x₂) plane's still parts (the arrows, the grid of the coordinates
   they make, the mode lines, the rail), and `projection(V, x)` the point's parallelogram, x = q₁v₁ + q₂v₂, as it
   moves. All in mm.
-- `matrices_view(system, V, rail)`: VᵀMV, VᵀKV (and VᵀCV with dampers) with their off-diagonal coupling marked,
+- `matrices_view(system, V, rail)`: the steps, M and K, then V and Vᵀ, then VᵀMV, VᵀKV (and VᵀCV with dampers)
+  with their off-diagonal coupling marked, each arrow's frequency kept alone (Rayleigh's quotient of it),
   and what they say: coupled statically, dynamically, both, or not at all (the modes), and the frequencies, the
   same in every basis.
-- `coordinates(V, rail, x)`: the coordinates q against time, and `shares(...)`: each coordinate's own energy and
-  the coupling's, the **Coupling** tab.
+- `coordinates(V, rail, x)`: the coordinates q against time, and `shares(...)`: the energy of the motion along
+  each arrow and the coupled energy, the **Coupling** tab.
 - The **Rail** tab is built by hand: each rail the reader tries lands its measured frequency at its angle
   (`RailRecorder`), with Rayleigh's quotient over them on request (`rail_view`).
 - The **Energy** tab is `live_bases.energy_view`'s.
@@ -60,7 +62,7 @@ class BasesTrial:
     v2: tuple[float, float] = (0.0, 1.0)
     rail: bool = False  # on a rail along v₁ (v₂ taken away)
     modes: bool = False  # the mode lines drawn on the plane
-    theory: bool = False  # Rayleigh's quotient drawn on the Rail tab
+    theory: bool = False  # Rayleigh's quotient drawn on the One arrow tab
     pluck: tuple[float, float] = (0.0, 0.0)  # m: plucked from here and let go ((0, 0): at rest, as it opens)
     tab: int = TAB_COUPLING
     predict: Prediction | Placement | None = None  # asked once the reader has played (Things to try)
@@ -94,6 +96,7 @@ GRIPS = {
     "k1": Grip("k1", 1.0, 1e5, per=0.3),
     "k2": Grip("k2", 1.0, 1e5, per=0.3),
     "k3": Grip("k3", 1.0, 1e5, per=0.3),
+    "c": Grip("c", 0.2, 100.0, per=0.2, zero_below=0.3),  # the three dampers' one c; nought below 0.3 N·s/m
 }
 
 
@@ -184,7 +187,7 @@ def plane_view(s: TwoMass, V: np.ndarray, rail: bool, show_modes: bool) -> Plane
     )
     rail_line = _line(V[:, 0], REACH * 1.2) if rail else (np.empty(0), np.empty(0))
     if rail:
-        note = "On a rail along v₁: drag the arrow to turn it as it runs."
+        note = "One arrow, v₁ alone: the masses move along its line. Drag it to turn it as it runs."
     elif singular(V):
         note = "The arrows lie along one line: they don't make a basis, and most motions can't be written in them."
     else:
@@ -217,8 +220,13 @@ class Matrix:
 
 @dataclass(frozen=True)
 class MatricesView:
-    matrices: tuple[Matrix, ...]
-    hz: tuple[float, ...]  # the frequencies the matrices give (Hz): one on a rail
+    given: tuple[Matrix, ...]  # M and K in the masses' own displacements, the steps' start
+    basis: tuple[Matrix, ...]  # V (the arrows as its columns) and Vᵀ; one column on one arrow
+    halfway: tuple[Matrix, ...]  # MV and KV: the first multiplication
+    matrices: tuple[Matrix, ...]  # VᵀMV, VᵀKV (and VᵀCV with dampers): the products
+    hz: tuple[float, ...]  # the frequencies the matrices give (Hz): one on one arrow
+    alone: tuple[float, ...]  # each arrow kept alone, √(k̃ᵢᵢ/m̃ᵢᵢ)/2π (Hz): Rayleigh's quotient of its arrow
+    sums: tuple[str, ...]  # the last step, the frequencies worked out from the products, a line each
     note: str
 
 
@@ -229,46 +237,76 @@ def _coupled(A: np.ndarray) -> bool:
     return abs(float(A[0, 1])) > COUPLED * scale
 
 
-def _matrix(symbol: str, unit: str, A: np.ndarray) -> Matrix:
+def _matrix(symbol: str, unit: str, A: np.ndarray, coupling: bool = True) -> Matrix:
+    """`coupling`: its off-diagonal terms are a coupling (VᵀMV's), not just numbers (V's)."""
     scale = float(np.abs(A).max()) or 1.0
     entries = tuple(tuple("0" if abs(float(a)) < COUPLED * scale else sig(float(a), 4) for a in row) for row in A)
-    return Matrix(symbol, unit, entries, _coupled(A))
+    return Matrix(symbol, unit, entries, coupling and _coupled(A))
 
 
 def matrices_view(s: TwoMass, V: np.ndarray, rail: bool) -> MatricesView:
     """The matrices in the basis (see the module), and what they say."""
     M, C, K = s.matrices()
     B = V[:, :1] if rail else V
+    given = (_matrix("M", "kg", M), _matrix("K", "N/m", K))
+    names_v = ("v₁", "v₁ᵀ") if rail else ("V", "Vᵀ")
+    basis = (_matrix(names_v[0], "", B, coupling=False), _matrix(names_v[1], "", B.T, coupling=False))
+    v = "v₁" if rail else "V"
+    halfway = (_matrix(f"M{v}", "kg", M @ B, coupling=False), _matrix(f"K{v}", "N/m", K @ B, coupling=False))
     if not rail and singular(V):
-        return MatricesView((), (), "The arrows lie along one line: they don't make a basis.")
+        return MatricesView(
+            given, basis, halfway, (), (), (), (), "The arrows lie along one line: they don't make a basis."
+        )
     Mt, Ct, Kt = (transformed(B, A) for A in (M, C, K))
     names = ("v₁ᵀMv₁", "v₁ᵀKv₁", "v₁ᵀCv₁") if rail else ("VᵀMV", "VᵀKV", "VᵀCV")
     shown = [_matrix(names[0], "kg", Mt), _matrix(names[1], "N/m", Kt)]
     if s.c > 0:
         shown.append(_matrix(names[2], "N·s/m", Ct))
+    alone = tuple(float(np.sqrt(Kt[i, i] / Mt[i, i]) / (2 * np.pi)) for i in range(B.shape[1]))
     if rail:
-        f = rayleigh_hz(V[:, 0], M, K)
-        note = (
-            f"On the rail, one coordinate: m̃ = v₁ᵀMv₁ = {sig(float(Mt[0, 0]), 4)} kg and k̃ = v₁ᵀKv₁ = "
-            f"{sig(float(Kt[0, 0]), 4)} N/m, so it swings at √(k̃/m̃)/2π = {sig(f, 4)} Hz: Rayleigh's quotient."
+        f = alone[0]
+        low = float(s.modes()[0][0])
+        m, k = float(Mt[0, 0]), float(Kt[0, 0])
+        sums: tuple[str, ...] = (
+            f"ω² = v₁ᵀKv₁ / v₁ᵀMv₁ = {sig(k, 4)} / {sig(m, 4)} = {sig(k / m, 4)} (rad/s)²",
+            f"f = √{sig(k / m, 4)} / 2π = {sig(f, 4)} Hz",
         )
-        return MatricesView(tuple(shown), (f,), note)
+        note = (
+            f"One coordinate, one oscillator, one pure sine: {_above(f, low)} the system's lowest, "
+            f"{sig(low, 4)} Hz. One arrow never comes in below it."
+        )
+        return MatricesView(given, basis, halfway, tuple(shown), (f,), alone, sums, note)
     hz = frequencies(Mt, Kt)
     both = " and ".join(f"{sig(float(f), 4)}" for f in hz)
+    sums = (
+        f"Both arrows: det(VᵀKV − ω²VᵀMV) = 0 gives {both} Hz",
+        *(
+            f"v{'₁₂'[i]} kept alone: {sig(float(Kt[i, i]), 4)} / {sig(float(Mt[i, i]), 4)} → {sig(alone[i], 4)} Hz"
+            for i in range(2)
+        ),
+    )
     m_c, k_c = _coupled(Mt), _coupled(Kt)
     if not (m_c or k_c):
-        what = (
-            "Both diagonal: the coordinates are uncoupled, each moving on its own at one frequency. "
-            "These arrows lie along the modes."
-        )
+        what = "Both diagonal: uncoupled. These arrows lie along the modes, each coordinate one pure sine."
     elif k_c and not m_c:
-        what = "VᵀMV is diagonal and VᵀKV isn't: the coordinates are coupled through the springs (static coupling)."
+        what = "Only VᵀKV couples: through the springs (static coupling)."
     elif m_c and not k_c:
-        what = "VᵀKV is diagonal and VᵀMV isn't: the coordinates are coupled through the masses (dynamic coupling)."
+        what = "Only VᵀMV couples: through the masses (dynamic coupling)."
     else:
-        what = "Neither is diagonal: the coordinates are coupled through both the springs and the masses."
-    note = f"{what} Their frequencies: {both} Hz, the same in every basis."
-    return MatricesView(tuple(shown), tuple(float(f) for f in hz), note)
+        what = "Both couple: through the springs and the masses."
+    kept = (
+        "Each arrow alone gives the same: nothing is left out."
+        if not (m_c or k_c)
+        else "An arrow alone leaves the coupling out, and misses."
+    )
+    note = f"{what} {kept}"
+    return MatricesView(given, basis, halfway, tuple(shown), tuple(float(f) for f in hz), alone, sums, note)
+
+
+def _above(f: float, low: float) -> str:
+    """How far a one-arrow frequency is above the system's lowest, in words."""
+    gap = f / low - 1.0
+    return "exactly" if gap < 5e-5 else f"{sig(100 * gap, 2)} % above"
 
 
 # ------------------------------------------------------------------ the coordinates and their energies
@@ -286,25 +324,29 @@ def coordinates(V: np.ndarray, rail: bool, x: np.ndarray) -> np.ndarray:
 
 @dataclass(frozen=True)
 class Shares:
-    own: tuple[np.ndarray, ...]  # J: each coordinate's ½m̃ᵢᵢq̇ᵢ² + ½k̃ᵢᵢqᵢ²
+    own: tuple[np.ndarray, ...]  # J: the motion along each arrow's, ½m̃ᵢᵢq̇ᵢ² + ½k̃ᵢᵢqᵢ²
     coupling: np.ndarray  # J: m̃₁₂q̇₁q̇₂ + k̃₁₂q₁q₂, the rest of the stored energy
     note: str
 
 
 def shares(s: TwoMass, V: np.ndarray, rail: bool, x: np.ndarray, v: np.ndarray) -> Shares:
-    """Each coordinate's own energy and the coupling's (see the module), for the samples' x and v."""
+    """The energy of the motion along each arrow and the coupled energy (see the module), for the samples' x and v."""
     M, _, K = s.matrices()
     B = V[:, :1] if rail else V
     q, qd = coordinates(V, rail, x), coordinates(V, rail, v)
     Mt, Kt = transformed(B, M), transformed(B, K)
     own = tuple(0.5 * Mt[i, i] * qd[:, i] ** 2 + 0.5 * Kt[i, i] * q[:, i] ** 2 for i in range(B.shape[1]))
     if B.shape[1] == 1:
-        return Shares(own, np.zeros(x.shape[0]), "On a rail there is one coordinate, and all the energy is its own.")
+        return Shares(
+            own,
+            np.zeros(x.shape[0]),
+            "With one arrow the masses move along one line, and all the energy is in that motion.",
+        )
     coupling = Mt[0, 1] * qd[:, 0] * qd[:, 1] + Kt[0, 1] * q[:, 0] * q[:, 1]
     if not (_coupled(Mt) or _coupled(Kt)):
-        note = "Uncoupled: each coordinate keeps its own energy, and nothing passes between them."
+        note = "Uncoupled: the energy in the motion along each arrow stays there, and none passes across."
     else:
-        note = "Coupled: the energy passes back and forth between the coordinates, through the coupling's term."
+        note = "Coupled: energy passes back and forth between the motion along v₁ and along v₂, through the coupled energy."
     return Shares(own, coupling, note)
 
 
@@ -320,7 +362,7 @@ class RailPoint:
 
 
 class RailRecorder:
-    """Each rail tried, its measured frequency at its angle: the Rail tab's points (see the module). A rail within
+    """Each rail tried, its measured frequency at its angle: the One arrow tab's points (see the module). A rail within
     half a degree of one already landed replaces it."""
 
     def __init__(self) -> None:
@@ -363,7 +405,7 @@ class RailView:
 def rail_view(
     s: TwoMass, current: Sequence[RailPoint], earlier: Sequence[RailPoint], theory: bool, now: float | None
 ) -> RailView:
-    """The Rail tab (see the module): its axes the same with the theory shown or not."""
+    """The One arrow tab (see the module): its axes the same with the theory shown or not."""
     M, _, K = s.matrices()
     hz, shapes = s.modes()
     pts = (np.array([p.angle for p in current]), np.array([p.hz for p in current]))
@@ -380,16 +422,24 @@ def rail_view(
         modes = (angle(shapes[:, 0]), angle(shapes[:, 1]))
     if not current:
         note = (
-            "Put the masses on a rail (One arrow), pluck them along it and turn the rail: each rail lands its "
-            "frequency here, at its angle."
+            "Keep one arrow (One arrow, under Basis), pluck the masses along it and turn it: each angle lands "
+            "its frequency here."
         )
     else:
         low = min(current, key=lambda p: p.hz)
         high = max(current, key=lambda p: p.hz)
         note = (
-            f"{len(current)} rail{'s' if len(current) > 1 else ''} so far: the slowest at {sig(low.angle, 3)}°, "
+            f"{len(current)} angle{'s' if len(current) > 1 else ''} so far: the slowest at {sig(low.angle, 3)}°, "
             f"{fmt(low.hz, 'Hz', 4)}; the fastest at {sig(high.angle, 3)}°, {fmt(high.hz, 'Hz', 4)}."
         )
+        f1 = float(hz[0])
+        if len(current) >= 3 and s.c == 0:
+            gap = low.hz / f1 - 1.0
+            where = "right on it" if gap < 1e-3 else f"{sig(100 * gap, 2)} % above it"
+            note += (
+                f" The system's lowest frequency is {sig(f1, 4)} Hz: no angle comes in below it, and the slowest is "
+                f"{where}."
+            )
         if theory:
             note += (
                 f" Rayleigh's quotient is never below f₁ = {sig(float(hz[0]), 4)} Hz nor above f₂ = "

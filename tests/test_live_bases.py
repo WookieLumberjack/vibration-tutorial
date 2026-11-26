@@ -124,14 +124,14 @@ def test_the_matrices_say_how_the_coordinates_are_coupled():
     assert notes["uncoupled"].note.startswith("Both diagonal")
     assert not any(m.coupled for m in notes["uncoupled"].matrices)
     assert "(dynamic coupling)" in notes["dynamic coupling"].note
-    assert notes["both"].note.startswith("Neither")
+    assert notes["both"].note.startswith("Both couple")
     hz, _ = s.modes()
     for name in ("static coupling", "uncoupled", "both"):
         assert notes[name].hz == pytest.approx(tuple(hz)), name
     flat = view.matrices_view(s, np.array([[1.0, 2.0], [1.0, 2.0]]), False)
     assert not flat.matrices and "one line" in flat.note
     rail = view.matrices_view(s, np.eye(2), True)
-    assert rail.hz == pytest.approx((math.sqrt(500.0) / TWO_PI,)) and "Rayleigh" in rail.note
+    assert rail.hz == pytest.approx((math.sqrt(500.0) / TWO_PI,)) and "one pure sine" in rail.note
 
 
 def test_in_the_modes_each_coordinate_keeps_its_energy_and_in_x_it_passes_between_them():
@@ -161,7 +161,7 @@ def test_the_coordinates_rebuild_x_and_the_parallelogram_closes():
     assert (xs[1], ys[1]) == pytest.approx(tuple(x[0] * view.MM))
 
 
-def test_the_rail_tab_lands_each_rail_and_keeps_its_axes_with_the_theory():
+def test_the_one_arrow_tab_lands_each_angle_and_keeps_its_axes_with_the_theory():
     s = TwoMass()
     rec = view.RailRecorder()
     k = view.key(s)
@@ -173,7 +173,7 @@ def test_the_rail_tab_lands_each_rail_and_keeps_its_axes_with_the_theory():
     assert shown.mode_angles == pytest.approx((45.0, 135.0)) and shown.quotient[1].min() == pytest.approx(
         s.modes()[0][0], rel=1e-4
     )
-    assert "2 rails so far" in plain.note
+    assert "2 angles so far" in plain.note
 
 
 def test_a_trial_survives_json_and_the_views_are_plain():

@@ -1,13 +1,13 @@
 """Coordinates & bases page (#478 Phase 4's new page): two masses live, their motion a point in a plane, described in
 any basis the reader drags.
 
-Left: the masses and springs, the basis's switches (a rail, the modes drawn), then the Things to try (setups to go
+Left: the masses and springs, the basis's switches (one arrow, the modes drawn), then the Things to try (setups to go
 back to; their predictions are asked once the reader has handled the masses). Centre: the two masses between their
 walls (`bases_view.ChainView`: pluck a mass, or drag its grips to change m and k as it runs), the (x₁, x₂) plane
 (`bases_plane.Plane`: the point and its path, the arrows v₁ and v₂ to drag, the parallelogram q₁v₁ + q₂v₂) with the
 matrices VᵀMV and VᵀKV beside it, their coupling marked, the run's controls, and the coordinates q against time,
-the past redescribed whenever the arrows move. Right: the energy in each coordinate and the coupling's (Coupling),
-the frequency on a rail against its angle, built by hand rail by rail (Rail), the energy balance through every
+the past redescribed whenever the arrows move. Right: the energy along each arrow and the coupled energy (Coupling),
+one arrow's frequency against its angle, built by hand angle by angle (One arrow), the energy balance through every
 change (Energy), and the Theory.
 
 The masses are stepped as they run (`view_models/live_bases.LiveBases`, exactly); what the page shows is
@@ -22,6 +22,7 @@ built by hand, predictions after play), `test_live_bases.py` (the Qt-free parts)
 from __future__ import annotations
 
 import time
+from collections.abc import Sequence
 
 import numpy as np
 import pyqtgraph as pg
@@ -60,16 +61,18 @@ COORDS_TIP = (
     "<p>The coordinates q₁ and q₂ in the basis the arrows make, the last 10 s: x = q₁v₁ + q₂v₂. With the arrows "
     "along the axes they are the masses' own displacements. Move an arrow and the whole trace is described again "
     "in the new basis: the motion didn't change. Along the modes each is one clean sine. A dashed line marks a "
-    "change of the masses, the springs or the rail. Paused, drag the line at the end back to see the masses "
+    "change of the masses, the springs or the one arrow. Paused, drag the line at the end back to see the masses "
     "then.</p>"
 )
 COUPLING_TIP = (
-    "<p>The stored energy, split: each coordinate's own (½m̃ᵢᵢq̇ᵢ² + ½k̃ᵢᵢqᵢ²) and the rest, the coupling's "
-    "(m̃₁₂q̇₁q̇₂ + k̃₁₂q₁q₂), which passes energy between them. Along the modes the coupling's is nought and each "
-    "keeps its own.</p>"
+    "<p>The stored energy, split by the arrows. q₁ and q₂ are how far the point goes along v₁ and v₂ "
+    "(x = q₁v₁ + q₂v₂: the dashed parallelogram on the plane). <b>Along v₁</b> is the energy the motion along v₁ "
+    "would store with q₂ held at nought, and the same for v₂. The <b>coupled energy</b> is the rest, from VᵀMV's "
+    "and VᵀKV's off-diagonal terms: through it energy passes from the motion along one arrow to the motion "
+    "along the other. Turn the arrows onto the modes and it is nought: the energy in each mode stays there.</p>"
 )
 RAIL_TIP = (
-    "<p>The frequency on a rail, built by hand: each rail you try lands its measured frequency at its angle "
+    "<p>One arrow's frequency, built by hand: each angle you try lands its measured frequency here "
     "(0° along x₁, 90° along x₂). Points from other masses or springs are faded. <i>Show the theory</i> draws "
     "Rayleigh's quotient for every angle, the two natural frequencies and the modes' angles.</p>"
 )
@@ -79,7 +82,7 @@ MATRICES_TIP = (
     "det(VᵀKV − ω²VᵀMV) = 0, are the same in every basis.</p>"
 )
 ENERGY_TIP = (
-    "<p>Where the energy went: what your hand put in (a pluck), what moving the rail did, what each change cost or "
+    "<p>Where the energy went: what your hand put in (a pluck), what keeping or turning one arrow did, what each change cost or "
     "added (a spring changed at a stretch, mass caught or dropped), what the dampers took out, and what's stored "
     "now. Put in, less taken out, with the changes, is what's stored, at every instant.</p>"
 )
@@ -117,7 +120,7 @@ class BasesPage(QtWidgets.QWidget):
         self.c = box.number("Each damper c:", 0.0, 100.0, 0.0, 3, " N·s/m", TIPS["c"])
         basis_box = QtWidgets.QGroupBox("Basis")
         bl = QtWidgets.QVBoxLayout(basis_box)
-        self.rail = QtWidgets.QCheckBox("One arrow: a rail along v₁")
+        self.rail = QtWidgets.QCheckBox("One arrow: v₁ alone, a reduced basis")
         self.rail.setToolTip(TIPS["rail"])
         self.modes = QtWidgets.QCheckBox("Draw the modes")
         self.modes.setToolTip(TIPS["modes"])
@@ -156,23 +159,21 @@ class BasesPage(QtWidgets.QWidget):
         self.plane.released.connect(self._on_let_go)
         self.plane.arrow_moved.connect(self._on_arrow_moved)
         self.plane.arrow_released.connect(self._on_arrow_released)
-        self.matrices = QtWidgets.QLabel()
-        self.matrices.setTextFormat(QtCore.Qt.TextFormat.RichText)
-        self.matrices.setWordWrap(True)
+        # redrawn at every step of an arrow's drag: a QLabel laid the whole page out again each time (10 ms a frame)
+        self.matrices = LiveLabel(wrap=True)
         self.matrices.setToolTip(MATRICES_TIP)
-        self.matrices.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop | QtCore.Qt.AlignmentFlag.AlignLeft)
         self.matrices.setMinimumWidth(170)
         self.plane_note = note_label()
         row, self.speed, self.run_button, self.reset_button, self.clock = run_row(self)
         self.run_button.toggled.connect(self._on_run)
-        self.reset_button.setToolTip("<p>Back to rest at t = 0; the rails measured are kept.</p>")
+        self.reset_button.setToolTip("<p>Back to rest at t = 0; the angles measured are kept.</p>")
         self.reset_button.clicked.connect(self.reset)
 
         self.q_plot = plot("Coordinate q", "m", "Time", "s", height=130)
         self.q_plot.setToolTip(COORDS_TIP)
         self.q_plot.setMouseEnabled(x=False, y=False)
         add_legend(self.q_plot.getPlotItem(), offset=(-10, 10))
-        self.q_items = [pg.PlotDataItem(name=n) for n in ("q₁", "q₂")]
+        self.q_items = [pg.PlotDataItem(name=n) for n in ("q₁, along v₁", "q₂, along v₂")]
         for item in self.q_items:
             self.q_plot.addItem(item)
         decimate(self.q_plot)
@@ -204,7 +205,7 @@ class BasesPage(QtWidgets.QWidget):
         self.shares_plot.setToolTip(COUPLING_TIP)
         self.shares_plot.setMouseEnabled(x=False, y=False)
         add_legend(self.shares_plot.getPlotItem(), offset=(-10, 10))
-        self.share_items = [pg.PlotDataItem(name=n) for n in ("q₁'s own", "q₂'s own", "the coupling's")]
+        self.share_items = [pg.PlotDataItem(name=n) for n in ("along v₁", "along v₂", "coupled energy")]
         for item in self.share_items:
             self.shares_plot.addItem(item)
         decimate(self.shares_plot)
@@ -217,12 +218,12 @@ class BasesPage(QtWidgets.QWidget):
         self.theory = QtWidgets.QCheckBox("Show the theory")
         self.theory.setToolTip(TIPS["theory"])
         self.clear_button = QtWidgets.QPushButton("Clear points")
-        self.clear_button.setToolTip("<p>Forget the rails measured.</p>")
+        self.clear_button.setToolTip("<p>Forget the angles measured.</p>")
         self.clear_button.clicked.connect(self.clear_points)
         buttons = FlowLayout()
         buttons.add(self.theory, self.clear_button)
         rv.addLayout(buttons)
-        self.rail_plot = plot("Frequency", "Hz", "Rail's angle", "°", height=200)
+        self.rail_plot = plot("Frequency", "Hz", "The arrow's angle", "°", height=200)
         self.rail_plot.setToolTip(RAIL_TIP)
         self.rail_plot.setMouseEnabled(x=False, y=False)
         self.rail_plot.enableAutoRange(x=False, y=False)  # set from the view: the same with the theory or not
@@ -247,7 +248,7 @@ class BasesPage(QtWidgets.QWidget):
         self.notes = theory(NOTES_HTML)
         self.tabs = QtWidgets.QTabWidget()
         self.tabs.addTab(coupling, "Coupling")
-        self.tabs.addTab(rails, "Rail")
+        self.tabs.addTab(rails, "One arrow")
         self.tabs.addTab(self.energy, "Energy")
         self.tabs.addTab(self.notes, "Theory")
 
@@ -322,7 +323,7 @@ class BasesPage(QtWidgets.QWidget):
         self.live.set_system(view.system(state))
         self.live.set_rail(np.array(state.v1) if state.rail else None)
         s = self.live.system
-        self.chain.set_values(s.m1, s.m2, s.k1, s.k2, s.k3)
+        self.chain.set_values(s.m1, s.m2, s.k1, s.k2, s.k3, s.c)
         self._draw_still()
         self._draw_rail()
         if not self.running:
@@ -518,28 +519,46 @@ class BasesPage(QtWidgets.QWidget):
         s, V, rail = self.live.system, self.basis, self.rail.isChecked()
         p = view.plane_view(s, V, rail, self.modes.isChecked())
         self.plane.set_still(p)
-        self.plane_note.setText(p.note)
-        self.matrices.setText(self._matrices_html(view.matrices_view(s, V, rail)))
+        m = view.matrices_view(s, V, rail)
+        self.plane_note.setText(f"{m.note} {p.note}")  # under the plane, the whole width: the panel is full
+        self.matrices.setText(self._matrices_html(m))
 
     @staticmethod
     def _matrices_html(m: view.MatricesView) -> str:
+        """The steps in pairs, a row each: M and K, then V and Vᵀ, then VᵀMV and VᵀKV (VᵀCV under them)."""
         c = colors
-        parts = []
-        for mat in m.matrices:
-            cells = []
+
+        def one(mat: view.Matrix, square: bool) -> str:
+            rows = []
             for i, row in enumerate(mat.entries):
                 tds = []
                 for j, e in enumerate(row):
-                    off = i != j
+                    off = square and i != j
                     colour = c.force if off and mat.coupled else (c.muted if off else c.foreground)
                     weight = "bold" if off and mat.coupled else "normal"
                     tds.append(f'<td align="right" style="color:{colour}; font-weight:{weight}">{e}</td>')
-                cells.append("<tr>" + "".join(tds) + "</tr>")
-            parts.append(
-                f"<p><b>{mat.symbol}</b> ({mat.unit})</p><table cellspacing='4' style='margin-left:8px'>{''.join(cells)}</table>"
-            )
-        parts.append(f"<p style='color:{c.muted}'>{m.note}</p>")
-        return "".join(parts)
+                rows.append("<tr>" + "".join(tds) + "</tr>")
+            unit = f" ({mat.unit})" if mat.unit else ""
+            return f"<b>{mat.symbol}</b>{unit}<table cellspacing='3'>{''.join(rows)}</table>"
+
+        def pair(mats: Sequence[view.Matrix], square: bool) -> str:
+            tds = "".join(f"<td style='padding-right:14px' valign='top'>{one(x, square)}</td>" for x in mats)
+            return f"<tr>{tds}</tr>"
+
+        def step(text: str) -> str:
+            return f"<tr><td colspan='2' style='color:{c.muted}; padding-top:4px'>{text}</td></tr>"
+
+        v = "v₁" if len(m.basis[0].entries[0]) == 1 else "V"
+        products = list(m.matrices)
+        rows = [step("1. The system, in x₁ and x₂"), pair(m.given, True)]
+        rows += [step(f"2. The arrows as columns: x = {v}q"), pair(m.basis, False)]
+        if products:
+            rows += [step(f"3. Multiply by {v}"), pair(m.halfway, False)]
+            rows += [step(f"4. Then by {v}ᵀ: the matrices in q")]
+            rows += [pair(products[i : i + 2], True) for i in range(0, len(products), 2)]
+        sums = "".join(f"<br>{line}" for line in m.sums)
+        last = f"<p>5. The frequencies{sums}</p>" if m.sums else ""
+        return f"<table cellspacing='2'>{''.join(rows)}</table>{last}"
 
     @coalesce.coalesced(covers=("_draw_live",))
     def _draw_tab(self, *_: object) -> None:
@@ -586,7 +605,7 @@ class BasesPage(QtWidgets.QWidget):
                 else:
                     item.setData([], [])
             self.shares_plot.setXRange(max(0.0, end - STRIP_SECONDS), max(end, STRIP_SECONDS), padding=0)
-            self.shares_note.setText(sh.note if t.size else "Pluck the masses to see the energy in each coordinate.")
+            self.shares_note.setText(sh.note if t.size else "Pluck the masses to see the energy along each arrow.")
         elif i == view.TAB_ENERGY:
             self.energy.draw(live.record, frame)
 
@@ -606,7 +625,7 @@ class BasesPage(QtWidgets.QWidget):
             return
         if live.rail is not None:
             hz = self.rail_hz if live.t - live.changed_at > MEASURE_EVERY else None
-            where = f"On the rail at {sig(angle(live.rail), 3)}°"
+            where = f"One arrow at {sig(angle(live.rail), 3)}°"
             self.readout.setText(f"{where}: {sig(hz, 4)} Hz, measured." if hz else f"{where}: timing its swing…")
             return
         V = self.basis

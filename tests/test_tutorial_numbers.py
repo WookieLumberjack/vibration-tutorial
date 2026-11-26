@@ -5269,6 +5269,18 @@ def test_bases_worked_example():
     _, U = TwoMass(m2=2.0).modes()
     apart = math.degrees(math.acos(abs(float(U[:, 0] @ U[:, 1]))))
     assert apart == pytest.approx(quoted("bases", "80.1"), abs=0.05)
+    # One arrow: 11.8 % high along x₁; v = (1, 0.8), 38.7°, 6.3° off mode 1, only 0.3 % high.
+    assert quoted("bases", "3.559") / f1 - 1 == pytest.approx(quoted("bases", "11.8 %") / 100, abs=5e-4)
+    v = np.array([1.0, quoted("bases", "0.8")])
+    kv, mv = float(v @ K @ v), float(v @ M @ v)
+    assert (kv, mv) == pytest.approx((660.0, quoted("bases", "1.64")))  # 500 − 160 + 320, as the notes add it
+    assert 500 - 2 * 100 * 0.8 + 500 * 0.8**2 == pytest.approx(kv)
+    assert kv / mv == pytest.approx(quoted("bases", "402.4"), abs=0.05)
+    assert math.sqrt(402.4) / TWO_PI == pytest.approx(quoted("bases", "3.193"), abs=5e-4)
+    assert rayleigh_hz(v, M, K) == pytest.approx(3.193, abs=5e-4)
+    assert math.degrees(math.atan(0.8)) == pytest.approx(quoted("bases", "38.7"), abs=0.05)
+    assert 45 - 38.7 == pytest.approx(quoted("bases", "6.3"), abs=1e-9)
+    assert 3.193 / 3.183 - 1 == pytest.approx(quoted("bases", "0.3 %") / 100, abs=5e-4)
 
 
 def test_bases_trials():
@@ -5310,4 +5322,6 @@ def test_bases_trials():
     s = TwoMass()
     M, _, K = s.matrices()
     assert rayleigh_hz(direction(0.0), M, K) == pytest.approx(3.559, abs=5e-4)
-    says("On a rail", "500 N/m", "3.559 Hz")
+    says("One arrow along x₁", "500 N/m", "3.559 Hz")
+    says("One arrow along x₁", "11.8 %", "3.183 Hz", "0.3 % at 38.7°")
+    assert rayleigh_hz(direction(38.7), M, K) / rayleigh_hz(direction(45.0), M, K) - 1 == pytest.approx(0.003, abs=5e-4)

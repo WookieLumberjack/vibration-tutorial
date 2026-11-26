@@ -53,9 +53,14 @@ def test_it_opens_at_rest_along_the_axes_with_things_to_try_after_its_boxes(page
     left = page.trials.parentWidget()
     boxes = [w for w in left.findChildren(QtWidgets.QGroupBox) if w.parentWidget() is left]
     assert [b.title() for b in boxes] == ["Two masses", "Basis", "Things to try"]
-    assert [page.tabs.tabText(i) for i in range(page.tabs.count())] == ["Coupling", "Rail", "Energy", "Theory"]
+    assert [page.tabs.tabText(i) for i in range(page.tabs.count())] == [
+        "Coupling",
+        "One arrow",
+        "Energy",
+        "Theory",
+    ]
     assert page.practice_state() == view.BasesTrial("", "")
-    assert "static coupling" in page.matrices.text() and "3.183 and 3.898 Hz" in page.matrices.text()
+    assert "static coupling" in page.plane_note.text() and "3.183 and 3.898 Hz" in page.matrices.text()
     assert 5 <= len(bases.TRIALS) <= 8
 
 
@@ -85,29 +90,30 @@ def test_an_arrow_snaps_onto_a_mode_and_the_coordinates_uncouple(page, app):
     drag(v, v.press_point(0), QtCore.QPointF(*(view.ARROW * 1e3 * direction(47.0))), app)
     drag(v, v.press_point(1), QtCore.QPointF(*(view.ARROW * 1e3 * direction(133.0))), app)
     assert angle(np.array(page.v1)) == pytest.approx(45.0) and angle(np.array(page.v2)) == pytest.approx(135.0)
-    assert page.matrices.text().count("Both diagonal") == 1
+    assert page.plane_note.text().count("Both diagonal") == 1
     page.step(0.5)
     # The past redescribed: q is the modes' coordinates over the whole window, each one sine.
     _, q1 = page.q_items[0].getData()
     assert np.ptp(q1) > 0 and page.shares_note.text().startswith("Uncoupled")
 
 
-def test_the_grips_change_m_and_k_as_it_runs(page, app):
+def test_the_grips_change_m_k_and_c_as_it_runs(page, app):
     page.load_trial(trial("Pluck one mass"))
+    page.c.setValue(1.0)
     page.step(0.3)
     c = page.chain
-    for name in ("m2", "k2"):
+    for name in ("m2", "k2", "c"):
         before = getattr(page, name).value()
         at = c.press_point(name)
         drag(c, at, at + QtCore.QPointF(0.0, 0.2), app)
         assert getattr(page, name).value() == pytest.approx(view.GRIPS[name].dragged(before, 0.2), rel=0.05), name
     s = page.system
-    assert (s.m2, s.k2) == (page.m2.value(), page.k2.value())
+    assert (s.m2, s.k2, s.c) == (page.m2.value(), page.k2.value(), page.c.value())
     assert page.running and page.live.edits
 
 
 def test_on_a_rail_each_angle_lands_its_frequency(page, app):
-    page.load_trial(trial("On a rail"))
+    page.load_trial(trial("One arrow along"))
     page.step(1.0)
     k = view.key(page.system)
     assert [p.angle for p in page.recorder.current(k)] == [0.0]
@@ -134,7 +140,7 @@ def test_predictions_come_after_play(page):
     page.k2.setValue(150.0)  # the reader handles it ...
     page.step(bases.PLAYED_AFTER + 0.1)  # ... and watches
     assert box.played
-    unasked = trial("On a rail")
+    unasked = trial("One arrow along")
     box.combo.pick(bases.TRIALS[unasked].name)
     assert box.asking == unasked and box.ask.isVisible()
     box._on_skip()
