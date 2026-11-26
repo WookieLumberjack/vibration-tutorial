@@ -95,7 +95,9 @@ RAIL_TIP = (
 )
 MATRICES_TIP = (
     "<p>The steps from the masses' own matrices, M, K and C, to the matrices in the basis the arrows make: "
-    "VᵀMV, VᵀKV and VᵀCV, V times the matrix times V's columns again. Their off-diagonal terms are the coupling "
+    "VᵀMV, VᵀKV and VᵀCV, V times the matrix times V's columns again. Why Vᵀ: with x = Vq the equations "
+    "MVq̈ + CVq̇ + KVq = 0 stay true multiplied by any invertible matrix, and Vᵀ is the one that keeps them "
+    "symmetric, the energies' own matrices (V⁻¹ would be right too, but lopsided). Their off-diagonal terms are the coupling "
     "between the coordinates (in color while they aren't zero). The frequencies, the roots of "
     "det(VᵀKV − ω²VᵀMV) = 0, are the same in every basis. The modes make VᵀMV and VᵀKV diagonal, but VᵀCV only "
     "for some dampers.</p>"
@@ -670,7 +672,10 @@ class BasesPage(QtWidgets.QWidget):
         parts = [step("1. The system, in x₁ and x₂"), row(m.given)]
         parts += [step(f"2. The arrows as columns: x = {v}q"), row(m.basis)]
         if m.matrices:
-            parts += [step(f"3. Multiply by {v}, then by {v}ᵀ: the matrices in q"), row(m.matrices)]
+            parts += [
+                step(f"3. Multiply by {v}, then by {v}ᵀ (which keeps them symmetric): the matrices in q"),
+                row(m.matrices),
+            ]
         sums = "".join(f"<br>{line}" for line in m.sums)
         if m.sums:
             parts.append(f"<p>4. The frequencies{sums}</p>")

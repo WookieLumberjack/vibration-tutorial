@@ -524,8 +524,8 @@ SYMBOLS = (
     Symbol(
         "T_state",
         "T, w",
-        "a basis of the state, its columns in pairs (a plane a pair), and the coordinates in it, z = Tw; A in it is "
-        "T<sup>−1</sup>AT",
+        "a basis of the state, its columns in pairs (a plane a pair), and the coordinates in it, z = Tw (V and q of "
+        "Coordinates &amp; bases, for the state); A in it is T<sup>−1</sup>AT",
         "–, m",
         "state_page",
         "change",

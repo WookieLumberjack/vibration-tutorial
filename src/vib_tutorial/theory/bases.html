@@ -34,10 +34,14 @@ amount of each,</p>
 basis. On the plane, the dashed parallelogram from the point to the two arrows' lines shows them. Put
 <m>x = Vq</m> into the equations and multiply by <m>Vᵀ</m> <cite>strang</cite>:</p>
 <eq>(V^\mathsf{T} M V)\,\ddot{q} + (V^\mathsf{T} C V)\,\dot{q} + (V^\mathsf{T} K V)\,q = 0</eq>
-<p>Why <m>Vᵀ</m>, and not <m>V<sup>−1</sup></m>? Because the energies say so: the kinetic energy
-<m>½ẋᵀMẋ = ½q̇ᵀ(VᵀMV)q̇</m> and the potential <m>½xᵀKx = ½qᵀ(VᵀKV)q</m>, so these are the matrices
-<a href="page:deriving_page#lagrange">Lagrange's equations</a> give in <m>q</m>. They stay symmetric, and
-each stays positive.</p>
+<p>Why <m>Vᵀ</m>, and not <m>V<sup>−1</sup></m>? Putting <m>x = Vq</m> in gives
+<m>MVq̈ + CVq̇ + KVq = 0</m>: two equations, and they still hold multiplied on the left by any invertible matrix, so
+there's a choice. <m>V<sup>−1</sup></m> would be right too. <m>Vᵀ</m> is the choice the energies make: the kinetic
+energy <m>½ẋᵀMẋ = ½q̇ᵀ(VᵀMV)q̇</m> and the potential <m>½xᵀKx = ½qᵀ(VᵀKV)q</m>, so these are the matrices
+<a href="page:deriving_page#lagrange">Lagrange's equations</a> give in <m>q</m>. They stay symmetric, and each
+stays positive; <m>V<sup>−1</sup>MV</m> wouldn't be symmetric. When the arrows are of unit length and at right
+angles, <m>Vᵀ = V<sup>−1</sup></m> and the two agree. (The next page's first-order equations leave no such
+choice.)</p>
 
 <h3><a name="coupling"></a>Coupling belongs to the description</h3>
 <p>The off-diagonal terms are the <b>coupling</b>: through <m>VᵀKV</m> a coordinate's displacement pushes
