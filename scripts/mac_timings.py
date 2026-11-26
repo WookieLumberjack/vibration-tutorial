@@ -299,8 +299,8 @@ def _live_bases(trial: str, tab: str):
 
 
 def _turning_arrows(trial: str, tab: str):
-    """`_live_bases`, with v₁ turned the whole time as a drag turns it (the page's own `_on_arrow_moved`, about
-    once a frame), so the matrices and the coordinates' whole window are described again each step."""
+    """`_live_bases`, with v₁ held and turned the whole time as a drag turns it (the page's own `_on_arrow_moved`,
+    about once a frame), so the plane and the coordinates' whole window are described again each step."""
     base = _live_bases(trial, tab)
 
     def setup(w):
@@ -319,6 +319,7 @@ def _turning_arrows(trial: str, tab: str):
 
         timer.timeout.connect(step)
         timer.start(16)
+        page.plane.held = 0  # v₁ held, as by a hand: the page draws what a drag draws
         return page, speed
 
     return setup
@@ -422,7 +423,7 @@ SCENARIOS = (
     ),
     Scenario(
         "Coordinates & bases: one mass plucked, v₁ turning, Coupling tab",
-        "an arrow dragged as it runs: the matrices' steps and the whole window redescribed each step (#478 Phase 4)",
+        "an arrow dragged as it runs: the plane and the whole window redescribed each frame (#478 Phase 4)",
         _turning_arrows("Pluck one mass", "TAB_COUPLING"),
     ),
     Scenario(

@@ -156,3 +156,23 @@ def test_scrubbed_back_the_masses_are_drawn_where_they_were(page):
     page._on_scrubbed(t)
     assert page.chain.x[1] == pytest.approx(np.interp(t, r.t[: r.size], r.y[: r.size, COL["x2"]]))
     assert "paused" in page.clock.text()
+
+
+def test_a_running_drag_redraws_the_matrices_now_and_then_and_exactly_on_letting_go(page, app):
+    """Dragged as it runs, the arrow is drawn in the frames and the matrices' steps at most every
+    `MATRICES_EVERY`; letting go draws them for where it stopped."""
+    page.load_trial(trial("Pluck one mass"))
+    page.step(0.5)
+    assert page.running
+    page.plane.held = 0  # v₁ in hand
+    page._on_arrow_moved(0, *(view.ARROW * direction(30.0)))
+    page._tick(1 / 60)  # drawn in the frame: the arrow, and the matrices (none drawn this drag yet)
+    before = page.matrices.text()
+    page._on_arrow_moved(0, *(view.ARROW * direction(20.0)))
+    page._tick(1 / 60)
+    assert angle(np.array(page.plane.tips[0])) == pytest.approx(20.0, abs=0.01), "the arrow, every frame"
+    assert page.matrices.text() == before, "the matrices wait"
+    page.plane.held = False
+    page._on_arrow_released(0)
+    assert page.matrices.text() != before, "let go: drawn where it stopped"
+    assert page.matrices.text() == page._matrices_html(view.matrices_view(page.live.system, page.basis, False))
