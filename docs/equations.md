@@ -39,12 +39,12 @@ x = q₁v₁ + q₂v₂: drag them while it runs and the matrices beside them, V
 coupling marked (static, dynamic, both or none), while the frequencies never do. The coordinates' traces below are
 described again in the new basis, the past too. Along the modes both matrices are diagonal and each coordinate is
 one clean sine; with unequal masses the modes aren't at right angles, only orthogonal through M. The Coupling tab
-splits the energy into each coordinate's own and the coupling's: plucking one mass, it beats across and back. Take
+splits the energy into the motion along each arrow and the coupled energy: plucking one mass, it beats across and back. Take
 one arrow away and the masses run on a rail, at Rayleigh's quotient: the Rail tab is built by hand, each rail's
 measured frequency landing at its angle, lowest along mode 1. Masses and springs change as it runs by their grips;
 the rail can be put on, turned and taken off, each change booked in the energy balance.
 
-![Coordinates & bases page, 1 and 2 kg masses described along their modes: both matrices diagonal, the modes 80.1° apart on the plane (69.6° and 169.5°), each coordinate one clean sine, and on the Coupling tab each keeps its own energy](images/coordinates_bases.png)
+![Coordinates & bases page, 1 and 2 kg masses described along their modes: both matrices diagonal, the modes 80.1° apart on the plane (69.6° and 169.5°), each coordinate one clean sine, and on the Coupling tab the energy in each mode stays there](images/coordinates_bases.png)
 
 ## 3D rigid body
 

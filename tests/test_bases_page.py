@@ -92,17 +92,18 @@ def test_an_arrow_snaps_onto_a_mode_and_the_coordinates_uncouple(page, app):
     assert np.ptp(q1) > 0 and page.shares_note.text().startswith("Uncoupled")
 
 
-def test_the_grips_change_m_and_k_as_it_runs(page, app):
+def test_the_grips_change_m_k_and_c_as_it_runs(page, app):
     page.load_trial(trial("Pluck one mass"))
+    page.c.setValue(1.0)
     page.step(0.3)
     c = page.chain
-    for name in ("m2", "k2"):
+    for name in ("m2", "k2", "c"):
         before = getattr(page, name).value()
         at = c.press_point(name)
         drag(c, at, at + QtCore.QPointF(0.0, 0.2), app)
         assert getattr(page, name).value() == pytest.approx(view.GRIPS[name].dragged(before, 0.2), rel=0.05), name
     s = page.system
-    assert (s.m2, s.k2) == (page.m2.value(), page.k2.value())
+    assert (s.m2, s.k2, s.c) == (page.m2.value(), page.k2.value(), page.c.value())
     assert page.running and page.live.edits
 
 

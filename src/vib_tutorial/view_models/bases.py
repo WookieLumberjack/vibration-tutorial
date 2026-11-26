@@ -10,8 +10,8 @@ shown. The page runs a `live_bases.LiveBases` built from it, and each panel has 
 - `matrices_view(system, V, rail)`: VᵀMV, VᵀKV (and VᵀCV with dampers) with their off-diagonal coupling marked,
   and what they say: coupled statically, dynamically, both, or not at all (the modes), and the frequencies, the
   same in every basis.
-- `coordinates(V, rail, x)`: the coordinates q against time, and `shares(...)`: each coordinate's own energy and
-  the coupling's, the **Coupling** tab.
+- `coordinates(V, rail, x)`: the coordinates q against time, and `shares(...)`: the energy of the motion along
+  each arrow and the coupled energy, the **Coupling** tab.
 - The **Rail** tab is built by hand: each rail the reader tries lands its measured frequency at its angle
   (`RailRecorder`), with Rayleigh's quotient over them on request (`rail_view`).
 - The **Energy** tab is `live_bases.energy_view`'s.
@@ -94,6 +94,7 @@ GRIPS = {
     "k1": Grip("k1", 1.0, 1e5, per=0.3),
     "k2": Grip("k2", 1.0, 1e5, per=0.3),
     "k3": Grip("k3", 1.0, 1e5, per=0.3),
+    "c": Grip("c", 0.2, 100.0, per=0.2, zero_below=0.3),  # the three dampers' one c; nought below 0.3 N·s/m
 }
 
 
@@ -286,25 +287,27 @@ def coordinates(V: np.ndarray, rail: bool, x: np.ndarray) -> np.ndarray:
 
 @dataclass(frozen=True)
 class Shares:
-    own: tuple[np.ndarray, ...]  # J: each coordinate's ½m̃ᵢᵢq̇ᵢ² + ½k̃ᵢᵢqᵢ²
+    own: tuple[np.ndarray, ...]  # J: the motion along each arrow's, ½m̃ᵢᵢq̇ᵢ² + ½k̃ᵢᵢqᵢ²
     coupling: np.ndarray  # J: m̃₁₂q̇₁q̇₂ + k̃₁₂q₁q₂, the rest of the stored energy
     note: str
 
 
 def shares(s: TwoMass, V: np.ndarray, rail: bool, x: np.ndarray, v: np.ndarray) -> Shares:
-    """Each coordinate's own energy and the coupling's (see the module), for the samples' x and v."""
+    """The energy of the motion along each arrow and the coupled energy (see the module), for the samples' x and v."""
     M, _, K = s.matrices()
     B = V[:, :1] if rail else V
     q, qd = coordinates(V, rail, x), coordinates(V, rail, v)
     Mt, Kt = transformed(B, M), transformed(B, K)
     own = tuple(0.5 * Mt[i, i] * qd[:, i] ** 2 + 0.5 * Kt[i, i] * q[:, i] ** 2 for i in range(B.shape[1]))
     if B.shape[1] == 1:
-        return Shares(own, np.zeros(x.shape[0]), "On a rail there is one coordinate, and all the energy is its own.")
+        return Shares(
+            own, np.zeros(x.shape[0]), "On a rail the masses move along one line, and all the energy is in that motion."
+        )
     coupling = Mt[0, 1] * qd[:, 0] * qd[:, 1] + Kt[0, 1] * q[:, 0] * q[:, 1]
     if not (_coupled(Mt) or _coupled(Kt)):
-        note = "Uncoupled: each coordinate keeps its own energy, and nothing passes between them."
+        note = "Uncoupled: the energy in the motion along each arrow stays there, and none passes across."
     else:
-        note = "Coupled: the energy passes back and forth between the coordinates, through the coupling's term."
+        note = "Coupled: energy passes back and forth between the motion along v₁ and along v₂, through the coupled energy."
     return Shares(own, coupling, note)
 
 

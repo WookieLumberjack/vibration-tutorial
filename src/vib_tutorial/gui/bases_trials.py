@@ -42,8 +42,8 @@ TRIALS = (
         "Only <m>m<sub>1</sub></m> pulled 50 mm and let go. The point traces a box on the plane, and the masses "
         "trade their swing: after 0.699 s <m>m<sub>1</sub></m> has nearly stopped and <m>m<sub>2</sub></m> swings "
         "with the energy, and it comes back every 1.398 s, <m>1/(f<sub>2</sub> − f<sub>1</sub>)</m>. The "
-        "Coupling tab shows the energy pass between the coordinates <m>x<sub>1</sub></m> and "
-        "<m>x<sub>2</sub></m>, through the coupling spring.",
+        "Coupling tab shows the energy pass from the motion of <m>m<sub>1</sub></m> to the motion of "
+        "<m>m<sub>2</sub></m> and back, through the coupling spring.",
         pluck=(0.05, 0.0),
         tab=TAB_COUPLING,
         predict=Prediction(
@@ -65,7 +65,7 @@ TRIALS = (
         "The same pluck, described along the modes: <m>v<sub>1</sub></m> at 45°, in phase, and "
         "<m>v<sub>2</sub></m> at 135°, opposed. Both matrices are diagonal, <m>VᵀMV</m> = 1 kg and <m>VᵀKV</m> = "
         "400 and 600 N/m on the diagonal, and each coordinate's trace is one clean sine: 3.183 Hz and 3.898 Hz. "
-        "On the Coupling tab each keeps its energy, and nothing passes between them. The motion is the same; "
+        "On the Coupling tab the energy in each mode stays there, and none passes across. The motion is the same; "
         "only its description changed.",
         v1=IN_PHASE,
         v2=OPPOSED,
@@ -268,7 +268,7 @@ PROBLEMS = tuple(
     Problem(key, title, "bases_page", f"See {page_link('bases_page', anchor, section)}.", make)
     for key, title, anchor, section, make in (
         ("symmetric-pair", "A symmetric pair", "modes", "The modes", _symmetric_pair),
-        ("beat-time", "The energy passing across", "energy", "The energy in each coordinate", _beat_time),
+        ("beat-time", "The energy passing across", "energy", "The energy along each arrow", _beat_time),
         ("rail-frequency", "On a rail", "rail", "On a rail: Rayleigh's quotient", _rail_frequency),
         ("coupling-kind", "Which coupling?", "coupling", "Coupling belongs to the description", _coupling_kind),
     )

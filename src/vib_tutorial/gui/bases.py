@@ -6,7 +6,7 @@ back to; their predictions are asked once the reader has handled the masses). Ce
 walls (`bases_view.ChainView`: pluck a mass, or drag its grips to change m and k as it runs), the (x₁, x₂) plane
 (`bases_plane.Plane`: the point and its path, the arrows v₁ and v₂ to drag, the parallelogram q₁v₁ + q₂v₂) with the
 matrices VᵀMV and VᵀKV beside it, their coupling marked, the run's controls, and the coordinates q against time,
-the past redescribed whenever the arrows move. Right: the energy in each coordinate and the coupling's (Coupling),
+the past redescribed whenever the arrows move. Right: the energy along each arrow and the coupled energy (Coupling),
 the frequency on a rail against its angle, built by hand rail by rail (Rail), the energy balance through every
 change (Energy), and the Theory.
 
@@ -64,9 +64,11 @@ COORDS_TIP = (
     "then.</p>"
 )
 COUPLING_TIP = (
-    "<p>The stored energy, split: each coordinate's own (½m̃ᵢᵢq̇ᵢ² + ½k̃ᵢᵢqᵢ²) and the rest, the coupling's "
-    "(m̃₁₂q̇₁q̇₂ + k̃₁₂q₁q₂), which passes energy between them. Along the modes the coupling's is nought and each "
-    "keeps its own.</p>"
+    "<p>The stored energy, split by the arrows. q₁ and q₂ are how far the point goes along v₁ and v₂ "
+    "(x = q₁v₁ + q₂v₂: the dashed parallelogram on the plane). <b>Along v₁</b> is the energy the motion along v₁ "
+    "would store with q₂ held at nought, and the same for v₂. The <b>coupled energy</b> is the rest, from VᵀMV's "
+    "and VᵀKV's off-diagonal terms: through it energy passes from the motion along one arrow to the motion "
+    "along the other. Turn the arrows onto the modes and it is nought: the energy in each mode stays there.</p>"
 )
 RAIL_TIP = (
     "<p>The frequency on a rail, built by hand: each rail you try lands its measured frequency at its angle "
@@ -172,7 +174,7 @@ class BasesPage(QtWidgets.QWidget):
         self.q_plot.setToolTip(COORDS_TIP)
         self.q_plot.setMouseEnabled(x=False, y=False)
         add_legend(self.q_plot.getPlotItem(), offset=(-10, 10))
-        self.q_items = [pg.PlotDataItem(name=n) for n in ("q₁", "q₂")]
+        self.q_items = [pg.PlotDataItem(name=n) for n in ("q₁, along v₁", "q₂, along v₂")]
         for item in self.q_items:
             self.q_plot.addItem(item)
         decimate(self.q_plot)
@@ -204,7 +206,7 @@ class BasesPage(QtWidgets.QWidget):
         self.shares_plot.setToolTip(COUPLING_TIP)
         self.shares_plot.setMouseEnabled(x=False, y=False)
         add_legend(self.shares_plot.getPlotItem(), offset=(-10, 10))
-        self.share_items = [pg.PlotDataItem(name=n) for n in ("q₁'s own", "q₂'s own", "the coupling's")]
+        self.share_items = [pg.PlotDataItem(name=n) for n in ("along v₁", "along v₂", "coupled energy")]
         for item in self.share_items:
             self.shares_plot.addItem(item)
         decimate(self.shares_plot)
@@ -322,7 +324,7 @@ class BasesPage(QtWidgets.QWidget):
         self.live.set_system(view.system(state))
         self.live.set_rail(np.array(state.v1) if state.rail else None)
         s = self.live.system
-        self.chain.set_values(s.m1, s.m2, s.k1, s.k2, s.k3)
+        self.chain.set_values(s.m1, s.m2, s.k1, s.k2, s.k3, s.c)
         self._draw_still()
         self._draw_rail()
         if not self.running:
@@ -586,7 +588,7 @@ class BasesPage(QtWidgets.QWidget):
                 else:
                     item.setData([], [])
             self.shares_plot.setXRange(max(0.0, end - STRIP_SECONDS), max(end, STRIP_SECONDS), padding=0)
-            self.shares_note.setText(sh.note if t.size else "Pluck the masses to see the energy in each coordinate.")
+            self.shares_note.setText(sh.note if t.size else "Pluck the masses to see the energy along each arrow.")
         elif i == view.TAB_ENERGY:
             self.energy.draw(live.record, frame)
 
