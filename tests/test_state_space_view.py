@@ -202,3 +202,12 @@ def test_an_overdamped_mode_keeps_As_own_pair_in_your_basis():
         and "rows ẋ₁, ẋ₂ are λψ" in two.columns
     )
     assert v.basis_of(s, v.OWN)[:, 2:] == pytest.approx(v.basis_of(s, v.STATE)[:, 2:])
+
+
+def test_with_no_dampers_the_gauge_is_full_at_the_start_and_empties_as_you_drag_away():
+    s = TwoMass(m2=2.0, c=0.0)  # the modes of M and K are A's own: the start is already the answer
+    start = v.undamped_ratios(s)
+    assert [o.closeness for o in v.pair_shapes(s, v.OWN)] == [1.0, 1.0]
+    away = v.pair_shapes(s, v.OWN, (start[0] + 1.5j, start[1]))
+    assert away[0].closeness is not None and away[0].closeness < 0.5 and "passes motion" in away[0].note
+    assert away[1].closeness == 1.0
