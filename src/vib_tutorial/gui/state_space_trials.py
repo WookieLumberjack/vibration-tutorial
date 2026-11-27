@@ -20,6 +20,7 @@ from ..core.practice import Prediction, Problem, Question, number, pick
 from ..core.state_modes import state_modes
 from ..view_models.state_space import (
     MASS,
+    OWN,
     STATE,
     TAB_MATRICES,
     TAB_SHAPES,
@@ -105,6 +106,18 @@ TRIALS = (
         basis=STATE,
         start=STATE_ONE,
         tab=TAB_SHAPES,
+    ),
+    StateTrial(
+        "Find A's modes by hand",
+        "Each damper 3 N·s/m, started in <m>A</m>'s mode 1, and seen in your own shapes, which start as the modes of "
+        "<m>M</m> and <m>K</m>. Only mode 1 runs, yet your mode 2's plane moves: your mode 1 isn't quite it. On the "
+        "Matrices tab, drag mode 1's <m>m<sub>2</sub></m> arrow and watch the red under its columns of "
+        "<m>T<sup>−1</sup>AT</m>: only one shape clears it, and there your mode 2's plane falls still (start again "
+        "from State-space mode 1 as often as you like). Then find mode 2's. How far from the modes of <m>M</m> and "
+        "<m>K</m> did you have to turn them?",
+        c=3.0,
+        basis=OWN,
+        start=STATE_ONE,
     ),
     StateTrial(
         "Mode 2 overdamped",
@@ -219,8 +232,9 @@ TIPS = {
     "c": "<p>A viscous damper beside each of the three springs, each this strong. Past about 19 N·s/m (with m₂ = "
     "2 kg) mode 2 is overdamped.</p>",
     "basis": "<p>Which coordinates the two planes show the four numbers of the state in, a pair a plane: each mass's "
-    "displacement and velocity; each mode of M and K's; or A's own modes, which uncouple any dampers. Switch it as "
-    "it runs: the motion doesn't change, only its description.</p>",
+    "displacement and velocity; each mode of M and K's; A's own modes, which uncouple any dampers; or your own: a "
+    "shape for each mode you drag on the Matrices tab, to find A's by feel. Switch it as it runs: the motion "
+    "doesn't change, only its description.</p>",
     "start": "<p>Start the masses from here and let them go: in one of the last page's modes (the modes of M and K), "
     "displaced along its shape and let go from rest; or in one of A's own modes, displaced along Re ψ and already "
     "moving as the damped mode moves. Under the buttons: the last start's x and ẋ, and where it puts each pair on "

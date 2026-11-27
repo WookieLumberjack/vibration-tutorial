@@ -2,13 +2,14 @@
 numbers, shown two at a time on two planes in the basis the reader picks, so the coupling between the pairs, or its
 absence, is seen as it runs.
 
-Left: the masses, springs and dampers, the planes' basis (each mass's x and ẋ, the modes of M and K, or A's own
-modes), where to start the masses, then the Things to try (setups to go back to; their predictions are asked once
+Left: the masses, springs and dampers, the planes' basis (each mass's x and ẋ, the modes of M and K, A's own
+modes, or your own, made from shapes you drag), where to start the masses, then the Things to try (setups to go back to; their predictions are asked once
 the reader has handled the masses). Center: the two masses between their walls (`bases_view.ChainView`: pluck a
 mass, or drag its grips to change m, k and c as it runs), the plane of the masses' displacements with the
 state-space modes' shapes (`state_planes.ShapePlane`), the two planes of the state's coordinate pairs
 (`state_planes.PairPlane`: drag to set a pair), the run's controls, and the four coordinates against time. Right:
-the matrices' steps from M, C, K to T⁻¹AT, its coupling marked (Matrices), each pair's size on a log axis in both
+the matrices' steps from M, C, K to T⁻¹AT, its coupling marked, and in your own basis each mode's shape to
+drag (Matrices), each pair's size on a log axis in both
 modal bases (Sizes), each mode's shape as phasors (Shapes), and the Theory.
 
 The masses are stepped as they run (`view_models/live_bases.LiveBases`, exactly, the last page's run); what the page
@@ -23,6 +24,7 @@ parts), `test_readiness.py`.
 
 from __future__ import annotations
 
+import dataclasses
 import time
 
 import numpy as np
@@ -38,6 +40,7 @@ from ..view_models.text import number as sig
 from . import coalesce
 from .bases_view import ChainView
 from .bindings import Bindings
+from .drag import DragPoint
 from .frame_loop import FrameLoop
 from .layouts import FlowLayout
 from .lesson import Form, LiveLabel, TrialBox, plot, theory, three_panes
@@ -56,6 +59,7 @@ __all__ = ["NOTES_HTML", "PROBLEMS", "TRIALS", "StateSpacePage"]
 STRIP_SECONDS = 8.0  # the coordinates' and the Sizes tab's window
 TRAIL_SECONDS = 2.0  # the planes' paths
 PHASOR_HEIGHT = 250  # px: the Shapes tab's plots
+OWN_HEIGHT = 200  # px: your own basis's drag plots, above the matrices
 PLAYED_AFTER = 2.0  # s of run after the reader's first change: they've handled it, predictions on
 SYSTEM_FIELDS = ("m1", "m2", "k1", "k2", "k3", "c")
 COORDS_TIP = (
@@ -76,6 +80,12 @@ SIZES_TIP = (
     "and K (thin) and A's own modes (thick). A state-space mode's size falls as e^(σt), a straight line here; a "
     "mode of M and K started at zero climbs when the dampers couple it to the other.</p>"
 )
+OWN_TIP = (
+    "<p>Your guess at this mode's shape: m₁'s part is the unit arrow along Re, and m₂'s the arrow you drag, its "
+    "length m₂'s swing over m₁'s and its angle the phase between them. The dashed arrow is where it started, the mode "
+    "of M and K's. The basis's pair for this mode is made from your shape as A's own are, Re and Im of [ψ; λψ], with "
+    "the λ your shape asks for. Watch the red in T⁻¹AT under this mode's columns: it goes only at A's own shape.</p>"
+)
 SHAPES_TIP = (
     "<p>Each mode's shape ψ, a mass's part as an arrow in the complex plane (a phasor), beside the undamped mode's "
     "real shape, dashed. The angle between the masses' arrows is the phase between them: 0° or 180° when the shape "
@@ -83,7 +93,7 @@ SHAPES_TIP = (
 )
 
 
-def _square(plot_: pg.PlotWidget) -> None:
+def _square(plot_: pg.PlotWidget, height: int = PHASOR_HEIGHT) -> None:
     """A phasor plot: its aspect locked, a fixed height, and narrow enough that two side by side don't widen the
     pane (the window fits 1280 px)."""
     plot_.setMenuEnabled(False)
@@ -91,7 +101,7 @@ def _square(plot_: pg.PlotWidget) -> None:
     plot_.hideButtons()
     plot_.setAspectLocked(True)
     plot_.setMinimumWidth(60)
-    plot_.setFixedHeight(PHASOR_HEIGHT)
+    plot_.setFixedHeight(height)
     plot_.setSizePolicy(QtWidgets.QSizePolicy.Policy.Ignored, QtWidgets.QSizePolicy.Policy.Fixed)
 
 
@@ -109,6 +119,7 @@ class StateSpacePage(QtWidgets.QWidget):
         self.running = False
         self._handled_at: float | None = None
         self._grip_start = 0.0
+        self.own: view.Own = None  # your own basis's shapes (ψ₂/ψ₁ a mode), None: the modes of M and K's
         self._w_held = np.zeros(4)  # the coordinates when a pair was taken (mm): the other pair stays there
         self._budget = Budget()
         self.bindings = Bindings(StateTrial, self)
@@ -219,6 +230,47 @@ class StateSpacePage(QtWidgets.QWidget):
         # --- right: Matrices, Sizes, Shapes, Theory
         matrices = QtWidgets.QWidget()
         mv = QtWidgets.QVBoxLayout(matrices)
+        self.own_box = QtWidgets.QGroupBox("Your own shapes: drag m₂'s arrow")
+        ov = QtWidgets.QVBoxLayout(self.own_box)
+        own_row = QtWidgets.QHBoxLayout()
+        self.own_plots: list[pg.PlotWidget] = []
+        self.own_items: list[list[pg.PlotDataItem]] = []  # m₁'s arrow, m₂'s, where it started
+        self.own_dots: list[DragPoint] = []
+        self.own_notes: list[LiveLabel] = []
+        for r in range(2):
+            column = QtWidgets.QVBoxLayout()
+            op = pg.PlotWidget()
+            _square(op, OWN_HEIGHT)
+            op.setToolTip(OWN_TIP)
+            op.setAccessibleName(f"Your shape for mode {r + 1}: m₂'s phasor over m₁'s, dragged")
+            op.setTitle(f"Mode {r + 1}")
+            op.setLabel("bottom", "Re")
+            op.setLabel("left", "Im")
+            for side in ("bottom", "left"):
+                op.getAxis(side).enableAutoSIPrefix(False)
+            items = [pg.PlotDataItem() for _ in range(3)]
+            for z, item in zip((2, 1, 0), items):  # m₁'s unit arrow over m₂'s, which often lies along it
+                item.setZValue(z)
+                op.addItem(item, ignoreBounds=True)
+            dot = DragPoint(OWN_TIP, size=13, role="strong")
+            dot.setProperty("mode", r)
+            dot.dragged.connect(self._on_own_dragged)
+            op.addItem(dot, ignoreBounds=True)
+            note = LiveLabel(wrap=True)
+            mute(note)
+            column.addWidget(op)
+            column.addWidget(note)
+            own_row.addLayout(column, 1)
+            self.own_plots.append(op)
+            self.own_items.append(items)
+            self.own_dots.append(dot)
+            self.own_notes.append(note)
+        ov.addLayout(own_row)
+        self.own_reset = QtWidgets.QPushButton("Back to the modes of M and K")
+        self.own_reset.setToolTip("<p>Your shapes back where they started: the modes of M and K's real shapes.</p>")
+        self.own_reset.clicked.connect(self._on_own_reset)
+        ov.addWidget(self.own_reset, 0, QtCore.Qt.AlignmentFlag.AlignLeft)
+        mv.addWidget(self.own_box)
         self.matrices = MatricesLabel()
         self.matrices.setToolTip(MATRICES_TIP)
         self.matrices_note = LiveLabel(wrap=True)
@@ -301,7 +353,7 @@ class StateSpacePage(QtWidgets.QWidget):
     # ------------------------------------------------------------- the state
     def practice_state(self) -> StateTrial:
         """The page's settings, as a trial: what a practice spec checks, and Defaults puts back."""
-        return self.bindings.read(StateTrial("", ""))
+        return dataclasses.replace(self.bindings.read(StateTrial("", "")), **view.own_fields(self.own))
 
     @property
     def system(self) -> TwoMass:
@@ -321,6 +373,7 @@ class StateSpacePage(QtWidgets.QWidget):
     def apply_trial(self, t: StateTrial) -> None:
         """A setup: the masses, springs, dampers and basis as it says, the run from rest, then started from `start`."""
         self.bindings.write(t)
+        self.own = view.own_of(t)
         self._push_system()
         self.reset()
         self._handled_at = None
@@ -368,6 +421,28 @@ class StateSpacePage(QtWidgets.QWidget):
         self._handled()
         self.start(int(self.sender().property("start")))
 
+    def _basis(self) -> np.ndarray:
+        """T: the planes' basis, as picked (your own from your shapes)."""
+        return view.basis_of(self.live.system, self.which, self.own)
+
+    def _on_own_dragged(self, x: float, y: float) -> None:
+        """Your shape for a mode dragged (m₂'s phasor over m₁'s): snapped onto A's own when near it."""
+        r = int(self.sender().property("mode"))
+        s = self.live.system
+        ratios = list(view.own_ratios(s, self.own))
+        ratios[r] = view.snap(s, r, complex(x, y))
+        self.own = (ratios[0], ratios[1])
+        self._handled()
+        self._draw_still()
+        if not self.running:
+            self._draw_live()
+
+    def _on_own_reset(self) -> None:
+        self.own = None
+        self._draw_still()
+        if not self.running:
+            self._draw_live()
+
     def _on_grip_taken(self, name: str) -> None:
         self._grip_start = getattr(self, name).value()
 
@@ -392,12 +467,12 @@ class StateSpacePage(QtWidgets.QWidget):
 
     def _on_pair_grabbed(self) -> None:
         self._on_grabbed()
-        self._w_held = view.pairs(view.basis_of(self.system, self.which), self.live.x, self.live.v)[0]
+        self._w_held = view.pairs(self._basis(), self.live.x, self.live.v)[0]
 
     def _on_pair_pulled(self, a: float, b: float) -> None:
         plane = self.sender()
         assert isinstance(plane, PairPlane), "pulled by a pair's plane"
-        T = view.basis_of(self.system, self.which)
+        T = self._basis()
         x, v = view.place(T, self._w_held, plane.index, a, b)
         self.live.hold_state(x, v)
         self._draw_body()
@@ -504,6 +579,11 @@ class StateSpacePage(QtWidgets.QWidget):
                 items[2 + i].setPen(pg.mkPen(c.grey, width=1.5, style=dash))
                 texts[i].setColor(c.mass[i])
             items[4].setPen(pg.mkPen(c.faint, width=1))
+        for items, dot in zip(self.own_items, self.own_dots):
+            items[0].setPen(pg.mkPen(c.mass[0], width=3))
+            items[1].setPen(pg.mkPen(c.mass[1], width=3))
+            items[2].setPen(pg.mkPen(c.grey, width=1.5, style=dash))
+            dot.apply_theme()
         self._draw_still()
         self._draw_tab()
 
@@ -513,7 +593,7 @@ class StateSpacePage(QtWidgets.QWidget):
         self.start_note.setVisible(started is not None)
         if started is not None:
             which, s = started  # as it was when it started: the masses or springs changed since don't rewrite it
-            self.start_note.setText(view.start_note(s, which, self.which))
+            self.start_note.setText(view.start_note(s, which, self.which, self.own))
 
     @coalesce.coalesced
     def _draw_still(self, *_: object) -> None:
@@ -524,7 +604,7 @@ class StateSpacePage(QtWidgets.QWidget):
         self.shape_plane.set_still(xp)
         for plane, labels in zip(self.pair_planes, view.labels(s, which)):
             plane.set_labels(labels)
-        m = view.matrices_view(s, which)
+        m = view.matrices_view(s, which, self.own)
         self.plane_note.setText(xp.note)
         for i, button in enumerate(self.start_buttons):
             button.setToolTip(f"{TIPS['start']}<p>{view.STARTS[i]} now: {view.start_conditions(s, i)}</p>")
@@ -541,7 +621,27 @@ class StateSpacePage(QtWidgets.QWidget):
                 texts[i].setPos(a * 1.08, b * 1.08 + 0.05)
             items[4].setData(np.cos(circle), np.sin(circle))
             note.setText(ph.note)
+        self._draw_own()
         self._name_coordinates()
+
+    def _draw_own(self) -> None:
+        """Your own shapes' drag plots, above the matrices when your own basis is picked."""
+        on = self.which == view.OWN
+        self.own_box.setVisible(on)
+        if not on:
+            return
+        for op, items, dot, note, o in zip(
+            self.own_plots, self.own_items, self.own_dots, self.own_notes, view.own_view(self.live.system, self.own)
+        ):
+            span = o.span
+            op.setRange(QtCore.QRectF(-span, -span, 2 * span, 2 * span), padding=0)
+            a, b = o.ratio
+            items[0].setData([0.0, 1.0], [0.0, 0.0])
+            items[1].setData([0.0, a], [0.0, b])
+            items[2].setData([0.0, o.undamped], [0.0, 0.0])
+            dot.place(a, b)
+            dot.setVisible(o.movable)
+            note.setText(o.note)
 
     def _name_coordinates(self) -> None:
         """The coordinates plot's legend, from the planes' axes."""
@@ -601,7 +701,7 @@ class StateSpacePage(QtWidgets.QWidget):
         end = live.t
         x = y[:, COL["x1"] : COL["x2"] + 1]
         v = y[:, COL["v1"] : COL["v2"] + 1]
-        T = view.basis_of(live.system, self.which)
+        T = self._basis()
         w = view.pairs(T, x, v) if t.size else np.empty((0, 4))
         for k, item in enumerate(self.w_items):
             item.setData(t, w[:, k]) if t.size else item.setData([], [])
@@ -627,7 +727,7 @@ class StateSpacePage(QtWidgets.QWidget):
     ) -> None:
         """The masses, the (x₁, x₂) plane and the pairs' planes at (x, v), with their paths up to `end` (now)."""
         live = self.live
-        T = view.basis_of(live.system, self.which)
+        T = self._basis()
         if t is None or y is None or w is None:
             t, y = live.record.window(STRIP_SECONDS)
             w = view.pairs(T, y[:, COL["x1"] : COL["x2"] + 1], y[:, COL["v1"] : COL["v2"] + 1]) if t.size else None
@@ -657,7 +757,7 @@ class StateSpacePage(QtWidgets.QWidget):
         if live.record.size < 2:
             self.readout.setText("Start the masses from the left, drag a point on a plane, or pluck a mass.")
             return
-        w = view.pairs(view.basis_of(live.system, self.which), live.x, live.v)[0]
+        w = view.pairs(self._basis(), live.x, live.v)[0]
         a, b = (float(np.hypot(w[2 * r], w[2 * r + 1])) for r in range(2))
         tiny = 1e-9 * max(a, b, 1e-300)  # a pair started at zero stays at rounding's size: shown as 0
         self.readout.setText(

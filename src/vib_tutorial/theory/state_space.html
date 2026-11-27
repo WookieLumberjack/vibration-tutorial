@@ -108,6 +108,26 @@ plane of <m>x<sub>1</sub></m> and <m>x<sub>2</sub></m> it traces an ellipse span
 two phasors is the phase between the masses. It grows with the dampers, and with how far they are from being
 proportional.</p>
 
+<h3><a name="by-hand"></a>Finding a mode by hand</h3>
+<p>Why do <m>A</m>'s eigenvectors uncouple, and nothing else? Pick <i>Your own</i> as the planes' coordinates and
+make the basis yourself. For each mode you guess a shape, <m>ψ = (1, ρ)</m>: <m>m<sub>1</sub></m>'s part is 1 and
+<m>m<sub>2</sub></m>'s is <m>ρ</m>, a complex number you drag on the Matrices tab, its size how far
+<m>m<sub>2</sub></m> swings for each unit of <m>m<sub>1</sub></m>'s and its angle the phase between them. Your
+guesses start at the modes of <m>M</m> and <m>K</m>, real.</p>
+<p>A shape needs a <m>λ</m> to make a pair <m>[ψ; λψ]</m>. If <m>ψ</m> were a mode,
+<m>(λ²M + λC + K)ψ = 0</m>, and multiplying on the left by <m>ψᴴ</m>, the conjugate transpose, turns that into
+one equation in numbers:</p>
+<eq>\lambda^2\, \psi^H M \psi + \lambda\, \psi^H C \psi + \psi^H K \psi = 0</eq>
+<p>The three are real (each matrix is symmetric), so this is the single oscillator's characteristic equation with
+the shape's own mass, damping and stiffness, and the page takes its root with <m>ω &gt; 0</m>. Your pair's
+columns are <m>Re y</m> and <m>Im y</m> of <m>y = [ψ; λψ]</m>, as <m>A</m>'s are.</p>
+<p>A pair's two columns span a plane in the four-dimensional state. The block under them in
+<m>T<sup>−1</sup>AT</m> is zero off the diagonal only if <m>A</m> maps that plane into itself: only then does
+motion that starts in it stay in it. That's an eigenvector's property, so the red under a mode's columns goes only
+at <m>A</m>'s own shape, and each mode's shape clears its own columns, whatever the other's is. There the
+<m>λ</m> above is exact and your pair is <m>A</m>'s. Start the masses in <m>A</m>'s mode 1 and the other
+plane is a gauge: it falls still when your mode 1 is right.</p>
+
 <h3><a name="overdamped"></a>An overdamped mode</h3>
 <p>Strong enough dampers stop a mode swinging. Its pair of eigenvalues then meet on the real axis and part along
 it: two real decay rates, <m>λ<sub>a</sub></m> and <m>λ<sub>b</sub></m>, and two real eigenvectors. They still
@@ -126,7 +146,8 @@ how complex a measured mode can be, is <a href="page:complex_page#how-complex">C
 <p>The masses, springs and dampers change as it runs, by the grips on the drawing or the boxes, as on the last
 page, and the motion carries on by the physics. The basis can be switched as it runs too: the motion doesn't
 change, only its description, and the planes redraw the recent past in the new coordinates. Drag a point on a
-coordinate plane to set that pair, the other kept, and let go; drag on the plane of <m>x<sub>1</sub></m> and
+coordinate plane to set that pair, the other kept, and let go (in your own basis, drag the shapes on the
+Matrices tab as it runs too); drag on the plane of <m>x<sub>1</sub></m> and
 <m>x<sub>2</sub></m>, or a mass, to pluck the masses from rest.</p>
 
 <h3><a name="worked-example"></a>A worked example: the page as it opens</h3>
@@ -157,9 +178,10 @@ predict what you'll see first.</p>
 <li>The state <m>z = (x, ẋ)</m> turns <m>Mẍ + Cẋ + Kx = 0</m> into <m>ż = Az</m>, twice as many first-order equations.</li>
 <li><m>A</m>'s eigenvalues come in conjugate pairs <m>σ ± iω</m>, one pair a mode, and its eigenvectors' real and imaginary parts make a real basis in which <m>T<sup>−1</sup>AT</m> is block diagonal, whatever the damping.</li>
 <li>In that basis each mode's pair spirals in on its own plane, as <m>e<sup>σt</sup></m>; in the modes of <m>M</m> and <m>K</m> the dampers couple the modes unless they're proportional.</li>
+<li>Only <m>A</m>'s eigenvectors make a pair that keeps its motion to itself: a guessed shape passes motion to the other pair until it is the mode's own.</li>
 <li>A basis of the state changes <m>A</m> to <m>T<sup>−1</sup>AT</m>, not <m>TᵀAT</m>: <m>A</m> isn't symmetric.</li>
 <li>With non-proportional damping the modes' shapes are complex: the masses don't move in step, and a mode alone traces an ellipse.</li>
 </takeaways>
 <h3><a name="notation"></a>Notation</h3>
-<notation>m x matrices identity state lambda zeta omega_i psi T_state omega_hat q V_basis</notation>
+<notation>m x matrices identity state lambda zeta omega_i psi rho_shape T_state omega_hat q V_basis</notation>
 <reading>strang foss caughey inman</reading>

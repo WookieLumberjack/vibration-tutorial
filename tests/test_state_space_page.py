@@ -48,7 +48,7 @@ def trial(name: str) -> int:
 
 
 def pairs_now(page) -> np.ndarray:
-    return view.pairs(view.basis_of(page.system, page.which), page.live.x, page.live.v)[0]
+    return view.pairs(page._basis(), page.live.x, page.live.v)[0]
 
 
 def test_it_opens_at_rest_on_its_system_with_things_to_try_after_the_controls(page):
@@ -193,3 +193,32 @@ def test_reset_and_defaults(page, main_window):
     assert page.live.t == 0 and not page.running
     main_window.restore_defaults()
     assert dataclasses.replace(page.practice_state(), tab=0) == view.StateTrial("", "")  # Defaults leaves the tab
+
+
+def test_your_own_shapes_are_dragged_on_the_matrices_tab_and_snap_onto_As(page, app):
+    assert page.own_box.isHidden()
+    page.load_trial(trial("Find A's modes by hand"))
+    assert page.which == view.OWN and page.running and not page.own_box.isHidden()
+    page.tabs.setCurrentIndex(view.TAB_MATRICES)
+    page.own_plots[0].grab()
+    app.processEvents()
+    assert np.abs(pairs_now(page)[2:]).max() > 0.1  # only A's mode 1 runs, but your mode 2's plane moves
+    s = page.system
+    true = view.ratio(view.modes(s)[0])
+    start = view.undamped_ratios(s)[0]
+    away = start + 1.5j
+    drag(page.own_plots[0], QtCore.QPointF(start.real, start.imag), QtCore.QPointF(away.real, away.imag), app)
+    assert page.own is not None and page.own[0] == pytest.approx(away, abs=0.05) and page.own_dots[0].pos().y() > 1
+    assert "passes motion to mode 2's" in page.own_notes[0].text()
+    drag(page.own_plots[0], QtCore.QPointF(away.real, away.imag), QtCore.QPointF(true.real, true.imag), app)
+    assert page.own is not None and page.own[0] == true  # snapped on
+    assert page.own[1] == view.undamped_ratios(s)[1]
+    assert "A's own mode 1" in page.own_notes[0].text()
+    page.step(0.5)
+    assert np.abs(pairs_now(page)[2:]).max() < 1e-6  # your mode 2's plane falls still
+    state = page.practice_state()
+    assert view.own_of(state) == page.own
+    page.own_reset.click()
+    assert page.own is None and "at 0°" in page.own_notes[0].text()
+    page.apply_trial(state)  # a setup with shapes puts them back
+    assert page.own == view.own_of(state)
