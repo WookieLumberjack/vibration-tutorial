@@ -50,7 +50,8 @@ one arrow can be kept, turned and given back its partner, each change booked in 
 
 The same two masses, now with x and ẋ together: the state, four numbers, z = (x₁, x₂, ẋ₁, ẋ₂), with ż = Az. The
 page shows the state two numbers at a time, on two planes, in the basis picked: each mass's x and ẋ, the modes of
-M and K (the last page's), or A's own modes. The matrices panel steps from M, C and K to A and on to T⁻¹AT in that
+M and K (the last page's), A's own modes, or the reader's own: a shape for each mode, dragged on the Matrices tab as
+m₂'s phasor over m₁'s, whose red in T⁻¹AT clears only at A's own shape. The matrices panel steps from M, C and K to A and on to T⁻¹AT in that
 basis, its off-diagonal 2×2 blocks, the coupling between the pairs, marked in red. With a 2 kg m₂ the damping isn't
 proportional (the dampers' forces in one mode push on the other), so the modes of M and K stay coupled through the dampers: started in mode 2, mode 1's pair climbs from
 zero (the *Sizes* tab, on a log axis). In A's own modes, the real and imaginary parts of each conjugate pair of

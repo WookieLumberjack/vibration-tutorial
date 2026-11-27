@@ -244,15 +244,17 @@ def _state_views(state):
     live.advance(1.0)
     _, y = live.since_change()
     x, xd = y[:, lb.COL["x1"] : lb.COL["x2"] + 1], y[:, lb.COL["v1"] : lb.COL["v2"] + 1]
-    T = v.basis_of(s, state.basis)
+    own = v.own_of(state)
+    T = v.basis_of(s, state.basis, own)
     return (
         v.labels(s, state.basis),
         v.pairs(T, x, xd),
         v.place(T, np.zeros(4), 0, 1.0, 2.0),
         v.x_plane(s),
-        v.matrices_view(s, state.basis),
+        v.matrices_view(s, state.basis, own),
         v.sizes(s, x, xd),
         v.shapes_view(s),
+        v.own_view(s, own),
         lb.energy_view(*live.since_change()),
     )
 

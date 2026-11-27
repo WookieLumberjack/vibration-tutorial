@@ -15,9 +15,13 @@ from vib_tutorial.core.state_modes import (
     basis,
     coordinates,
     coupling,
+    fitted_eigenvalue,
     in_basis,
     mass_basis,
     own_frequency,
+    passed,
+    ratio,
+    shape_basis,
     state_basis,
     state_modes,
     undamped_basis,
@@ -139,3 +143,33 @@ def test_the_matrix_in_a_basis_keeps_the_eigenvalues():
     for name in BASES:
         got = np.sort_complex(scipy.linalg.eigvals(in_basis(basis(name, M, C, K), A)))
         assert got == pytest.approx(want)
+
+
+@pytest.mark.parametrize("s", [UNEQUAL, SYMMETRIC, TwoMass(m1=3.0, k1=900.0, k2=50.0, k3=100.0, c=4.0)])
+def test_a_guessed_shape_uncouples_only_its_own_columns_and_only_at_As_shape(s):
+    M, C, K = s.matrices()
+    A = state_matrix(M, C, K)
+    modes = state_modes(M, C, K)
+    true = tuple(ratio(m) for m in modes)
+    for m in modes:  # at A's shape the fitted λ is A's, and the pair is A's own, exactly
+        assert fitted_eigenvalue(M, C, K, m.shape) == pytest.approx(m.eigenvalues[0])
+    assert shape_basis(M, C, K, true) == pytest.approx(state_basis(M, C, K), abs=1e-12)
+    _, V = undamped_modes(M, K)
+    undamped = (V[1, 0] / V[0, 0], V[1, 1] / V[0, 1])
+    proportional = s is SYMMETRIC
+    for r in range(2):  # mode r's right shape clears its own columns whatever the other's is
+        guess = list(undamped)
+        guess[r] = true[r]
+        Ab = in_basis(shape_basis(M, C, K, tuple(guess)), A)
+        assert passed(Ab, r) < 1e-12
+        assert (passed(Ab, 1 - r) < 1e-9) == proportional  # the other, still the undamped mode's, passes motion on
+        off = list(true)
+        off[r] = true[r] * complex(math.cos(0.05), math.sin(0.05))  # turned 2.9°
+        assert passed(in_basis(shape_basis(M, C, K, tuple(off)), A), r) > 1e-3
+
+
+def test_a_shape_too_damped_to_swing_still_makes_two_columns():
+    M, C, K = HEAVY.matrices()
+    lam = fitted_eigenvalue(M, C, K, np.array([1.0, -0.2]))
+    assert lam.real < 0 and lam.imag > 0
+    assert np.linalg.matrix_rank(shape_basis(M, C, K, (2.0, -0.2))) == 4

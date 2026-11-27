@@ -130,3 +130,41 @@ def test_a_starts_note_gives_its_initial_conditions_and_tells_it_from_its_neighb
     own = v.start_note(DEFAULT, 3, v.STATE)
     assert "ẋ = (-31.5, 21) mm/s: displaced along Re ψ and already moving" in own and "(0, 0) and (30.5, 0)" in own
     assert "the mode of M and K itself" in v.start_note(TwoMass(m2=2.0, c=0.0), 3, v.STATE)
+
+
+def test_your_own_shapes_start_as_the_modes_of_M_and_K_and_snap_onto_As():
+    s = TwoMass(m2=2.0, c=3.0)
+    start = v.own_view(s, None)
+    assert [o.ratio[1] for o in start] == [0.0, 0.0] and all(o.movable and not o.found for o in start)
+    assert [o.ratio[0] for o in start] == pytest.approx([o.undamped for o in start])
+    assert "passes motion to mode 2's" in start[0].note
+    assert v.basis_of(s, v.OWN) == pytest.approx(v.basis_of(s, v.OWN, v.undamped_ratios(s)))
+    true = [v.ratio(m) for m in v.modes(s)]
+    near = v.snap(s, 0, true[0] + 0.5 * v.SNAP * v.own_span(s, 0))
+    assert near == true[0]  # close enough: onto A's own
+    far = true[0] + 3 * v.SNAP * v.own_span(s, 0)
+    assert v.snap(s, 0, far) == far
+    assert v.snap(s, 1, complex(100.0, -100.0)) == complex(v.own_span(s, 1), -v.own_span(s, 1))  # kept on its plot
+    mine = (true[0], v.undamped_ratios(s)[1])
+    one, two = v.own_view(s, mine)
+    assert one.found and "A's own mode 1" in one.note and not two.found
+    assert "each mode's pair is A's own" in v.matrices_view(s, v.OWN, mine).note
+    assert v.matrices_view(s, v.OWN, tuple(true)).note.startswith("Your own shapes are A's own modes")
+    marked = v.matrices_view(s, v.OWN, mine).product.marked
+    assert not any(marked[i][j] for i in (2, 3) for j in (0, 1))  # mode 1's columns: no red
+    assert any(marked[i][j] for i in (0, 1) for j in (2, 3))  # mode 2's still passes to mode 1
+    assert v.labels(s, v.OWN)[0].title == "Your mode 1"
+
+
+def test_your_own_shapes_survive_the_trials_fields():
+    own = (complex(2.5, -0.5), complex(-0.2, -0.05))
+    t = v.StateTrial("", "", **v.own_fields(own))
+    assert v.own_of(t) == own and v.own_of(v.StateTrial("", "")) is None
+    assert v.own_fields(None) == {"own1": None, "own2": None}
+
+
+def test_an_overdamped_mode_keeps_As_own_pair_in_your_basis():
+    s = TwoMass(m2=2.0, c=20.0)
+    two = v.own_view(s, None)[1]
+    assert not two.movable and "overdamped" in two.note
+    assert v.basis_of(s, v.OWN)[:, 2:] == pytest.approx(v.basis_of(s, v.STATE)[:, 2:])

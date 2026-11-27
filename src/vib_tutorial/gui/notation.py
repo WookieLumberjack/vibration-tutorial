@@ -797,6 +797,15 @@ SYMBOLS = (
         "ignoring-it",
     ),
     Symbol(
+        "rho_shape",
+        "ρ, ψᴴ",
+        "a guessed mode shape's ψ<sub>2</sub>/ψ<sub>1</sub>, m<sub>2</sub>'s part over m<sub>1</sub>'s (complex); "
+        "ψᴴ, ψ's conjugate transpose",
+        "–",
+        "state_page",
+        "by-hand",
+    ),
+    Symbol(
         "rho",
         "ρ",
         "density",
