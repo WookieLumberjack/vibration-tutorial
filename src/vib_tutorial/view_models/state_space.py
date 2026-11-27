@@ -19,16 +19,19 @@ the last page's `live_bases.LiveBases` (free, no rail), and each panel has a fun
 - `shapes_view(s)`: the **Shapes** tab: each mode's ψ as phasors, one a mass, turned so m₁'s lies along the real
   axis (then m₂'s angle is the phase between them), beside the undamped mode's φ.
 - `start_state(s, start)`: where a start puts the masses (x, v).
-- `own_view(s, own)`: the fourth basis, the reader's own (`core/state_modes.shape_basis`): each mode's guessed
-  shape as m₂'s phasor over m₁'s, ρ = ψ₂/ψ₁, dragged on the Matrices tab (`snap`: within `SNAP` of the plot's
-  width of A's own shape, onto it, so the red can be seen to go), with how much that pair still passes to the
-  other. A mode of A that doesn't swing keeps A's own pair. `own` is (ρ₁, ρ₂), or None for the modes of M and K's.
+- `pair_shapes(s, basis, own)`: each pair of the basis as a shape on the Matrices tab, m₂'s part as a phasor
+  beside m₁'s, with the ψ and λ whose Re and Im of [ψ; λψ] are its columns of T (every basis's are: a mass alone
+  and iω̂, a mode of M and K and iω, A's own) and what it passes to the other pair. In the fourth basis, the
+  reader's own (`core/state_modes.shape_basis`), m₂'s phasor ρ = ψ₂/ψ₁ is dragged (`snap`: within `SNAP` of the
+  plot's half-width of A's own shape, onto it, so the red can be seen to go), with a gauge of how near A's it is.
+  A mode of A that doesn't swing keeps A's own pair. `own` is (ρ₁, ρ₂), or None for the modes of M and K's.
 
 Working on it: Qt-free (the package's docstring). `tests/test_state_space_view.py` checks the views.
 """
 
 from __future__ import annotations
 
+import dataclasses
 import math
 from dataclasses import dataclass
 
@@ -42,6 +45,7 @@ from ..core.state_modes import (
     basis,
     coordinates,
     coupling,
+    guessed_mode,
     in_basis,
     own_frequency,
     passed,
@@ -67,7 +71,7 @@ ARROW = 0.035  # m: a unit displacement drawn this long on the (x₁, x₂) plan
 ZERO = 1e-6  # an entry under this of its matrix's largest is zero
 FLOOR = 1e-6  # m: the Sizes tab's log axis stops here
 EDGE = 0.9  # m₁'s arrow, when longer than the plot, is drawn to this of its half-width
-SNAP = 0.02  # a dragged shape within this of its plot's half-width of A's own snaps onto it
+SNAP = 0.05  # a dragged shape within this of its plot's half-width of A's own snaps onto it
 
 
 @dataclass(frozen=True)
@@ -246,6 +250,7 @@ class Grid:
     cols: tuple[str, ...] = ()
     row_groups: tuple[str, ...] = ()  # the block each row and column is in, for its tint (`matrix_table`'s groups)
     col_groups: tuple[str, ...] = ()
+    lit: int | None = None  # the pair whose columns are lit (the shape being dragged), drawn in its plane's color
 
 
 @dataclass(frozen=True)
@@ -301,7 +306,7 @@ def mode_line(r: int, m: StateMode) -> str:
     return f"Mode {r + 1}: λ = {sig(a, 3)} and {sig(b, 3)} /s: overdamped, two decays, no swing"
 
 
-def matrices_view(s: TwoMass, which: int, own: Own = None) -> MatricesView:
+def matrices_view(s: TwoMass, which: int, own: Own = None, lit: int | None = None) -> MatricesView:
     """The steps from M, C, K to A in the basis `which` (see the module), and what they say."""
     M, C, K = s.matrices()
     A = state_matrix(M, C, K)
@@ -349,8 +354,8 @@ def matrices_view(s: TwoMass, which: int, own: Own = None) -> MatricesView:
     return MatricesView(
         given,
         _grid("A", "", A, STATE_NAMES, STATE_NAMES, (BY_HALF, BY_HALF)),
-        _grid("T", "", B, STATE_NAMES, w, (PLAIN, PLAIN), blocks=True, coupling=False),
-        _grid("T⁻¹AT", "", Ab, w, w, (BY_HALF, BY_HALF), blocks=True),
+        dataclasses.replace(_grid("T", "", B, STATE_NAMES, w, (PLAIN, PLAIN), blocks=True, coupling=False), lit=lit),
+        dataclasses.replace(_grid("T⁻¹AT", "", Ab, w, w, (BY_HALF, BY_HALF), blocks=True), lit=lit),
         tuple(mode_line(r, m) for r, m in enumerate(ms)),
         coupled,
         note,
@@ -492,25 +497,29 @@ def start_note(s: TwoMass, start: int, which: int, own: Own = None) -> str:
     )
 
 
-# ------------------------------------------------------------------ your own basis
+# ------------------------------------------------------------------ the pairs as shapes
 
 
 @dataclass(frozen=True)
-class OwnShape:
+class PairShape:
+    """One pair of the basis drawn as a shape: m₂'s part as a phasor beside m₁'s, on the Matrices tab."""
+
     title: str
-    span: float  # the plot's half-width (ρ's units: m₂ over m₁)
-    ratio: tuple[float, float]  # your ψ₂/ψ₁ (Re, Im): m₂'s phasor, m₁'s the unit along Re
-    undamped: float  # the mode of M and K's φ₂/φ₁, where yours starts (real)
-    m1: float  # m₁'s unit arrow as drawn: cut at the plot's edge (`EDGE`) when 1 is off it
-    movable: bool  # False: A's mode doesn't swing, and keeps its own pair
-    found: bool  # your shape is A's own
+    span: float  # the plot's half-width (m₁'s part's units)
+    m1: tuple[float, float]  # m₁'s arrow's tip as drawn: the unit along Re, cut at `EDGE` of the plot if 1 is off it
+    m1_cut: bool  # m₁'s arrow runs on off the plot (to 1)
+    m2: tuple[float, float]  # m₂'s: ψ₂/ψ₁ (or the unit along Re, where m₁ doesn't move)
+    start: float | None  # dashed: the mode of M and K's ψ₂/ψ₁, where yours start, beside A's and yours
+    movable: bool  # yours, and A's mode swings: m₂'s arrow is dragged
+    closeness: float | None  # yours: how near A's own, 0 to 1 by the coupling it leaves (3 decades); else None
+    columns: str  # the ψ and λ whose Re and Im of [ψ; λψ] are this pair's columns of T
     note: str
 
 
 def own_span(s: TwoMass, r: int) -> float:
-    """Mode r's drag plot's half-width: room round the mode of M and K's ratio (m₁'s unit arrow may run off it, so
-    a mode whose m₂ moves little is still dragged finely)."""
-    return 1.5 * abs(undamped_ratios(s)[r])
+    """Mode r's plot's half-width: room round the mode of M and K's ψ₂/ψ₁ (m₁'s unit arrow may run off it, so a
+    mode whose m₂ moves little is still dragged finely)."""
+    return max(1.5 * abs(undamped_ratios(s)[r]), 0.1)
 
 
 def snap(s: TwoMass, r: int, at: complex) -> complex:
@@ -521,41 +530,116 @@ def snap(s: TwoMass, r: int, at: complex) -> complex:
     return true if abs(at - true) <= SNAP * span else at
 
 
-def own_view(s: TwoMass, own: Own) -> tuple[OwnShape, ...]:
-    """Each mode's own shape on its drag plot, and what it does to T⁻¹AT (see the module)."""
+def _complex(z: complex) -> str:
+    """A complex number to 3 figures: 0.937 - 0.073i, 15.2i, 0.349."""
+    re, im = (v if abs(v) > 1e-9 * max(abs(z), 1e-300) else 0.0 for v in (z.real, z.imag))
+    if not im:
+        return sig(re, 3)
+    if not re:
+        return f"{sig(im, 3)}i"
+    return f"{sig(re, 3)} {'+' if im > 0 else '-'} {sig(abs(im), 3)}i"
+
+
+SHAPE_TITLES = (
+    "Each pair as a shape: m₁'s part along Re, m₂'s beside it",
+    "Each pair as a shape: m₁'s part along Re, m₂'s beside it",
+    "Each pair as a shape: m₁'s part along Re, m₂'s beside it (dashed: the mode of M and K's)",
+    "Your own shapes: drag m₂'s arrow (dashed: where it started)",
+)
+
+
+def pair_shapes(s: TwoMass, which: int, own: Own = None) -> tuple[PairShape, ...]:
+    """Each pair of the basis `which` as a shape, the ψ and λ that make its columns, and what it passes on (see the
+    module). Every basis's pair is Re and Im of [ψ; λψ]: a mass alone and iω̂, a mode of M and K and iω, A's own,
+    or yours with the λ it asks for."""
     M, C, K = s.matrices()
-    ratios = own_ratios(s, own)
+    Ab = in_basis(basis_of(s, which, own), state_matrix(M, C, K))
+    names_ = names(s, which)
     phi = undamped_ratios(s)
-    Ab = in_basis(basis_of(s, OWN, own), state_matrix(M, C, K))
+    omega, V = undamped_modes(M, K)
+    ms = modes(s)
+    first = in_basis(basis_of(s, OWN, None), state_matrix(M, C, K)) if which == OWN else None
     out = []
-    for r, m in enumerate(modes(s)):
-        rho = ratios[r]
-        span = own_span(s, r)
-        m1 = min(1.0, EDGE * span)
+    for r in range(2):
         other = 2 - r
-        size = math.degrees(math.atan2(rho.imag, rho.real))
-        where = f"m₂/m₁ = {sig(abs(rho), 3)} at {sig(size, 3)}°"
-        if not m.swings:
-            out.append(
-                OwnShape(
-                    f"Mode {r + 1}",
-                    span,
-                    (1.0, 0.0),
-                    phi[r].real,
-                    m1,
-                    False,
-                    True,
-                    f"Mode {r + 1} is overdamped: it keeps A's own pair, two real decays.",
-                )
-            )
-            continue
+        cols = f"{names_[2 * r]} and {names_[2 * r + 1]}"
         share = passed(Ab, r)
         found = share < ZERO
-        note = (
-            f"{where}: A's own mode {r + 1}. Its pair passes nothing to mode {other}'s: its columns' red is gone."
-            if found
-            else f"{where}: its pair passes motion to mode {other}'s, up to {sig(100 * share, 2)} % of A's largest "
-            "term (the red in its columns)."
+        span = own_span(s, r)
+        start: float | None = None
+        closeness: float | None = None
+        movable = False
+        if which == MASS:
+            psi = np.eye(2)[r].astype(complex)
+            lam = complex(0.0, own_frequency(M, K, r))
+            span = 1.2
+            title = f"Mass {r + 1}"
+            note = (
+                f"m{'₁₂'[r]} alone: the other mass doesn't move in this pair, so it isn't a mode. The springs and "
+                f"dampers pass its motion to the other pair, up to {sig(100 * share, 2)} % of A's largest term."
+            )
+        elif which == UNDAMPED:
+            psi, lam = V[:, r].astype(complex), complex(0.0, omega[r])
+            title = f"Mode {r + 1} of M and K"
+            kind = "in step" if phi[r].real > 0 else "opposed"
+            note = f"Real: the masses exactly {kind}, as the last page's mode. " + (
+                f"Its pair passes nothing to mode {other}'s: the damping is proportional, or there is none."
+                if found
+                else f"Through the dampers it passes motion to mode {other}'s pair, up to {sig(100 * share, 2)} % "
+                "of A's largest term (the red in its columns)."
+            )
+        else:
+            m = ms[r]
+            if which == STATE or not m.swings:
+                psi, lam = m.shape, m.eigenvalues[0]
+                start = phi[r].real
+                title = f"State-space mode {r + 1}" if which == STATE else f"Your mode {r + 1}"
+                note = (
+                    f"A's own mode {r + 1}: its pair passes nothing to mode {other}'s."
+                    if m.swings
+                    else f"Mode {r + 1} is overdamped: its pair is A's own, two real decays, and passes nothing on."
+                )
+            else:
+                psi, lam = guessed_mode(M, C, K, own_ratios(s, own)[r])
+                start, movable, title = phi[r].real, True, f"Your mode {r + 1}"
+                assert first is not None, "worked out for your own basis"
+                share0 = passed(first, r)
+                closeness = 1.0 if found or share0 < ZERO else min(max(math.log10(share0 / share) / 3.0, 0.0), 1.0)
+                note = (
+                    f"A's own mode {r + 1}: its pair passes nothing to mode {other}'s, and the red in its columns "
+                    "is gone."
+                    if found
+                    else f"Its pair passes motion to mode {other}'s, up to {sig(100 * share, 2)} % of A's largest "
+                    "term (the red in its columns)."
+                )
+        if abs(psi[0]) > 1e-12 and abs(psi[1]) > 1e-12:
+            rho = complex(psi[1] / psi[0])
+            m1, m2 = min(1.0, EDGE * span), (rho.real, rho.imag)
+            angle = math.degrees(math.atan2(rho.imag, rho.real))
+            where = f"m₂/m₁ = {sig(abs(rho), 3)} at {sig(angle, 3)}°. "
+        else:  # one mass doesn't move: the other's part is the unit
+            m1, m2, where = 0.0, (min(1.0, EDGE * span), 0.0), ""
+        if abs(psi[1]) <= 1e-12:  # m₂ doesn't move: m₁'s part alone
+            m1, m2 = min(1.0, EDGE * span), (0.0, 0.0)
+        if which in (STATE, OWN) and not ms[r].swings:
+            columns = f"T's {cols}: its two real eigenvectors [ψ; λψ], one for each decay rate."
+        else:
+            columns = (
+                f"T's {cols} are Re and Im of [ψ; λψ]: ψ = ({_complex(psi[0])}, {_complex(psi[1])}), "
+                f"λ = {_complex(lam)} /s."
+            )
+        out.append(
+            PairShape(
+                title,
+                span,
+                (m1, 0.0),
+                0 < m1 < 1.0,
+                m2,
+                start,
+                movable,
+                closeness,
+                columns,
+                where + note,
+            )
         )
-        out.append(OwnShape(f"Mode {r + 1}", span, (rho.real, rho.imag), phi[r].real, m1, True, found, note))
     return tuple(out)

@@ -45,12 +45,17 @@ def table_html(
     dim_cols: int | None = None,
     nowrap: bool = False,
     marked: Sequence[Sequence[bool]] | None = None,
+    lit: Sequence[int] = (),
+    lit_color: str = "",
 ) -> str:
     """`matrix_html` with its entries already written (`texts`): a page that rounds its own (State-space modes,
-    three figures, so two 4×4s fit side by side). `marked` entries are bold in `colors.force` (a coupling term)."""
+    three figures, so two 4×4s fit side by side). `marked` entries are bold in `colors.force` (a coupling term); the
+    `lit` columns' heads are in `lit_color` and their entries bold (the pair whose shape is being dragged)."""
     wrap = "white-space:nowrap" if nowrap else ""
     th = f"<th style='{wrap}'>" if nowrap else "<th>"
-    head = "".join(f"{th}{c}</th>" for c in cols)
+    head = "".join(
+        f"<th style='{wrap}; color:{lit_color}'>{c}</th>" if k in lit else f"{th}{c}</th>" for k, c in enumerate(cols)
+    )
     out = [f"<table border='1' cellspacing='0' cellpadding='3'><tr>{th}{title}</th>{head}</tr>"]
     for r, (label, rg) in enumerate(zip(rows, row_groups)):
         cells = []
@@ -64,7 +69,8 @@ def table_html(
                 if hot
                 else (f"color:{colors.grey}" if text == "0" or dim else "")
             )
-            styles = [s for s in (wrap, colour) if s]
+            bold = "font-weight:bold" if c in lit and not hot else ""
+            styles = [s for s in (wrap, colour, bold) if s]
             style = f" style='{'; '.join(styles)}'" if styles else ""
             cells.append(f"<td align='right' bgcolor='{tint}'{style}>{text}</td>")
         out.append(f"<tr>{th}{label}</th>{''.join(cells)}</tr>")
