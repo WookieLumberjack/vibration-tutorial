@@ -10,7 +10,7 @@ modes' shapes.
 
 The (x₁, x₂) plane keeps a fixed range (`REACH`), so a path keeps its size as it shrinks. A pair's plane zooms to
 its own path (`fit`: at least ±`SMALLEST` mm, grown at once, shrunk only past half its size), so a pair a
-thousandth of the other's, a leak just starting, still shows.
+thousandth of the other's, the dampers' coupling just starting to show, still shows.
 
 Working on it: `tests/test_state_space_page.py` drags both with synthetic mouse events.
 """

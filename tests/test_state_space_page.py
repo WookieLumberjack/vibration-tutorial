@@ -101,7 +101,7 @@ def test_a_pluck_on_the_masses_plane_holds_them_there_then_lets_them_run(page, a
 
 
 def test_the_grips_change_m_k_and_c_as_it_runs(page, app):
-    page.load_trial(trial("The modes of M and K leak"))
+    page.load_trial(trial("The dampers couple the modes"))
     page.step(0.3)
     c = page.chain
     for name in ("m2", "k2", "c"):
@@ -137,12 +137,12 @@ def test_the_matrices_mark_the_coupling_by_basis(page):
     assert page.pair_planes[1].labels.title == "State-space mode 2: overdamped"
 
 
-def test_the_sizes_tab_shows_the_leak(page):
-    page.load_trial(trial("The modes of M and K leak"))
+def test_the_sizes_tab_shows_the_dampers_coupling(page):
+    page.load_trial(trial("The dampers couple the modes"))
     assert page.tabs.currentIndex() == view.TAB_SIZES
     page.step(1.0)
-    leak = 10 ** page.size_items[0].getData()[1]  # drawn on a log axis: its data are the logs
-    assert leak[0] < 0.01 and leak.max() > 1.0  # mm: mode 1 of M and K climbs from nothing
+    passed = 10 ** page.size_items[0].getData()[1]  # drawn on a log axis: its data are the logs
+    assert passed[0] < 0.01 and passed.max() > 1.0  # mm: mode 1 of M and K climbs from nothing
     assert all(points(item) for item in page.size_items)
 
 
@@ -158,7 +158,7 @@ def test_the_shapes_tab_and_the_plane_show_complex_shapes(page):
 
 def test_predictions_come_after_play(page):
     box = page.trials
-    asked = trial("The modes of M and K leak")
+    asked = trial("The dampers couple the modes")
     page.load_trial(trial("Each mass"))
     page.k2.setValue(150.0)  # the reader handles it ...
     page.step(state_space.PLAYED_AFTER + 0.1)  # ... and watches

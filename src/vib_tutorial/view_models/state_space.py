@@ -14,7 +14,7 @@ the last page's `live_bases.LiveBases` (free, no rail), and each panel has a fun
 - `matrices_view(s, basis)`: the steps, M, C and K, then A, then the basis T, then T⁻¹AT with its coupling (the
   off-diagonal blocks' entries that aren't zero) marked, and the modes' λ, f and ζ, the same in every basis.
 - `sizes(s, x, v)`: the **Sizes** tab: each pair's size, √(w₁² + w₂²), against time, in the undamped modes and in the
-  state-space modes, so the dampers' leak between the undamped modes shows beside the state-space modes' clean
+  state-space modes, so the dampers' coupling of the undamped modes shows beside the state-space modes' clean
   decays (straight lines on its log axis).
 - `shapes_view(s)`: the **Shapes** tab: each mode's ψ as phasors, one a mass, turned so m₁'s lies along the real
   axis (then m₂'s angle is the phase between them), beside the undamped mode's φ.
@@ -335,11 +335,11 @@ def sizes_note(s: TwoMass) -> str:
     M, C, K = s.matrices()
     ms = modes(s)
     rates = ", ".join(f"mode {r + 1} at σ = {sig(m.sigma, 3)} /s" for r, m in enumerate(ms) if m.swings)
-    leaks = coupling(in_basis(undamped_basis(M, K), state_matrix(M, C, K))) >= ZERO
+    coupled = coupling(in_basis(undamped_basis(M, K), state_matrix(M, C, K))) >= ZERO
     first = (
         "In the modes of M and K the dampers pass motion between the pairs: start one alone and the other's size "
         "climbs from nothing."
-        if leaks
+        if coupled
         else "In the modes of M and K nothing passes between the pairs here: the damping is proportional."
     )
     second = (
