@@ -52,7 +52,8 @@ __all__ = ["GRIPS", "MM", "StateTrial"]
 TAB_MATRICES, TAB_SIZES, TAB_SHAPES = range(3)
 MASS, UNDAMPED, STATE = range(3)  # the bases, as BASES
 BASIS_NAMES = ("Each mass: x and ẋ", "Modes of M and K: q and q̇", "State-space modes")
-STARTS = ("m₁ pulled", "Mode 2 of M and K", "State-space mode 1", "State-space mode 2")
+STARTS = ("Mode 1 of M and K", "Mode 2 of M and K", "State-space mode 1", "State-space mode 2", "m₁ pulled")
+BUTTONS = 4  # the page's Start from buttons are STARTS' first four; m₁ pulled is a trial's own (the reader can pull m₁)
 START_REACH = 0.03  # m: a start pulls the farther mass this far
 REACH = 0.045  # m: the planes' half-width
 ARROW = 0.035  # m: a unit displacement drawn this long on the (x₁, x₂) plane
@@ -392,15 +393,48 @@ def shapes_view(s: TwoMass) -> tuple[Phasors, ...]:
 
 
 def start_state(s: TwoMass, start: int) -> tuple[np.ndarray, np.ndarray]:
-    """Where a start (`STARTS`) puts the masses: (x m, v m/s), the farther mass START_REACH out."""
+    """Where a start (`STARTS`) puts the masses: (x m, v m/s), the farther mass START_REACH out. A mode of M and K
+    starts from rest, displaced along its shape; a state-space mode along Re ψ and already moving, Re(λψ): what it
+    takes for the motion to stay in that one mode when the dampers aren't proportional."""
     M, C, K = s.matrices()
-    if start == 0:
+    if start == 4:
         return np.array([START_REACH, 0.0]), np.zeros(2)
-    if start == 1:
+    if start in (0, 1):
         _, V = undamped_modes(M, K)
-        x = V[:, 1]
+        x = V[:, start]
         return x * START_REACH / float(np.abs(x).max()), np.zeros(2)
     m = state_modes(M, C, K)[start - 2]
     z = m.columns[:, 0]
     z = z * START_REACH / float(np.abs(z[:2]).max())
     return z[:2], z[2:]
+
+
+def _pair(values: np.ndarray, scale: float) -> str:
+    """Two numbers to 3 figures, a rounding error's (under a nanometer) printed as 0."""
+    a, b = (float(u) * scale for u in values[:2])
+    return f"({sig(a if abs(a) > 1e-6 else 0.0, 3)}, {sig(b if abs(b) > 1e-6 else 0.0, 3)})"
+
+
+def start_conditions(s: TwoMass, start: int) -> str:
+    """A start's initial conditions, x (mm) and ẋ (mm/s), and how it sets the masses going (the buttons' tips)."""
+    x, v = start_state(s, start)
+    how = (
+        "from rest"
+        if start == 4
+        else "displaced along the mode's shape, from rest"
+        if start in (0, 1)
+        else "displaced along Re ψ and already moving, as the damped mode moves"
+        if float(np.abs(v).max()) > 1e-9
+        else "displaced along the mode's shape, from rest: with no damping, the mode of M and K itself"
+    )
+    return f"x = {_pair(x, MM)} mm, ẋ = {_pair(v, MM)} mm/s: {how}."
+
+
+def start_note(s: TwoMass, start: int, which: int) -> str:
+    """The last start: its name, its initial conditions, and where it puts each pair in the planes' basis (mm), so
+    two starts that look alike on the masses (a mode of M and K and the state-space mode it's near) tell apart."""
+    x, v = start_state(s, start)
+    w = pairs(basis_of(s, which), x, v)[0]
+    return (
+        f"{STARTS[start]}: {start_conditions(s, start)} On the planes: {_pair(w[:2], 1.0)} and {_pair(w[2:], 1.0)} mm."
+    )
