@@ -69,6 +69,7 @@ START_REACH = 0.03  # m: a start pulls the farther mass this far
 REACH = 0.045  # m: the planes' half-width
 ARROW = 0.035  # m: a unit displacement drawn this long on the (x₁, x₂) plane
 ZERO = 1e-6  # an entry under this of its matrix's largest is zero
+EMPTY = 0.01  # the gauge is empty at your start's coupling, or this of A's largest term if that's more
 FLOOR = 1e-6  # m: the Sizes tab's log axis stops here
 EDGE = 0.9  # m₁'s arrow, when longer than the plot, is drawn to this of its half-width
 SNAP = 0.05  # a dragged shape within this of its plot's half-width of A's own snaps onto it
@@ -604,7 +605,8 @@ def pair_shapes(s: TwoMass, which: int, own: Own = None) -> tuple[PairShape, ...
                 start, movable, title = phi[r].real, True, f"Your mode {r + 1}"
                 assert first is not None, "worked out for your own basis"
                 share0 = passed(first, r)
-                closeness = 1.0 if found or share0 < ZERO else min(max(math.log10(share0 / share) / 3.0, 0.0), 1.0)
+                empty = max(share0, EMPTY)  # undamped, the start is A's own: empty a way from it, not at it
+                closeness = 1.0 if found else min(max(math.log10(empty / share) / 3.0, 0.0), 1.0)
                 note = (
                     f"A's own mode {r + 1}: its pair passes nothing to mode {other}'s, and the red in its columns "
                     "is gone."

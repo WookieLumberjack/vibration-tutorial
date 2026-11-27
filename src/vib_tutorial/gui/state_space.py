@@ -276,7 +276,8 @@ class StateSpacePage(QtWidgets.QWidget):
             gauge.setFormat("How near A's own: %p %")
             gauge.setToolTip(
                 "<p>How near your shape is to A's own mode, by the coupling it leaves: empty where you started (the "
-                "mode of M and K's), full when the red in its columns is gone, each tenth of the coupling left a "
+                "mode of M and K's) or at 1 % of A's largest term if that's more (with no dampers the modes of M "
+                "and K are A's own), full when the red in its columns is gone, each tenth of the coupling left a "
                 "third of the way.</p>"
             )
             gauge.setAccessibleName(f"How near your mode {r + 1} is to A's own")
