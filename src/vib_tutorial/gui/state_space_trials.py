@@ -46,7 +46,7 @@ TRIALS = (
     StateTrial(
         "The dampers couple the modes of M and K",
         "Started in mode 2 of <m>M</m> and <m>K</m>, the last page's mode, with mode 1's pair at zero. On the Sizes "
-        "tab, mode 1's pair (dashed) climbs from nothing to 1.48 mm in 0.41 s: the dampers pass motion from "
+        "tab, mode 1's pair (thin) climbs from nothing to 1.48 mm in 0.41 s: the dampers pass motion from "
         "mode 2 to mode 1, through the one red term left in each velocity row of <m>T<sup>−1</sup>AT</m>. The springs "
         "no longer couple these coordinates; the dampers still do.",
         basis=UNDAMPED,

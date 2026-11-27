@@ -59,8 +59,8 @@ PHASOR_HEIGHT = 250  # px: the Shapes tab's plots
 PLAYED_AFTER = 2.0  # s of run after the reader's first change: they've handled it, predictions on
 SYSTEM_FIELDS = ("m1", "m2", "k1", "k2", "k3", "c")
 COORDS_TIP = (
-    "<p>The state's four coordinates in the basis picked, the last 8 s (mm): each pair solid and dashed, in its "
-    "plane's color. Switch the basis and the whole trace is described again: the motion didn't change. A dashed line "
+    "<p>The state's four coordinates in the basis picked, the last 8 s (mm): each pair a thick line and a thin "
+    "one, in its plane's color. Switch the basis and the whole trace is described again: the motion didn't change. A dashed line "
     "marks a change of the masses, springs or dampers. Paused, drag the line at the end back to see the masses "
     "then.</p>"
 )
@@ -73,7 +73,7 @@ MATRICES_TIP = (
 )
 SIZES_TIP = (
     "<p>Each pair's size, √(a² + b²), on a log axis, in two bases at once whatever the planes show: the modes of M "
-    "and K (dashed) and A's own modes (solid). A state-space mode's size falls as e^(σt), a straight line here; a "
+    "and K (thin) and A's own modes (thick). A state-space mode's size falls as e^(σt), a straight line here; a "
     "mode of M and K started at zero climbs when the dampers couple it to the other.</p>"
 )
 SHAPES_TIP = (
@@ -476,10 +476,12 @@ class StateSpacePage(QtWidgets.QWidget):
         self.scrub.apply_theme()
         self.marks.apply_theme()
         dash = QtCore.Qt.PenStyle.DashLine
+        # A pair's second coordinate thin, not dashed: a dash is stroked one at a time, so a long dashed curve
+        # cost 12 ms a frame at 2× undamped (#478; mac_timings' "no damping" scenario).
         for k, item in enumerate(self.w_items):
-            item.setPen(pg.mkPen(c.mass[k // 2], width=2, style=dash if k % 2 else QtCore.Qt.PenStyle.SolidLine))
+            item.setPen(pg.mkPen(c.mass[k // 2], width=1 if k % 2 else 2.5))
         for k, item in enumerate(self.size_items):
-            item.setPen(pg.mkPen(c.mass[k % 2], width=2, style=dash if k < 2 else QtCore.Qt.PenStyle.SolidLine))
+            item.setPen(pg.mkPen(c.mass[k % 2], width=1 if k < 2 else 2.5))
         for items, texts in zip(self.phasor_items, self.phasor_labels):
             for i in range(2):
                 items[i].setPen(pg.mkPen(c.mass[i], width=3))
