@@ -3,7 +3,7 @@
 <a href="page:bases_page#coupling">Coupling belongs to the description</a>
 </before>
 <goals page="state_page">
-<li trial="2" problem="proportional">see the modes of <m>M</m> and <m>K</m> leak when the damping isn't proportional;</li>
+<li trial="2" problem="proportional">see the dampers couple the modes of <m>M</m> and <m>K</m> when the damping isn't proportional;</li>
 <li trial="4" problem="halving">start the masses in one of <m>A</m>'s own modes and watch it spiral in alone, at its own rate;</li>
 <li trial="6" problem="damping-ratio">see why those modes' shapes are complex, and what that means for the masses.</li>
 </goals>
@@ -89,9 +89,9 @@ but the dampers stayed where they were.</li>
 <li><b>State-space modes.</b> <m>A</m>'s own pairs: block diagonal whatever <m>C</m> is, the blocks built from
 <m>σ</m> and <m>ω</m>. This is the basis that uncouples any damped linear system <cite>foss</cite>.</li>
 </ol>
-<p>When the second basis leaks, the dampers pass motion from one mode of <m>M</m> and <m>K</m> to the other. Start
+<p>When the damping isn't proportional, the second basis stays coupled: the dampers pass motion from one mode of <m>M</m> and <m>K</m> to the other. Start
 the masses in mode 2 of <m>M</m> and <m>K</m>, with mode 1's pair at zero, and mode 1's pair climbs from nothing:
-the Sizes tab shows it beside the state-space modes, which only decay. With light damping the leak is small, which
+the Sizes tab shows it beside the state-space modes, which only decay. With light damping that coupling is weak, which
 is why the modes of <m>M</m> and <m>K</m> serve so well in practice.</p>
 
 <h3><a name="complex-shapes"></a>Complex shapes</h3>
@@ -119,7 +119,7 @@ diagonalizes <m>A</m>; the page's dampers pass through that point without stoppi
 <h3><a name="cost"></a>What it costs</h3>
 <p>The state has twice as many coordinates as the masses, and its modes are complex, so the price of uncoupling
 any damping is a doubled, complex problem. For the light damping of most structures the modes of <m>M</m> and
-<m>K</m> leak only a little, and engineers use them with a damping ratio for each mode. How much that misses, and
+<m>K</m> are coupled only a little, and engineers use them with a damping ratio for each mode. How much that misses, and
 how complex a measured mode can be, is <a href="page:complex_page#how-complex">Complex modes</a>' subject later.</p>
 
 <h3><a name="live"></a>Changing it as it runs</h3>
@@ -144,7 +144,7 @@ Both off-diagonal blocks of <m>T<sup>−1</sup>AT</m> are red.</li>
 3.624 Hz, as the single oscillator's damped frequency was. <m>T<sup>−1</sup>AT</m> is two blocks, nothing red.</li>
 <li><b>The shapes.</b> In mode 1, <m>m<sub>2</sub></m> lags <m>m<sub>1</sub></m> by 4.51°; in mode 2 by
 173.29°, 6.71° short of opposed. Light damping, nearly real shapes: the ellipses on the plane are thin.</li>
-<li><b>The leak.</b> Started 30 mm out in mode 2 of <m>M</m> and <m>K</m>, mode 1's pair climbs to 1.48 mm in
+<li><b>The coupling.</b> Started 30 mm out in mode 2 of <m>M</m> and <m>K</m>, mode 1's pair climbs to 1.48 mm in
 0.41 s. In the state-space modes, mode 2's pair halves every <m>ln 2/1.142</m> = 0.607 s and mode 1's every
 1.94 s, each on its own.</li>
 </ol>
@@ -156,7 +156,7 @@ predict what you'll see first.</p>
 <takeaways>
 <li>The state <m>z = (x, ẋ)</m> turns <m>Mẍ + Cẋ + Kx = 0</m> into <m>ż = Az</m>, twice as many first-order equations.</li>
 <li><m>A</m>'s eigenvalues come in conjugate pairs <m>σ ± iω</m>, one pair a mode, and its eigenvectors' real and imaginary parts make a real basis in which <m>T<sup>−1</sup>AT</m> is block diagonal, whatever the damping.</li>
-<li>In that basis each mode's pair spirals in on its own plane, as <m>e<sup>σt</sup></m>; in the modes of <m>M</m> and <m>K</m> the dampers leak between the modes unless they're proportional.</li>
+<li>In that basis each mode's pair spirals in on its own plane, as <m>e<sup>σt</sup></m>; in the modes of <m>M</m> and <m>K</m> the dampers couple the modes unless they're proportional.</li>
 <li>A basis of the state changes <m>A</m> to <m>T<sup>−1</sup>AT</m>, not <m>TᵀAT</m>: <m>A</m> isn't symmetric.</li>
 <li>With non-proportional damping the modes' shapes are complex: the masses don't move in step, and a mode alone traces an ellipse.</li>
 </takeaways>

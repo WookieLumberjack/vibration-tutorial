@@ -1105,7 +1105,7 @@ def state_space_modes():
     page = w.state_page
     w.pages.setCurrentWidget(page)
     page.loop.enabled = False
-    page.load_trial(next(i for i, t in enumerate(state_space.TRIALS) if t.name.startswith("The modes of M and K")))
+    page.load_trial(next(i for i, t in enumerate(state_space.TRIALS) if t.name.startswith("The dampers couple")))
     page.step(1.5)
     page.tabs.setCurrentIndex(0)  # the Matrices, its red terms
     settle()

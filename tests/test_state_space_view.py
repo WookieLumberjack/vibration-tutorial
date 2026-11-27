@@ -1,5 +1,5 @@
 """State-space modes' view model (`view_models/state_space.py`): the planes' coordinates and labels, the matrices'
-steps and their marked coupling, the Sizes tab's leak and clean decays, the Shapes tab's phasors, the starts, and
+steps and their marked coupling, the Sizes tab's coupled and clean decays, the Shapes tab's phasors, the starts, and
 `LiveBases.hold_state`."""
 
 from __future__ import annotations
@@ -65,7 +65,7 @@ def test_the_starts():
         assert np.hypot(w[2 * (1 - r)], w[2 * (1 - r) + 1]) == pytest.approx(0.0, abs=1e-9)
 
 
-def test_the_sizes_tab_shows_the_leak_and_the_clean_decay():
+def test_the_sizes_tab_shows_the_coupling_and_the_clean_decay():
     """Started in mode 2 of M and K, mode 1's undamped pair climbs from zero; the state-space pairs each decay as
     e^(σt) and nothing more."""
     M, C, K = DEFAULT.matrices()
@@ -73,7 +73,7 @@ def test_the_sizes_tab_shows_the_leak_and_the_clean_decay():
     steps = Steps(M, C, K, np.concatenate([x, xd]))
     ts, zs, _ = steps.advance(3.0)
     sz = v.sizes(DEFAULT, zs[:, :2], zs[:, 2:])
-    assert sz.undamped[0][0] == pytest.approx(v.FLOOR * v.MM) and sz.undamped[0].max() > 0.05  # mm: the leak
+    assert sz.undamped[0][0] == pytest.approx(v.FLOOR * v.MM) and sz.undamped[0].max() > 0.05  # mm: passed across
     one, two = v.modes(DEFAULT)
     for size, m in zip(sz.state, (one, two)):
         assert size == pytest.approx(size[0] * np.exp(m.sigma * (ts - ts[0])), rel=1e-6)

@@ -5363,13 +5363,13 @@ def test_state_space_worked_example():
     assert two.sigma == pytest.approx(-quoted("state_space", "1.142"), abs=5e-4)
     assert math.log(2) / 1.142 == pytest.approx(quoted("state_space", "0.607"), abs=5e-4)
     assert math.log(2) / 0.358 == pytest.approx(quoted("state_space", "1.94"), abs=5e-3)
-    # The leak: started 30 mm out in mode 2 of M and K, mode 1's pair climbs to 1.48 mm in 0.41 s.
+    # The coupling: started 30 mm out in mode 2 of M and K, mode 1's pair climbs to 1.48 mm in 0.41 s.
     x, xd = v.start_state(s, 1)
     assert np.abs(x).max() * 1e3 == pytest.approx(30.0)
     ts, zs, _ = Steps(M, C, K, np.concatenate([x, xd])).advance(2.0)
-    leak = v.sizes(s, zs[:, :2], zs[:, 2:]).undamped[0]
-    i = int(np.argmax(leak))
-    assert leak[i] == pytest.approx(quoted("state_space", "1.48"), abs=5e-3)
+    passed = v.sizes(s, zs[:, :2], zs[:, 2:]).undamped[0]
+    i = int(np.argmax(passed))
+    assert passed[i] == pytest.approx(quoted("state_space", "1.48"), abs=5e-3)
     assert ts[i] == pytest.approx(0.41, abs=5e-3)
     # The symmetric pair's dampers are proportional, C = −3M + 0.01K; the default's aren't, φ₂ᵀCφ₁ = −0.51.
     Ms, Cs, Ks = TwoMass(c=1.0).matrices()
@@ -5395,17 +5395,20 @@ def test_state_space_trials():
         for n in numbers:
             assert n in trial(name).note, (name, n)
 
-    def leak_peak(c: float) -> tuple[float, float]:
+    def passed_peak(c: float) -> tuple[float, float]:
         s = v.system(v.StateTrial("", "", c=c))
         M, C, K = s.matrices()
         x, xd = v.start_state(s, 1)
         ts, zs, _ = Steps(M, C, K, np.concatenate([x, xd])).advance(2.0)
-        leak = v.sizes(s, zs[:, :2], zs[:, 2:]).undamped[0]
-        return float(leak.max()), float(ts[int(np.argmax(leak))])
+        passed = v.sizes(s, zs[:, :2], zs[:, 2:]).undamped[0]
+        return float(passed.max()), float(ts[int(np.argmax(passed))])
 
-    peak, at = leak_peak(1.0)
-    says("The modes of M and K leak", f"{peak:.2f} mm", f"{at:.2f} s")
-    assert f"{leak_peak(2.0)[0]:.2f}" == "2.28" and "2.28 mm" in trial("The modes of M and K leak").predict.why[1]
+    peak, at = passed_peak(1.0)
+    says("The dampers couple the modes of M and K", f"{peak:.2f} mm", f"{at:.2f} s")
+    assert (
+        f"{passed_peak(2.0)[0]:.2f}" == "2.28"
+        and "2.28 mm" in trial("The dampers couple the modes of M and K").predict.why[1]
+    )
     s = v.system(trial("The same start"))
     x, xd = v.start_state(s, 1)
     sz = v.sizes(s, x[None, :], xd[None, :])

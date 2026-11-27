@@ -44,7 +44,7 @@ TRIALS = (
         start=M1_PULLED,
     ),
     StateTrial(
-        "The modes of M and K leak",
+        "The dampers couple the modes of M and K",
         "Started in mode 2 of <m>M</m> and <m>K</m>, the last page's mode, with mode 1's pair at zero. On the Sizes "
         "tab, mode 1's pair (dashed) climbs from nothing to 1.48 mm in 0.41 s: the dampers pass motion from "
         "mode 2 to mode 1, through the one red term left in each velocity row of <m>T<sup>−1</sup>AT</m>. The springs "
@@ -58,9 +58,9 @@ TRIALS = (
             2,
             ordered=True,
             why=(
-                "The leak is the dampers' doing: the term that passes the motion across is c's, so stronger dampers "
+                "The coupling is the dampers' doing: the term that passes the motion across is c's, so stronger dampers "
                 "pass more, even though everything dies away faster.",
-                "The red term in T⁻¹AT grows with c, so the leak does too: 2.28 mm instead of 1.48.",
+                "The red term in T⁻¹AT grows with c, so the motion passed across does too: 2.28 mm instead of 1.48.",
                 "",
             ),
         ),

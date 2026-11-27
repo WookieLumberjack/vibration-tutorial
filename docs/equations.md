@@ -52,7 +52,7 @@ The same two masses, now with x and ẋ together: the state, four numbers, z = (
 page shows the state two numbers at a time, on two planes, in the basis picked: each mass's x and ẋ, the modes of
 M and K (the last page's), or A's own modes. The matrices panel steps from M, C and K to A and on to T⁻¹AT in that
 basis, its off-diagonal 2×2 blocks, the coupling between the pairs, marked in red. With a 2 kg m₂ the damping isn't
-proportional (the dampers' forces in one mode push on the other), so the modes of M and K still leak: started in mode 2, mode 1's pair climbs from
+proportional (the dampers' forces in one mode push on the other), so the modes of M and K stay coupled through the dampers: started in mode 2, mode 1's pair climbs from
 zero (the *Sizes* tab, on a log axis). In A's own modes, the real and imaginary parts of each conjugate pair of
 eigenvectors, T⁻¹AT is block diagonal whatever the dampers: each pair spirals in on its own plane as e^(σt), a straight
 line on the Sizes tab. Their shapes are complex: the masses don't move in step, a mode alone traces an ellipse on the

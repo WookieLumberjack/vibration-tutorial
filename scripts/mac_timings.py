@@ -451,7 +451,7 @@ SCENARIOS = (
     Scenario(
         "State-space modes: started in mode 2 of M and K, Sizes tab",
         "the masses, three planes' paths, the four coordinates and both bases' sizes every frame (#478 Phase 4)",
-        _live_state("The modes of M and K leak", "TAB_SIZES"),
+        _live_state("The dampers couple the modes of M and K", "TAB_SIZES"),
     ),
     Scenario(
         "State-space modes: m₁ pulled, each mass's coordinates, Matrices tab",
