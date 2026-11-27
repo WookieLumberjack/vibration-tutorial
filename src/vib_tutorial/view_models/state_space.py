@@ -66,6 +66,7 @@ REACH = 0.045  # m: the planes' half-width
 ARROW = 0.035  # m: a unit displacement drawn this long on the (x₁, x₂) plane
 ZERO = 1e-6  # an entry under this of its matrix's largest is zero
 FLOOR = 1e-6  # m: the Sizes tab's log axis stops here
+EDGE = 0.9  # m₁'s arrow, when longer than the plot, is drawn to this of its half-width
 SNAP = 0.02  # a dragged shape within this of its plot's half-width of A's own snaps onto it
 
 
@@ -500,6 +501,7 @@ class OwnShape:
     span: float  # the plot's half-width (ρ's units: m₂ over m₁)
     ratio: tuple[float, float]  # your ψ₂/ψ₁ (Re, Im): m₂'s phasor, m₁'s the unit along Re
     undamped: float  # the mode of M and K's φ₂/φ₁, where yours starts (real)
+    m1: float  # m₁'s unit arrow as drawn: cut at the plot's edge (`EDGE`) when 1 is off it
     movable: bool  # False: A's mode doesn't swing, and keeps its own pair
     found: bool  # your shape is A's own
     note: str
@@ -528,6 +530,8 @@ def own_view(s: TwoMass, own: Own) -> tuple[OwnShape, ...]:
     out = []
     for r, m in enumerate(modes(s)):
         rho = ratios[r]
+        span = own_span(s, r)
+        m1 = min(1.0, EDGE * span)
         other = 2 - r
         size = math.degrees(math.atan2(rho.imag, rho.real))
         where = f"m₂/m₁ = {sig(abs(rho), 3)} at {sig(size, 3)}°"
@@ -535,9 +539,10 @@ def own_view(s: TwoMass, own: Own) -> tuple[OwnShape, ...]:
             out.append(
                 OwnShape(
                     f"Mode {r + 1}",
-                    own_span(s, r),
+                    span,
                     (1.0, 0.0),
                     phi[r].real,
+                    m1,
                     False,
                     True,
                     f"Mode {r + 1} is overdamped: it keeps A's own pair, two real decays.",
@@ -552,5 +557,5 @@ def own_view(s: TwoMass, own: Own) -> tuple[OwnShape, ...]:
             else f"{where}: its pair passes motion to mode {other}'s, up to {sig(100 * share, 2)} % of A's largest "
             "term (the red in its columns)."
         )
-        out.append(OwnShape(f"Mode {r + 1}", own_span(s, r), (rho.real, rho.imag), phi[r].real, True, found, note))
+        out.append(OwnShape(f"Mode {r + 1}", span, (rho.real, rho.imag), phi[r].real, m1, True, found, note))
     return tuple(out)

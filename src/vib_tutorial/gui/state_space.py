@@ -25,6 +25,7 @@ parts), `test_readiness.py`.
 from __future__ import annotations
 
 import dataclasses
+import math
 import time
 
 import numpy as np
@@ -230,11 +231,13 @@ class StateSpacePage(QtWidgets.QWidget):
         # --- right: Matrices, Sizes, Shapes, Theory
         matrices = QtWidgets.QWidget()
         mv = QtWidgets.QVBoxLayout(matrices)
-        self.own_box = QtWidgets.QGroupBox("Your own shapes: drag m₂'s arrow")
+        self.own_box = QtWidgets.QGroupBox("Your own shapes: drag m₂'s arrow (dashed: where it started)")
         ov = QtWidgets.QVBoxLayout(self.own_box)
         own_row = QtWidgets.QHBoxLayout()
         self.own_plots: list[pg.PlotWidget] = []
         self.own_items: list[list[pg.PlotDataItem]] = []  # m₁'s arrow, m₂'s, where it started
+        self.own_heads: list[list[pg.ArrowItem]] = []  # m₁'s arrowhead, m₂'s
+        self.own_labels: list[list[pg.TextItem]] = []  # "m₁", "m₂" by their arrows
         self.own_dots: list[DragPoint] = []
         self.own_notes: list[LiveLabel] = []
         for r in range(2):
@@ -252,7 +255,14 @@ class StateSpacePage(QtWidgets.QWidget):
             for z, item in zip((2, 1, 0), items):  # m₁'s unit arrow over m₂'s, which often lies along it
                 item.setZValue(z)
                 op.addItem(item, ignoreBounds=True)
-            dot = DragPoint(OWN_TIP, size=13, role="strong")
+            heads = [pg.ArrowItem(headLen=13, tipAngle=36, tailLen=0) for _ in range(2)]
+            texts = [pg.TextItem(f"m{'₁₂'[i]}", anchor=(0.5, 0.5)) for i in range(2)]
+            for item in (*heads, *texts):
+                item.setZValue(21)  # over the drag ring (a DragDot's 20), which m₂'s head sits in
+                op.addItem(item, ignoreBounds=True)
+            self.own_heads.append(heads)
+            self.own_labels.append(texts)
+            dot = DragPoint(OWN_TIP, size=18, role="background")  # a ring round m₂'s arrowhead, to take hold of
             dot.setProperty("mode", r)
             dot.dragged.connect(self._on_own_dragged)
             op.addItem(dot, ignoreBounds=True)
@@ -579,9 +589,13 @@ class StateSpacePage(QtWidgets.QWidget):
                 items[2 + i].setPen(pg.mkPen(c.grey, width=1.5, style=dash))
                 texts[i].setColor(c.mass[i])
             items[4].setPen(pg.mkPen(c.faint, width=1))
-        for items, dot in zip(self.own_items, self.own_dots):
+        for items, dot, heads, texts in zip(self.own_items, self.own_dots, self.own_heads, self.own_labels):
             items[0].setPen(pg.mkPen(c.mass[0], width=3))
             items[1].setPen(pg.mkPen(c.mass[1], width=3))
+            for i in range(2):
+                # through setStyle: each setStyle (the angle) puts back the style's own pen and brush
+                heads[i].setStyle(pen=pg.mkPen(c.mass[i], width=1), brush=pg.mkBrush(c.mass[i]))
+                texts[i].setColor(c.mass[i])
             items[2].setPen(pg.mkPen(c.grey, width=1.5, style=dash))
             dot.apply_theme()
         self._draw_still()
@@ -630,15 +644,32 @@ class StateSpacePage(QtWidgets.QWidget):
         self.own_box.setVisible(on)
         if not on:
             return
-        for op, items, dot, note, o in zip(
-            self.own_plots, self.own_items, self.own_dots, self.own_notes, view.own_view(self.live.system, self.own)
+        for r, (op, items, dot, note, o) in enumerate(
+            zip(
+                self.own_plots, self.own_items, self.own_dots, self.own_notes, view.own_view(self.live.system, self.own)
+            )
         ):
             span = o.span
             op.setRange(QtCore.QRectF(-span, -span, 2 * span, 2 * span), padding=0)
             a, b = o.ratio
-            items[0].setData([0.0, 1.0], [0.0, 0.0])
+            items[0].setData([0.0, o.m1], [0.0, 0.0])
             items[1].setData([0.0, a], [0.0, b])
             items[2].setData([0.0, o.undamped], [0.0, 0.0])
+            heads, texts = self.own_heads[r], self.own_labels[r]
+            heads[0].setVisible(o.m1 == 1.0)  # cut at the edge, m₁'s arrow runs on off the plot: no head
+            heads[0].setPos(1.0, 0.0)
+            heads[0].setStyle(angle=180.0)
+            heads[1].setPos(a, b)
+            heads[1].setStyle(angle=180.0 - math.degrees(math.atan2(b, a)))
+            texts[0].setText("m₁" if o.m1 == 1.0 else "m₁ (to 1) →")
+            texts[0].setAnchor((1.0, 1.0) if o.m1 < 1.0 else (0.5, 1.2))
+            texts[0].setPos(o.m1 if o.m1 < 1.0 else 0.5, 0.0)
+            n = math.hypot(a, b) or 1.0
+            # beside its arrow's middle, on the upper side, so it stays on the plot whatever the zoom: an anchor
+            # off the text's center moves it off the point by that much of its width and height
+            px, py = (-b / n, a / n) if a >= 0 else (b / n, -a / n)
+            texts[1].setAnchor((0.5 - 0.9 * px, 0.5 + 0.9 * py))
+            texts[1].setPos(a / 2, b / 2)
             dot.place(a, b)
             dot.setVisible(o.movable)
             note.setText(o.note)

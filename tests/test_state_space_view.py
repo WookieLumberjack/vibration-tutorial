@@ -138,6 +138,8 @@ def test_your_own_shapes_start_as_the_modes_of_M_and_K_and_snap_onto_As():
     assert [o.ratio[1] for o in start] == [0.0, 0.0] and all(o.movable and not o.found for o in start)
     assert [o.ratio[0] for o in start] == pytest.approx([o.undamped for o in start])
     assert "passes motion to mode 2's" in start[0].note
+    assert start[0].m1 == 1.0 and start[1].m1 == pytest.approx(v.EDGE * start[1].span)  # cut at mode 2's edge
+    assert start[1].m1 < 1.0
     assert v.basis_of(s, v.OWN) == pytest.approx(v.basis_of(s, v.OWN, v.undamped_ratios(s)))
     true = [v.ratio(m) for m in v.modes(s)]
     near = v.snap(s, 0, true[0] + 0.5 * v.SNAP * v.own_span(s, 0))
