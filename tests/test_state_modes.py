@@ -13,6 +13,7 @@ from vib_tutorial.core.bases import Steps, TwoMass, state_matrix
 from vib_tutorial.core.state_modes import (
     BASES,
     basis,
+    complex_columns,
     coordinates,
     coupling,
     fitted_eigenvalue,
@@ -173,3 +174,31 @@ def test_a_shape_too_damped_to_swing_still_makes_two_columns():
     lam = fitted_eigenvalue(M, C, K, np.array([1.0, -0.2]))
     assert lam.real < 0 and lam.imag > 0
     assert np.linalg.matrix_rank(shape_basis(M, C, K, (2.0, -0.2))) == 4
+
+
+@pytest.mark.parametrize("s", [UNEQUAL, HEAVY])
+def test_written_complex_the_state_basis_is_as_eigenvectors_and_diagonalizes_a(s):
+    M, C, K = s.matrices()
+    A = state_matrix(M, C, K)
+    ms = state_modes(M, C, K)
+    B = state_basis(M, C, K)
+    Y = complex_columns(B, [m.swings for m in ms])
+    Yb = in_basis(Y, A)
+    assert np.abs(Yb - np.diag(np.diag(Yb))).max() < 1e-9 * np.abs(A).max()  # Y⁻¹AY: λ, λ̄ down the diagonal
+    one = ms[0].eigenvalues[0]
+    assert np.diag(Yb)[:2] == pytest.approx([one, one.conjugate()])
+    for j in range(4):
+        assert A @ Y[:, j] == pytest.approx(Yb[j, j] * Y[:, j])  # each column an eigenvector, as a solver gives them
+    z = np.array([0.01, -0.02, 0.3, 0.1])
+    w, eta = coordinates(B, z), np.linalg.solve(Y, z)
+    assert eta[0] == pytest.approx((w[0] - 1j * w[1]) / 2) and eta[1] == pytest.approx(np.conj(eta[0]))
+    assert (Y @ eta).imag == pytest.approx(np.zeros(4), abs=1e-12)  # the conjugates keep z real
+
+
+@pytest.mark.parametrize(("s", "coupled"), [(UNEQUAL, True), (TwoMass(m2=2.0, c=0.0), False)])
+def test_written_complex_the_undamped_basis_couples_as_it_did(s, coupled):
+    M, C, K = s.matrices()
+    A = state_matrix(M, C, K)
+    B = undamped_basis(M, K)
+    assert (coupling(in_basis(complex_columns(B, [True, True]), A)) > 1e-6) == coupled
+    assert (coupling(in_basis(B, A)) > 1e-6) == coupled

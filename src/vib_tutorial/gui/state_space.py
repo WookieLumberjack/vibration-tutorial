@@ -8,7 +8,7 @@ the reader has handled the masses). Center: the two masses between their walls (
 mass, or drag its grips to change m, k and c as it runs), the plane of the masses' displacements with the
 state-space modes' shapes (`state_planes.ShapePlane`), the two planes of the state's coordinate pairs
 (`state_planes.PairPlane`: drag to set a pair), the run's controls, and the four coordinates against time. Right:
-the matrices' steps from M, C, K to T⁻¹AT, its coupling marked, and in your own basis each mode's shape to
+the matrices' steps from M, C, K to T⁻¹AT (or, written complex, Y⁻¹AY), its coupling marked, and in your own basis each mode's shape to
 drag (Matrices), each pair's size on a log axis in both
 modal bases (Sizes), each mode's shape as phasors (Shapes), and the Theory.
 
@@ -43,7 +43,7 @@ from .bases_view import ChainView
 from .bindings import Bindings
 from .drag import DragPoint
 from .frame_loop import FrameLoop
-from .layouts import FlowLayout
+from .layouts import FlowLayout, group
 from .lesson import Form, LiveLabel, TrialBox, plot, theory, three_panes
 from .live_parts import ChangeMarks, run_row
 from .matrix_label import MatricesLabel, scrolling
@@ -300,6 +300,13 @@ class StateSpacePage(QtWidgets.QWidget):
         self.own_reset.clicked.connect(self._on_own_reset)
         ov.addWidget(self.own_reset, 0, QtCore.Qt.AlignmentFlag.AlignLeft)
         mv.addWidget(self.own_box)
+        self.written = QtWidgets.QComboBox()
+        self.written.addItems(view.WRITTEN)
+        self.written.setToolTip(TIPS["written"])
+        self.written.setSizeAdjustPolicy(QtWidgets.QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
+        written = group("The basis written", self.written)
+        written.setToolTip(TIPS["written"])
+        mv.addWidget(written)
         self.matrices = MatricesLabel()
         self.matrices.setToolTip(MATRICES_TIP)
         self.matrices_note = LiveLabel(wrap=True)
@@ -370,7 +377,7 @@ class StateSpacePage(QtWidgets.QWidget):
 
         for field in SYSTEM_FIELDS:
             self.bindings.bind(field, getattr(self, field))
-        for field, widget in (("basis", self.basis), ("tab", self.tabs)):
+        for field, widget in (("basis", self.basis), ("tab", self.tabs), ("written", self.written)):
             self.bindings.bind(field, widget)
         self.bindings.write(StateTrial("", ""))
         self.bindings.changed.connect(self._on_field)
@@ -424,6 +431,9 @@ class StateSpacePage(QtWidgets.QWidget):
     def _on_field(self, field: str) -> None:
         if field == "tab":
             self._draw_tab()
+            return
+        if field == "written":  # how the matrices are written: nothing handled
+            self._draw_still()
             return
         self._handled()
         if field == "basis":
@@ -640,7 +650,8 @@ class StateSpacePage(QtWidgets.QWidget):
         self.shape_plane.set_still(xp)
         for plane, labels in zip(self.pair_planes, view.labels(s, which)):
             plane.set_labels(labels)
-        m = view.matrices_view(s, which, self.own, self._lit if which == view.OWN else None)
+        lit = self._lit if which == view.OWN else None
+        m = view.matrices_view(s, which, self.own, lit, self.written.currentIndex())
         self.plane_note.setText(xp.note)
         for i, button in enumerate(self.start_buttons):
             button.setToolTip(f"{TIPS['start']}<p>{view.STARTS[i]} now: {view.start_conditions(s, i)}</p>")
@@ -666,7 +677,7 @@ class StateSpacePage(QtWidgets.QWidget):
         mine = which == view.OWN
         self.own_box.setTitle(view.SHAPE_TITLES[which])
         self.own_reset.setVisible(mine)
-        shapes = view.pair_shapes(self.live.system, which, self.own)
+        shapes = view.pair_shapes(self.live.system, which, self.own, self.written.currentIndex())
         for r, o in enumerate(shapes):
             op, items, dot = self.own_plots[r], self.own_items[r], self.own_dots[r]
             heads, texts = self.own_heads[r], self.own_labels[r]
@@ -743,11 +754,16 @@ class StateSpacePage(QtWidgets.QWidget):
             return f"<p style='color:{c.muted}; margin-top:8px; margin-bottom:2px'>{text}</p>"
 
         lines = "".join(f"<br>{line}" for line in m.modes)
+        first = (
+            "1. Each pair's two state vectors, Re and Im of [ψ; λψ] (above), as T's columns: z = Tw (the last "
+            "page's x = Vq, for the state). Then Tẇ = ATw, and ẇ alone takes T⁻¹: T⁻¹AT"
+            if m.basis.symbol == "T"
+            else "1. The same basis written complex, as an eigensolver gives A's modes: each pair's y = [ψ; λψ] "
+            "(above) and its conjugate ȳ as Y's columns, z = Yη. Its coordinates come in conjugates, η = (w₁ − iw₂)/2, "
+            "so z stays real. Then Y⁻¹AY: diagonal, λ and λ̄, where the pair is A's own"
+        )
         return (
-            step(
-                "1. Each pair's two state vectors, Re and Im of [ψ; λψ] (above), as T's columns: z = Tw (the last "
-                "page's x = Vq, for the state). Then Tẇ = ATw, and ẇ alone takes T⁻¹: T⁻¹AT"
-            )
+            step(first)
             + (side_by_side(one(m.basis), one(m.product)) if wide else one(m.basis) + "<br>" + one(m.product))
             + f"<p>2. The modes, the same in every basis{lines}</p>"
             + step("3. Where A comes from: the system, in x₁ and x₂")

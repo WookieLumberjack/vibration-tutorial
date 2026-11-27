@@ -235,6 +235,11 @@ TIPS = {
     "displacement and velocity; each mode of M and K's; A's own modes, which uncouple any dampers; or your own: a "
     "shape for each mode you drag on the Matrices tab, to find A's by feel. Switch it as it runs: the motion "
     "doesn't change, only its description.</p>",
+    "written": "<p>How the Matrices tab writes the basis. Real: T, each mode's pair as two real columns, Re y and Im "
+    "y of its state vector y = [ψ; λψ], so its coordinates w are real, the planes' own, and A's modes make T⁻¹AT 2×2 "
+    "blocks of σ and ω. Complex: Y, each pair as y and its conjugate ȳ, as an eigensolver gives A's modes, so its "
+    "coordinates η come in conjugates, η = (w₁ − iw₂)/2, and A's modes make Y⁻¹AY diagonal, λ and λ̄. The same "
+    "basis either way.</p>",
     "start": "<p>Start the masses from here and let them go: in one of the last page's modes (the modes of M and K), "
     "displaced along its shape and let go from rest; or in one of A's own modes, displaced along Re ψ and already "
     "moving as the damped mode moves. Under the buttons: the last start's x and ẋ, and where it puts each pair on "

@@ -226,3 +226,15 @@ def test_your_own_shapes_are_dragged_on_the_matrices_tab_and_snap_onto_As(page, 
     assert page.own is None and "at 0°" in page.own_notes[0].text()
     page.apply_trial(state)  # a setup with shapes puts them back
     assert page.own == view.own_of(state)
+
+
+def test_the_basis_written_complex_shows_y_and_counts_as_no_handling(page):
+    page.basis.setCurrentIndex(view.STATE)
+    assert "T⁻¹AT" in page.matrices.text()
+    page._handled_at = None
+    page.written.setCurrentIndex(view.COMPLEX)
+    html = page.matrices.text()
+    assert "Y⁻¹AY" in html and "η̄₁" in html and "T⁻¹AT" not in html and "conjugate" in html
+    assert page.own_columns[0].text().startswith("Y's η₁ and η̄₁")
+    assert page._handled_at is None  # how it's written isn't handling the system
+    assert page.practice_state().written == view.COMPLEX
