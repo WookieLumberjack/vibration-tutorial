@@ -31,7 +31,7 @@ from . import state_space_figures
 from .links import load_notes, page_link
 from .trials_text import trials_html
 
-M1_PULLED, UNDAMPED_TWO, STATE_ONE, STATE_TWO = range(4)  # the starts, as STARTS
+UNDAMPED_ONE, UNDAMPED_TWO, STATE_ONE, STATE_TWO, M1_PULLED = range(5)  # the starts, as STARTS
 
 TRIALS = (
     StateTrial(
@@ -221,8 +221,10 @@ TIPS = {
     "basis": "<p>Which coordinates the two planes show the four numbers of the state in, a pair a plane: each mass's "
     "displacement and velocity; each mode of M and K's; or A's own modes, which uncouple any dampers. Switch it as "
     "it runs: the motion doesn't change, only its description.</p>",
-    "start": "<p>Start the masses from here and let them go: m₁ alone pulled; the last page's mode 2 (the modes of M "
-    "and K); or one of A's own modes, which also sets the masses moving as the mode needs.</p>",
+    "start": "<p>Start the masses from here and let them go: in one of the last page's modes (the modes of M and K), "
+    "displaced along its shape and let go from rest; or in one of A's own modes, displaced along Re ψ and already "
+    "moving as the damped mode moves. Under the buttons: the last start's x and ẋ, and where it puts each pair on "
+    "the planes. To pull one mass alone, drag it.</p>",
 }
 
 NOTES_HTML = load_notes("state_space", figures=state_space_figures.FIGURES, trials=trials_html(TRIALS))

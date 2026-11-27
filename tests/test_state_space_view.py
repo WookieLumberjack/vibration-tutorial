@@ -54,10 +54,14 @@ def test_the_planes_coordinates_and_setting_a_pair():
 
 
 def test_the_starts():
-    x, xd = v.start_state(DEFAULT, 0)
+    assert v.STARTS[v.BUTTONS :] == ("m₁ pulled",)  # a trial's own: the reader pulls m₁ by hand
+    x, xd = v.start_state(DEFAULT, 4)
     assert list(x) == [v.START_REACH, 0.0] and not xd.any()
-    x, xd = v.start_state(DEFAULT, 1)
-    assert np.abs(x).max() == pytest.approx(v.START_REACH) and not xd.any()
+    for r in (0, 1):  # a mode of M and K: displaced along it, from rest, the other undamped pair at zero
+        x, xd = v.start_state(DEFAULT, r)
+        assert np.abs(x).max() == pytest.approx(v.START_REACH) and not xd.any()
+        w = v.pairs(v.basis_of(DEFAULT, v.UNDAMPED), x, xd)[0]
+        assert np.hypot(w[2 * (1 - r)], w[2 * (1 - r) + 1]) == pytest.approx(0.0, abs=1e-9)
     for r in (0, 1):
         x, xd = v.start_state(DEFAULT, 2 + r)
         assert np.abs(x).max() == pytest.approx(v.START_REACH) and np.abs(xd).max() > 0  # a mode starts moving
@@ -115,3 +119,14 @@ def test_a_held_state_is_let_go_moving():
     live.set_rail(np.array([1.0, 0.0]))
     with pytest.raises(ValueError):
         live.hold_state(x, xd)
+
+
+def test_a_starts_note_gives_its_initial_conditions_and_tells_it_from_its_neighbor():
+    near = v.start_note(DEFAULT, 1, v.STATE)  # mode 2 of M and K, seen in A's modes: mode 1's pair isn't zero
+    assert near == (
+        "Mode 2 of M and K: x = (30, -5.58) mm, ẋ = (0, 0) mm/s: displaced along the mode's shape, from rest. "
+        "On the planes: (0.0779, -0.99) and (30.5, 1.65) mm."
+    )
+    own = v.start_note(DEFAULT, 3, v.STATE)
+    assert "ẋ = (-31.5, 21) mm/s: displaced along Re ψ and already moving" in own and "(0, 0) and (30.5, 0)" in own
+    assert "the mode of M and K itself" in v.start_note(TwoMass(m2=2.0, c=0.0), 3, v.STATE)

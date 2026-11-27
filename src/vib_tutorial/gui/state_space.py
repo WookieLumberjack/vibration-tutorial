@@ -130,15 +130,22 @@ class StateSpacePage(QtWidgets.QWidget):
         self.basis.setSizeAdjustPolicy(QtWidgets.QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
         bl.addWidget(self.basis)
         start_box = QtWidgets.QGroupBox("Start from")
-        starts = FlowLayout(start_box)
+        sl = QtWidgets.QVBoxLayout(start_box)
+        buttons = QtWidgets.QWidget()
+        starts = FlowLayout(buttons)
         self.start_buttons = []
-        for i, name in enumerate(view.STARTS):
+        for i, name in enumerate(view.STARTS[: view.BUTTONS]):
             b = QtWidgets.QPushButton(name)
-            b.setToolTip(TIPS["start"])
             b.clicked.connect(self._on_start_clicked)
             b.setProperty("start", i)
             starts.add(b)
             self.start_buttons.append(b)
+        sl.addWidget(buttons)
+        self.start_note = QtWidgets.QLabel()  # the last start's initial conditions: rewritten only on a change
+        self.start_note.setWordWrap(True)
+        mute(self.start_note)
+        sl.addWidget(self.start_note)
+        self._started: tuple[int, TwoMass] | None = None  # the last start and the system it started on
 
         self.trials = TrialBox(
             [t.name for t in TRIALS],
@@ -322,6 +329,8 @@ class StateSpacePage(QtWidgets.QWidget):
     def start(self, which: int) -> None:
         """Start the masses from `view.STARTS[which]` and let them go."""
         x, v = view.start_state(self.live.system, which)
+        self._started = (which, self.live.system)
+        self._draw_start()
         self.scrub.hide()
         self.live.hold_state(x, v)
         self._on_let_go()
@@ -370,6 +379,8 @@ class StateSpacePage(QtWidgets.QWidget):
     def _on_grabbed(self) -> None:
         self.scrub.hide()
         self._handled()
+        self._started = None  # a hand's start, not a button's
+        self._draw_start()
 
     def _on_point_pulled(self, x1: float, x2: float) -> None:
         """The (x₁, x₂) plane's hand (mm): the masses held there at rest."""
@@ -425,6 +436,8 @@ class StateSpacePage(QtWidgets.QWidget):
         """Back to rest at t = 0, waiting for Start."""
         self.live.reset()
         self.scrub.hide()
+        self._started = None
+        self._draw_start()
         self.running = False
         self.run_button.rest()
         self._draw_live()
@@ -491,6 +504,14 @@ class StateSpacePage(QtWidgets.QWidget):
         self._draw_still()
         self._draw_tab()
 
+    def _draw_start(self) -> None:
+        """Under the buttons: the last start's x and ẋ and its place on the planes (nothing once a hand moved them)."""
+        started = self._started
+        self.start_note.setVisible(started is not None)
+        if started is not None:
+            which, s = started  # as it was when it started: the masses or springs changed since don't rewrite it
+            self.start_note.setText(view.start_note(s, which, self.which))
+
     @coalesce.coalesced
     def _draw_still(self, *_: object) -> None:
         """What moves only when the reader changes something: the shapes on the plane, the planes' labels, the
@@ -502,6 +523,9 @@ class StateSpacePage(QtWidgets.QWidget):
             plane.set_labels(labels)
         m = view.matrices_view(s, which)
         self.plane_note.setText(xp.note)
+        for i, button in enumerate(self.start_buttons):
+            button.setToolTip(f"{TIPS['start']}<p>{view.STARTS[i]} now: {view.start_conditions(s, i)}</p>")
+        self._draw_start()
         self.matrices.set_variants(self._matrices_html(m, True), self._matrices_html(m, False))
         self.matrices_note.setText(m.note)
         self.sizes_note.setText(view.sizes_note(s))

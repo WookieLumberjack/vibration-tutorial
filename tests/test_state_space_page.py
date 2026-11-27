@@ -60,6 +60,8 @@ def test_it_opens_at_rest_on_its_system_with_things_to_try_after_the_controls(pa
     assert page.practice_state() == view.StateTrial("", "")
     assert "dampers still do" in page.matrices_note.text() and "f = 2.421 Hz" in page.matrices.text()
     assert [p.labels.title for p in page.pair_planes] == ["Mode 1 of M and K", "Mode 2 of M and K"]
+    assert [b.text() for b in page.start_buttons] == list(view.STARTS[: view.BUTTONS])
+    assert page.start_note.isHidden()
     assert 5 <= len(state_space.TRIALS) <= 8
 
 
@@ -71,7 +73,10 @@ def test_a_start_in_a_state_space_mode_leaves_the_other_pair_still(page):
     w = pairs_now(page)
     assert np.hypot(w[0], w[1]) < 1e-9 * np.hypot(w[2], w[3])
     assert all(points(item) for item in page.w_items)
+    assert page.start_note.text().startswith("State-space mode 2: x = (30, -5.63) mm")
+    assert "On the planes: (0, 0) and (30.5, 0) mm." in page.start_note.text()
     page.basis.setCurrentIndex(view.UNDAMPED)  # switched as it runs: the motion is the same, its description not
+    assert "On the planes: (-0.0466, 0.991)" in page.start_note.text()
     w = pairs_now(page)
     assert np.hypot(w[0], w[1]) > 1e-3
     assert page.running
