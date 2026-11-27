@@ -512,7 +512,7 @@ class PairShape:
     start: float | None  # dashed: the mode of M and K's ψ₂/ψ₁, where yours start, beside A's and yours
     movable: bool  # yours, and A's mode swings: m₂'s arrow is dragged
     closeness: float | None  # yours: how near A's own, 0 to 1 by the coupling it leaves (3 decades); else None
-    columns: str  # the ψ and λ whose Re and Im of [ψ; λψ] are this pair's columns of T
+    columns: str  # the λ, ψ (T's x rows) and λψ (its ẋ rows) whose Re and Im are this pair's columns of T
     note: str
 
 
@@ -622,11 +622,16 @@ def pair_shapes(s: TwoMass, which: int, own: Own = None) -> tuple[PairShape, ...
         if abs(psi[1]) <= 1e-12:  # m₂ doesn't move: m₁'s part alone
             m1, m2 = min(1.0, EDGE * span), (0.0, 0.0)
         if which in (STATE, OWN) and not ms[r].swings:
-            columns = f"T's {cols}: its two real eigenvectors [ψ; λψ], one for each decay rate."
-        else:
+            a, b = ms[r].eigenvalues
             columns = (
-                f"T's {cols} are Re and Im of [ψ; λψ]: ψ = ({_complex(psi[0])}, {_complex(psi[1])}), "
-                f"λ = {_complex(lam)} /s."
+                f"T's {cols}: its two real eigenvectors [ψ; λψ], one for each decay rate, λ = {_complex(a)} and "
+                f"{_complex(b)} /s: rows x₁, x₂ are ψ, rows ẋ₁, ẋ₂ are λψ."
+            )
+        else:
+            v = lam * psi  # the velocities' rows: ẋ = λx along the mode
+            columns = (
+                f"T's {cols} are Re and Im of [ψ; λψ], with λ = {_complex(lam)} /s. Rows x₁, x₂: ψ = "
+                f"({_complex(psi[0])}, {_complex(psi[1])}). Rows ẋ₁, ẋ₂: λψ = ({_complex(v[0])}, {_complex(v[1])})."
             )
         out.append(
             PairShape(

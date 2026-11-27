@@ -167,14 +167,17 @@ def test_your_own_shapes_start_as_the_modes_of_M_and_K_and_snap_onto_As():
 
 @pytest.mark.parametrize("which", range(4))
 def test_every_bases_pairs_are_re_and_im_of_psi_and_lambda_psi(which):
-    """Each pair's shape gives the ψ and λ whose [ψ; λψ] makes its columns of T, in every basis."""
+    """Each pair's shape gives the λ, ψ and λψ whose Re and Im are its columns of T, row by row, in every basis."""
     s = TwoMass(m2=2.0, c=3.0)
     T = v.basis_of(s, which)
     for r, o in enumerate(v.pair_shapes(s, which)):
-        found = re.search(r"ψ = \((.+), (.+)\), λ = (.+) /s", o.columns)
+        found = re.search(
+            r"λ = (.+) /s\. Rows x₁, x₂: ψ = \((.+), (.+)\)\. Rows ẋ₁, ẋ₂: λψ = \((.+), (.+)\)\.", o.columns
+        )
         assert found, o.columns
-        psi1, psi2, lam = (complex(g.replace(" ", "").replace("i", "j")) for g in found.groups())
-        y = np.array([psi1, psi2, lam * psi1, lam * psi2])
+        lam, psi1, psi2, v1, v2 = (complex(g.replace(" ", "").replace("i", "j")) for g in found.groups())
+        assert [v1, v2] == pytest.approx([lam * psi1, lam * psi2], rel=0.02, abs=0.01 * abs(lam))
+        y = np.array([psi1, psi2, v1, v2])  # T's rows x₁, x₂, ẋ₁, ẋ₂, as printed
         assert T[:, 2 * r] == pytest.approx(y.real, rel=0.02, abs=0.02 * np.abs(y).max())
         assert T[:, 2 * r + 1] == pytest.approx(y.imag, rel=0.02, abs=0.02 * np.abs(y).max())
     mass = v.pair_shapes(s, v.MASS)
@@ -192,5 +195,10 @@ def test_your_own_shapes_survive_the_trials_fields():
 def test_an_overdamped_mode_keeps_As_own_pair_in_your_basis():
     s = TwoMass(m2=2.0, c=20.0)
     two = v.pair_shapes(s, v.OWN)[1]
-    assert not two.movable and "overdamped" in two.note and "real eigenvectors" in two.columns
+    assert (
+        not two.movable
+        and "overdamped" in two.note
+        and "real eigenvectors" in two.columns
+        and "rows ẋ₁, ẋ₂ are λψ" in two.columns
+    )
     assert v.basis_of(s, v.OWN)[:, 2:] == pytest.approx(v.basis_of(s, v.STATE)[:, 2:])
