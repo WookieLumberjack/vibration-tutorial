@@ -138,6 +138,9 @@ class StateSpacePage(QtWidgets.QWidget):
             b = QtWidgets.QPushButton(name)
             b.clicked.connect(self._on_start_clicked)
             b.setProperty("start", i)
+            # Laid out by its whole rect: macOS's layout rect leaves out the bezel's shadow, and the first line's
+            # button, with no room above it for that, was cut 4 px short and drawn as a square bevel.
+            b.setAttribute(QtCore.Qt.WidgetAttribute.WA_LayoutUsesWidgetRect)
             starts.add(b)
             self.start_buttons.append(b)
         sl.addWidget(buttons)
