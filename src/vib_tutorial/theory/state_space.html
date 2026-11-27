@@ -67,6 +67,38 @@ under the matrices, and they never move when the basis changes.</p>
 2×2 blocks. The two on the diagonal are each pair's own motion; the two off it are the <b>coupling</b> between the
 pairs, drawn in red where they aren't zero.</p>
 
+<h3><a name="complex-form"></a>Real or complex: two ways to write the basis</h3>
+<p>On the last page one arrow was one column of <m>V</m>: in a real mode the masses move in proportion,
+<m>x = φq</m>, along a line. The state's mode doesn't. Its displacements and velocities are a quarter cycle apart
+(when <m>x</m> is largest, <m>ẋ</m> is zero), so a mode alone traces an ellipse, and an ellipse needs a plane: two
+real directions, or one complex one.</p>
+<p>An eigensolver (NumPy's or MATLAB's <i>eig</i>) gives the complex one. It hands back <m>A</m>'s four eigenvectors
+<m>y<sub>1</sub>, ȳ<sub>1</sub>, y<sub>2</sub>, ȳ<sub>2</sub></m> with their eigenvalues, and with those as the
+columns of <m>Y</m>, <m>A</m> in that basis is diagonal:</p>
+<eq>Y = \begin{bmatrix} y_1 & \bar y_1 & y_2 & \bar y_2 \end{bmatrix}, \qquad Y^{-1} A Y = \mathrm{diag}(\lambda_1, \bar\lambda_1, \lambda_2, \bar\lambda_2)</eq>
+<p>This is the form most texts write. Its coordinates <m>η = Y<sup>−1</sup>z</m> are complex, and since
+<m>z</m> is real they come in conjugate pairs, <m>η̄<sub>1</sub></m> the conjugate of <m>η<sub>1</sub></m>. So
+<m>z = y<sub>1</sub>η<sub>1</sub> + ȳ<sub>1</sub>η̄<sub>1</sub> + y<sub>2</sub>η<sub>2</sub> +
+ȳ<sub>2</sub>η̄<sub>2</sub> = 2 Re(y<sub>1</sub>η<sub>1</sub> + y<sub>2</sub>η<sub>2</sub>)</m>. Half of
+<m>Y</m> would do, then: two complex columns and two complex numbers, four real numbers in all, as many as the state
+has. But the <m>Re</m> keeps that from being a matrix times a vector (multiply <m>η</m> by <m>i</m> and <m>z</m>
+isn't multiplied by <m>i</m>). Writing the conjugates in too, as <m>Y</m> does, makes it <m>z = Yη</m> again, at
+the price of carrying every coordinate twice.</p>
+<p>The page writes the same basis real. Each pair of columns <m>(y, ȳ)</m> is traded for
+<m>(Re y, Im y)</m>, two real vectors spanning the same plane:</p>
+<eq>\begin{bmatrix} y & \bar y \end{bmatrix} = \begin{bmatrix} \mathrm{Re}\,y & \mathrm{Im}\,y \end{bmatrix} \begin{bmatrix} 1 & 1 \\ i & -i \end{bmatrix}, \qquad \eta = \tfrac{1}{2}(w_1 - i w_2)</eq>
+<p>So <m>T</m> and <m>Y</m> are one basis, and <m>T<sup>−1</sup>AT</m> and <m>Y<sup>−1</sup>AY</m> one matrix
+written two ways: each 2×2 block <m>[σ ω; −ω σ]</m> has the eigenvalues <m>λ</m> and <m>λ̄</m>, and that 2×2
+matrix turns it into <m>diag(λ, λ̄)</m>. The page draws the real form because all it shows is real: the
+coordinates <m>w</m> are the planes' axes, the masses move by real amounts, and each block shows <m>σ</m> and
+<m>ω</m> as they are. Each plane is in fact <m>η</m>'s complex plane, doubled and mirrored
+(<m>w<sub>1</sub> = 2 Re η</m>, <m>w<sub>2</sub> = −2 Im η</m>): the point spiraling in is
+<m>η = η<sub>0</sub>e<sup>λt</sup></m>, which turns counterclockwise, drawn clockwise.</p>
+<p>Pick <i>Complex: Y</i> under the shapes on the Matrices tab to see <m>Y</m> and <m>Y<sup>−1</sup>AY</m> for any
+basis. <m>A</m>'s own modes make it diagonal; in the modes of <m>M</m> and <m>K</m> the dampers still couple them,
+in red, just as in <m>T</m>. The <a href="page:complex_page#state-space-coordinates">Complex modes</a> page, later,
+works in <m>η</m>.</p>
+
 <h3><a name="compare"></a>Three bases compared</h3>
 <ol>
 <li><b>Each mass: x and ẋ.</b> Each plane is one mass's displacement and velocity, the velocity scaled by
@@ -198,9 +230,10 @@ predict what you'll see first.</p>
 <li><m>A</m>'s eigenvalues come in conjugate pairs <m>σ ± iω</m>, one pair a mode, and its eigenvectors' real and imaginary parts make a real basis in which <m>T<sup>−1</sup>AT</m> is block diagonal, whatever the damping.</li>
 <li>In that basis each mode's pair spirals in on its own plane, as <m>e<sup>σt</sup></m>; in the modes of <m>M</m> and <m>K</m> the dampers couple the modes unless they're proportional.</li>
 <li>Only <m>A</m>'s eigenvectors make a pair that keeps its motion to itself: a guessed shape passes motion to the other pair until it is the mode's own.</li>
+<li>A mode can be written complex, <m>y</m> and <m>ȳ</m> as the columns of <m>Y</m> with <m>Y<sup>−1</sup>AY</m> diagonal, or real, <m>Re y</m> and <m>Im y</m> as <m>T</m>'s with 2×2 blocks: the same basis, the real one's coordinates the planes' own.</li>
 <li>A basis of the state changes <m>A</m> to <m>T<sup>−1</sup>AT</m>, not <m>TᵀAT</m>: <m>A</m> isn't symmetric.</li>
 <li>With non-proportional damping the modes' shapes are complex: the masses don't move in step, and a mode alone traces an ellipse.</li>
 </takeaways>
 <h3><a name="notation"></a>Notation</h3>
-<notation>m x matrices identity state lambda zeta omega_i psi rho_shape T_state omega_hat q V_basis</notation>
+<notation>m x matrices identity state lambda zeta omega_i psi rho_shape T_state eta_state omega_hat q V_basis</notation>
 <reading>strang foss caughey inman</reading>

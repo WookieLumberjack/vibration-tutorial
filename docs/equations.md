@@ -56,7 +56,8 @@ basis, its off-diagonal 2×2 blocks, the coupling between the pairs, marked in r
 proportional (the dampers' forces in one mode push on the other), so the modes of M and K stay coupled through the dampers: started in mode 2, mode 1's pair climbs from
 zero (the *Sizes* tab, on a log axis). In A's own modes, the real and imaginary parts of each conjugate pair of
 eigenvectors, T⁻¹AT is block diagonal whatever the dampers: each pair spirals in on its own plane as e^(σt), a straight
-line on the Sizes tab. Their shapes are complex: the masses don't move in step, a mode alone traces an ellipse on the
+line on the Sizes tab. The same basis can be shown complex, as an eigensolver gives it: Y, each pair's y and ȳ, with Y⁻¹AY
+diagonal, λ and λ̄. Their shapes are complex: the masses don't move in step, a mode alone traces an ellipse on the
 (x₁, x₂) plane, and the *Shapes* tab draws each mass's part as a phasor. Heavy enough dampers make a mode overdamped,
 its block two real decay rates. Masses, springs and dampers change as it runs by their grips, the basis switches as it
 runs, and dragging a point on a coordinate plane sets that pair.

@@ -43,6 +43,7 @@ from ..core.state_modes import (
     BASES,
     StateMode,
     basis,
+    complex_columns,
     coordinates,
     coupling,
     guessed_mode,
@@ -63,6 +64,8 @@ __all__ = ["GRIPS", "MM", "StateTrial"]
 TAB_MATRICES, TAB_SIZES, TAB_SHAPES = range(3)
 MASS, UNDAMPED, STATE, OWN = range(4)  # the bases, as BASES, then the reader's own
 BASIS_NAMES = ("Each mass: x and ẋ", "Modes of M and K: q and q̇", "State-space modes", "Your own: shapes you drag")
+REAL, COMPLEX = range(2)  # how the Matrices tab writes the basis: T's Re y and Im y, or Y's y and ȳ
+WRITTEN = ("Real: T, each pair Re y and Im y", "Complex: Y, each pair y and ȳ")
 STARTS = ("Mode 1 of M and K", "Mode 2 of M and K", "State-space mode 1", "State-space mode 2", "m₁ pulled")
 BUTTONS = 4  # the page's Start from buttons are STARTS' first four; m₁ pulled is a trial's own (the reader can pull m₁)
 START_REACH = 0.03  # m: a start pulls the farther mass this far
@@ -88,6 +91,7 @@ class StateTrial:
     basis: int = UNDAMPED  # the planes' basis, an index into BASES
     start: int | None = None  # where the trial starts the masses, an index into STARTS (None: at rest)
     tab: int = TAB_MATRICES
+    written: int = REAL  # the Matrices tab's basis written real (T) or complex (Y), an index into WRITTEN
     own1: tuple[float, float] | None = None  # your own basis: mode 1's ψ₂/ψ₁ as (Re, Im); None: the mode of M and K's
     own2: tuple[float, float] | None = None
     predict: Prediction | Placement | None = None  # asked once the reader has played (Things to try)
@@ -277,12 +281,18 @@ def _grid(
 ) -> Grid:
     scale = float(np.abs(A).max()) or 1.0
     n = A.shape[0]
-    entries = tuple(tuple("0" if abs(float(a)) < ZERO * scale else sig(float(a), 3) for a in row) for row in A)
+    entries = tuple(tuple(_entry(complex(a), scale) for a in row) for row in A)
     marked = tuple(
-        tuple(coupling and blocks and i // 2 != j // 2 and abs(float(A[i, j])) >= ZERO * scale for j in range(n))
+        tuple(coupling and blocks and i // 2 != j // 2 and abs(complex(A[i, j])) >= ZERO * scale for j in range(n))
         for i in range(n)
     )
     return Grid(symbol, unit, entries, marked, blocks, rows, cols, *groups)
+
+
+def _entry(a: complex, scale: float) -> str:
+    """A matrix's entry to 3 figures, a part under ZERO of the matrix's largest entry dropped (0 if both are)."""
+    re, im = (v if abs(v) >= ZERO * scale else 0.0 for v in (a.real, a.imag))
+    return _complex(complex(re, im)) if re or im else "0"
 
 
 X = ("x₁", "x₂")
@@ -307,8 +317,25 @@ def mode_line(r: int, m: StateMode) -> str:
     return f"Mode {r + 1}: λ = {sig(a, 3)} and {sig(b, 3)} /s: overdamped, two decays, no swing"
 
 
-def matrices_view(s: TwoMass, which: int, own: Own = None, lit: int | None = None) -> MatricesView:
-    """The steps from M, C, K to A in the basis `which` (see the module), and what they say."""
+def complex_names(s: TwoMass, which: int) -> tuple[str, ...]:
+    """The coordinates η = Y⁻¹z of the basis `which` written complex: η and η̄ a swinging pair, an overdamped mode's
+    two real ones as they were."""
+    real = names(s, which)
+    return tuple(
+        n
+        for r, swings in enumerate(pairs_swing(s, which))
+        for n in ((f"η{'₁₂'[r]}", f"η̄{'₁₂'[r]}") if swings else real[2 * r : 2 * r + 2])
+    )
+
+
+def pairs_swing(s: TwoMass, which: int) -> tuple[bool, ...]:
+    """Each pair of the basis `which` is Re and Im of a complex [ψ; λψ]: all but an overdamped mode's, two real ones."""
+    return tuple(which not in (STATE, OWN) or m.swings for m in modes(s))
+
+
+def matrices_view(s: TwoMass, which: int, own: Own = None, lit: int | None = None, written: int = REAL) -> MatricesView:
+    """The steps from M, C, K to A in the basis `which` (see the module), written real (T) or complex (Y), and what
+    they say."""
     M, C, K = s.matrices()
     A = state_matrix(M, C, K)
     B = basis_of(s, which, own)
@@ -352,11 +379,21 @@ def matrices_view(s: TwoMass, which: int, own: Own = None, lit: int | None = Non
             if swinging
             else "A's own modes: uncoupled whatever the dampers; an overdamped mode's block is its two decay rates."
         )
+    T, Tb, symbol = B, Ab, "T"
+    if written == COMPLEX:
+        T = complex_columns(B, pairs_swing(s, which))
+        Tb, symbol, w = in_basis(T, A), "Y", complex_names(s, which)
+        note = note.replace("T⁻¹AT", "Y⁻¹AY")
+        if which == STATE:
+            note = (
+                "A's own modes, written complex: Y⁻¹AY is diagonal whatever the dampers, each mode's λ and λ̄ (an "
+                "overdamped mode's two decay rates)."
+            )
     return MatricesView(
         given,
         _grid("A", "", A, STATE_NAMES, STATE_NAMES, (BY_HALF, BY_HALF)),
-        dataclasses.replace(_grid("T", "", B, STATE_NAMES, w, (PLAIN, PLAIN), blocks=True, coupling=False), lit=lit),
-        dataclasses.replace(_grid("T⁻¹AT", "", Ab, w, w, (BY_HALF, BY_HALF), blocks=True), lit=lit),
+        dataclasses.replace(_grid(symbol, "", T, STATE_NAMES, w, (PLAIN, PLAIN), blocks=True, coupling=False), lit=lit),
+        dataclasses.replace(_grid(f"{symbol}⁻¹A{symbol}", "", Tb, w, w, (BY_HALF, BY_HALF), blocks=True), lit=lit),
         tuple(mode_line(r, m) for r, m in enumerate(ms)),
         coupled,
         note,
@@ -549,13 +586,13 @@ SHAPE_TITLES = (
 )
 
 
-def pair_shapes(s: TwoMass, which: int, own: Own = None) -> tuple[PairShape, ...]:
+def pair_shapes(s: TwoMass, which: int, own: Own = None, written: int = REAL) -> tuple[PairShape, ...]:
     """Each pair of the basis `which` as a shape, the ψ and λ that make its columns, and what it passes on (see the
     module). Every basis's pair is Re and Im of [ψ; λψ]: a mass alone and iω̂, a mode of M and K and iω, A's own,
     or yours with the λ it asks for."""
     M, C, K = s.matrices()
     Ab = in_basis(basis_of(s, which, own), state_matrix(M, C, K))
-    names_ = names(s, which)
+    names_ = names(s, which) if written == REAL else complex_names(s, which)
     phi = undamped_ratios(s)
     omega, V = undamped_modes(M, K)
     ms = modes(s)
@@ -626,13 +663,14 @@ def pair_shapes(s: TwoMass, which: int, own: Own = None) -> tuple[PairShape, ...
         if which in (STATE, OWN) and not ms[r].swings:
             a, b = ms[r].eigenvalues
             columns = (
-                f"T's {cols}: its two real eigenvectors [ψ; λψ], one for each decay rate, λ = {_complex(a)} and "
+                f"{'TY'[written]}'s {cols}: its two real eigenvectors [ψ; λψ], one for each decay rate, λ = {_complex(a)} and "
                 f"{_complex(b)} /s: rows x₁, x₂ are ψ, rows ẋ₁, ẋ₂ are λψ."
             )
         else:
             v = lam * psi  # the velocities' rows: ẋ = λx along the mode
+            are = "are Re and Im of [ψ; λψ]" if written == REAL else "are y = [ψ; λψ] and its conjugate ȳ"
             columns = (
-                f"T's {cols} are Re and Im of [ψ; λψ], with λ = {_complex(lam)} /s. Rows x₁, x₂: ψ = "
+                f"{'TY'[written]}'s {cols} {are}, with λ = {_complex(lam)} /s. Rows x₁, x₂: ψ = "
                 f"({_complex(psi[0])}, {_complex(psi[1])}). Rows ẋ₁, ẋ₂: λψ = ({_complex(v[0])}, {_complex(v[1])})."
             )
         out.append(

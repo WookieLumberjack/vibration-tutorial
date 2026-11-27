@@ -774,10 +774,10 @@ SYMBOLS = (
         "eta_state",
         "η, Y, y<sub>r</sub>",
         "the state's modal coordinates, Y<sup>−1</sup>z; Y the eigenvectors y<sub>r</sub> = [ψ<sub>r</sub>; "
-        "λ<sub>r</sub>ψ<sub>r</sub>] as columns (η is also a loss factor)",
+        "λ<sub>r</sub>ψ<sub>r</sub>] and their conjugates as columns (η is also a loss factor)",
         "–",
-        "complex_page",
-        "state-space-coordinates",
+        "state_page",
+        "complex-form",
     ),
     Symbol(
         "mpc",

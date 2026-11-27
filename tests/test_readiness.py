@@ -251,10 +251,11 @@ def _state_views(state):
         v.pairs(T, x, xd),
         v.place(T, np.zeros(4), 0, 1.0, 2.0),
         v.x_plane(s),
-        v.matrices_view(s, state.basis, own),
+        v.matrices_view(s, state.basis, own, None, state.written),
+        v.matrices_view(s, state.basis, own, None, v.COMPLEX),
         v.sizes(s, x, xd),
         v.shapes_view(s),
-        v.pair_shapes(s, state.basis, own),
+        v.pair_shapes(s, state.basis, own, state.written),
         lb.energy_view(*live.since_change()),
     )
 

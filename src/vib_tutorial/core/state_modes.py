@@ -51,6 +51,7 @@ from __future__ import annotations
 
 import cmath
 import math
+from collections.abc import Sequence
 from dataclasses import dataclass
 
 import numpy as np
@@ -251,6 +252,19 @@ def basis(name: str, M: np.ndarray, C: np.ndarray, K: np.ndarray) -> np.ndarray:
 def in_basis(B: np.ndarray, A: np.ndarray) -> np.ndarray:
     """B⁻¹AB: A in the basis whose columns are B's."""
     return np.linalg.solve(B, A @ B)
+
+
+def complex_columns(B: np.ndarray, swinging: Sequence[bool]) -> np.ndarray:
+    """Y: a paired real basis written complex, as an eigensolver gives A's modes. Each swinging pair's columns
+    (Re y, Im y) become (y, ȳ), [y ȳ] = [Re y  Im y]·P with P = [[1, 1], [i, −i]]; a pair that doesn't swing (an
+    overdamped mode's two real eigenvectors) is kept. Coordinates η = Y⁻¹z then come in conjugates, η = (w₁ − iw₂)/2,
+    and z = Yη = 2 Re(yη) stays real; Y⁻¹AY = P⁻¹(B⁻¹AB)P, diagonal (λ, λ̄) where B's pair is A's own."""
+    P = np.array([[1.0, 1.0], [1.0j, -1.0j]])
+    Y = B.astype(complex)
+    for r, swings in enumerate(swinging):
+        if swings:
+            Y[:, 2 * r : 2 * r + 2] = B[:, 2 * r : 2 * r + 2] @ P
+    return Y
 
 
 def coordinates(B: np.ndarray, z: np.ndarray) -> np.ndarray:

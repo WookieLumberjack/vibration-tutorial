@@ -211,3 +211,22 @@ def test_with_no_dampers_the_gauge_is_full_at_the_start_and_empties_as_you_drag_
     away = v.pair_shapes(s, v.OWN, (start[0] + 1.5j, start[1]))
     assert away[0].closeness is not None and away[0].closeness < 0.5 and "passes motion" in away[0].note
     assert away[1].closeness == 1.0
+
+
+def test_written_complex_the_matrices_are_y_and_a_diagonal_y_inverse_a_y():
+    s = TwoMass(m2=2.0, c=3.0)
+    own = v.matrices_view(s, v.STATE, written=v.COMPLEX)
+    assert own.basis.symbol == "Y" and own.product.symbol == "Y⁻¹AY"
+    assert own.basis.cols == ("η₁", "η̄₁", "η₂", "η̄₂") and own.product.rows == own.basis.cols
+    assert all(own.product.entries[i][j] == "0" for i in range(4) for j in range(4) if i != j)  # λ, λ̄ alone
+    lam = v.modes(s)[0].eigenvalues[0]
+    assert own.product.entries[0][0] == v._complex(lam) and own.product.entries[1][1] == v._complex(lam.conjugate())
+    assert "diagonal" in own.note and not any(any(row) for row in own.product.marked)
+    undamped = v.matrices_view(s, v.UNDAMPED, written=v.COMPLEX)
+    assert any(any(row) for row in undamped.product.marked)  # the dampers still couple, as in T
+    real = v.matrices_view(s, v.STATE)
+    assert real.basis.symbol == "T" and "2×2 block" in real.note
+    over = v.matrices_view(TwoMass(m2=2.0, c=20.0), v.STATE, written=v.COMPLEX)
+    assert over.basis.cols[2:] == v.names(TwoMass(m2=2.0, c=20.0), v.STATE)[2:]  # an overdamped mode's stay real
+    shape = v.pair_shapes(s, v.STATE, written=v.COMPLEX)[0]
+    assert shape.columns.startswith("Y's η₁ and η̄₁ are y = [ψ; λψ] and its conjugate ȳ")
