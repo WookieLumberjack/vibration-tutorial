@@ -89,6 +89,12 @@ but the dampers stayed where they were.</li>
 <li><b>State-space modes.</b> <m>A</m>'s own pairs: block diagonal whatever <m>C</m> is, the blocks built from
 <m>σ</m> and <m>ω</m>. This is the basis that uncouples any damped linear system <cite>foss</cite>.</li>
 </ol>
+<p>All of these pairs have one form. Each pair's two columns of <m>T</m> are the real and imaginary parts of
+<m>[ψ; λψ]</m> for some shape <m>ψ</m> and some <m>λ</m>: one mass alone with <m>λ = iω̂</m> in the first basis,
+a mode of <m>M</m> and <m>K</m> with <m>λ = iω</m> in the second, and <m>A</m>'s own <m>ψ</m> and
+<m>λ</m> in the third. The Matrices tab draws each pair's <m>ψ</m> above <m>T</m>, <m>m<sub>2</sub></m>'s part as
+an arrow beside <m>m<sub>1</sub></m>'s, and gives its <m>ψ</m> and <m>λ</m>; only the third's are the ones
+<m>A</m> keeps to itself.</p>
 <p>When the damping isn't proportional, the second basis stays coupled: the dampers pass motion from one mode of <m>M</m> and <m>K</m> to the other. Start
 the masses in mode 2 of <m>M</m> and <m>K</m>, with mode 1's pair at zero, and mode 1's pair climbs from nothing:
 the Sizes tab shows it beside the state-space modes, which only decay. With light damping that coupling is weak, which
@@ -112,7 +118,8 @@ proportional.</p>
 <p>Why do <m>A</m>'s eigenvectors uncouple, and nothing else? Pick <i>Your own</i> as the planes' coordinates and
 make the basis yourself. For each mode you guess a shape, <m>ψ = (1, ρ)</m>: <m>m<sub>1</sub></m>'s part is 1 and
 <m>m<sub>2</sub></m>'s is <m>ρ</m>, a complex number you drag on the Matrices tab, its size how far
-<m>m<sub>2</sub></m> swings for each unit of <m>m<sub>1</sub></m>'s and its angle the phase between them. Your
+<m>m<sub>2</sub></m> swings for each unit of <m>m<sub>1</sub></m>'s and its angle the phase between them. The
+columns of <m>T</m> it makes are lit as you drag, and a gauge fills as the coupling it leaves falls. Your
 guesses start at the modes of <m>M</m> and <m>K</m>, real.</p>
 <p>A shape needs a <m>λ</m> to make a pair <m>[ψ; λψ]</m>. If <m>ψ</m> were a mode,
 <m>(λ²M + λC + K)ψ = 0</m>, and multiplying on the left by <m>ψᴴ</m>, the conjugate transpose, turns that into

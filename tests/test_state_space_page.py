@@ -196,9 +196,10 @@ def test_reset_and_defaults(page, main_window):
 
 
 def test_your_own_shapes_are_dragged_on_the_matrices_tab_and_snap_onto_As(page, app):
-    assert page.own_box.isHidden()
+    assert not page.own_box.isHidden() and page.own_reset.isHidden()  # each basis's shapes, read only
+    assert not page.own_dots[0].isVisible() and page.own_gauges[0].isHidden()
     page.load_trial(trial("Find A's modes by hand"))
-    assert page.which == view.OWN and page.running and not page.own_box.isHidden()
+    assert page.which == view.OWN and page.running and not page.own_reset.isHidden()
     page.tabs.setCurrentIndex(view.TAB_MATRICES)
     page.own_plots[0].grab()
     app.processEvents()
@@ -213,7 +214,10 @@ def test_your_own_shapes_are_dragged_on_the_matrices_tab_and_snap_onto_As(page, 
     drag(page.own_plots[0], QtCore.QPointF(away.real, away.imag), QtCore.QPointF(true.real, true.imag), app)
     assert page.own is not None and page.own[0] == true  # snapped on
     assert page.own[1] == view.undamped_ratios(s)[1]
-    assert "A's own mode 1" in page.own_notes[0].text()
+    assert "A's own mode 1" in page.own_notes[0].text() and page.own_gauges[0].value() == 100
+    lit = page.matrices.text()
+    assert "<th style='white-space:nowrap; color:" in lit  # the dragged pair's columns lit in T and T⁻¹AT
+    assert lit.index("T⁻¹AT") < lit.index("Where A comes from")  # the basis first, under its shapes
     page.step(0.5)
     assert np.abs(pairs_now(page)[2:]).max() < 1e-6  # your mode 2's plane falls still
     state = page.practice_state()

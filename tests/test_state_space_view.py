@@ -4,6 +4,8 @@ steps and their marked coupling, the Sizes tab's coupled and clean decays, the S
 
 from __future__ import annotations
 
+import re
+
 import numpy as np
 import pytest
 
@@ -134,12 +136,13 @@ def test_a_starts_note_gives_its_initial_conditions_and_tells_it_from_its_neighb
 
 def test_your_own_shapes_start_as_the_modes_of_M_and_K_and_snap_onto_As():
     s = TwoMass(m2=2.0, c=3.0)
-    start = v.own_view(s, None)
-    assert [o.ratio[1] for o in start] == [0.0, 0.0] and all(o.movable and not o.found for o in start)
-    assert [o.ratio[0] for o in start] == pytest.approx([o.undamped for o in start])
+    start = v.pair_shapes(s, v.OWN)
+    assert [o.m2[1] for o in start] == [0.0, 0.0] and all(o.movable for o in start)
+    assert [o.closeness for o in start] == [0.0, 0.0]
+    assert [o.m2[0] for o in start] == pytest.approx([o.start for o in start])
     assert "passes motion to mode 2's" in start[0].note
-    assert start[0].m1 == 1.0 and start[1].m1 == pytest.approx(v.EDGE * start[1].span)  # cut at mode 2's edge
-    assert start[1].m1 < 1.0
+    assert start[0].m1 == (1.0, 0.0) and not start[0].m1_cut
+    assert start[1].m1[0] == pytest.approx(v.EDGE * start[1].span) and start[1].m1_cut  # cut at mode 2's edge
     assert v.basis_of(s, v.OWN) == pytest.approx(v.basis_of(s, v.OWN, v.undamped_ratios(s)))
     true = [v.ratio(m) for m in v.modes(s)]
     near = v.snap(s, 0, true[0] + 0.5 * v.SNAP * v.own_span(s, 0))
@@ -148,14 +151,35 @@ def test_your_own_shapes_start_as_the_modes_of_M_and_K_and_snap_onto_As():
     assert v.snap(s, 0, far) == far
     assert v.snap(s, 1, complex(100.0, -100.0)) == complex(v.own_span(s, 1), -v.own_span(s, 1))  # kept on its plot
     mine = (true[0], v.undamped_ratios(s)[1])
-    one, two = v.own_view(s, mine)
-    assert one.found and "A's own mode 1" in one.note and not two.found
+    one, two = v.pair_shapes(s, v.OWN, mine)
+    assert one.closeness == 1.0 and "A's own mode 1" in one.note and two.closeness == 0.0
+    halfway = v.pair_shapes(s, v.OWN, (0.5 * (true[0] + v.undamped_ratios(s)[0]), mine[1]))[0].closeness
+    assert halfway is not None and 0.0 < halfway < 1.0
     assert "each mode's pair is A's own" in v.matrices_view(s, v.OWN, mine).note
     assert v.matrices_view(s, v.OWN, tuple(true)).note.startswith("Your own shapes are A's own modes")
     marked = v.matrices_view(s, v.OWN, mine).product.marked
     assert not any(marked[i][j] for i in (2, 3) for j in (0, 1))  # mode 1's columns: no red
     assert any(marked[i][j] for i in (0, 1) for j in (2, 3))  # mode 2's still passes to mode 1
     assert v.labels(s, v.OWN)[0].title == "Your mode 1"
+    lit = v.matrices_view(s, v.OWN, mine, lit=1)
+    assert lit.basis.lit == lit.product.lit == 1 and v.matrices_view(s, v.OWN, mine).basis.lit is None
+
+
+@pytest.mark.parametrize("which", range(4))
+def test_every_bases_pairs_are_re_and_im_of_psi_and_lambda_psi(which):
+    """Each pair's shape gives the ψ and λ whose [ψ; λψ] makes its columns of T, in every basis."""
+    s = TwoMass(m2=2.0, c=3.0)
+    T = v.basis_of(s, which)
+    for r, o in enumerate(v.pair_shapes(s, which)):
+        found = re.search(r"ψ = \((.+), (.+)\), λ = (.+) /s", o.columns)
+        assert found, o.columns
+        psi1, psi2, lam = (complex(g.replace(" ", "").replace("i", "j")) for g in found.groups())
+        y = np.array([psi1, psi2, lam * psi1, lam * psi2])
+        assert T[:, 2 * r] == pytest.approx(y.real, rel=0.02, abs=0.02 * np.abs(y).max())
+        assert T[:, 2 * r + 1] == pytest.approx(y.imag, rel=0.02, abs=0.02 * np.abs(y).max())
+    mass = v.pair_shapes(s, v.MASS)
+    assert mass[0].m2 == (0.0, 0.0) and mass[1].m1 == (0.0, 0.0) and "m₂ alone" in mass[1].note
+    assert all(o.closeness is None and not o.movable for b in range(3) for o in v.pair_shapes(s, b))
 
 
 def test_your_own_shapes_survive_the_trials_fields():
@@ -167,6 +191,6 @@ def test_your_own_shapes_survive_the_trials_fields():
 
 def test_an_overdamped_mode_keeps_As_own_pair_in_your_basis():
     s = TwoMass(m2=2.0, c=20.0)
-    two = v.own_view(s, None)[1]
-    assert not two.movable and "overdamped" in two.note
+    two = v.pair_shapes(s, v.OWN)[1]
+    assert not two.movable and "overdamped" in two.note and "real eigenvectors" in two.columns
     assert v.basis_of(s, v.OWN)[:, 2:] == pytest.approx(v.basis_of(s, v.STATE)[:, 2:])

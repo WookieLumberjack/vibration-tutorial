@@ -166,14 +166,24 @@ def fitted_eigenvalue(M: np.ndarray, C: np.ndarray, K: np.ndarray, shape: np.nda
     return complex(sigma, max(omega, LEAST_SWING * natural))
 
 
+def guessed_mode(M: np.ndarray, C: np.ndarray, K: np.ndarray, ratio: complex) -> tuple[np.ndarray, complex]:
+    """A guessed shape ψ ∝ (1, `ratio`), scaled and turned as A's own, and the λ it asks for (see the module)."""
+    psi = np.array([1.0, ratio], dtype=complex)
+    psi = psi * _as_real(psi)
+    return psi, fitted_eigenvalue(M, C, K, psi)
+
+
+def pair_columns(psi: np.ndarray, lam: complex) -> np.ndarray:
+    """The pair (4×2) Re y and Im y of y = [ψ; λψ]: every basis's pairs here are made so (`mass_basis`: ψ a mass
+    alone and λ = iω̂; `undamped_basis`: ψ = φ and λ = iω; A's own and the guessed ones: their ψ and λ)."""
+    y = np.concatenate([psi, lam * np.asarray(psi, dtype=complex)])
+    return np.column_stack([y.real, y.imag])
+
+
 def shape_columns(M: np.ndarray, C: np.ndarray, K: np.ndarray, ratio: complex) -> np.ndarray:
     """The pair (4×2: Re y, Im y) a guessed shape ψ ∝ (1, `ratio`) makes, scaled and turned as A's own (see the
     module)."""
-    psi = np.array([1.0, ratio], dtype=complex)
-    psi = psi * _as_real(psi)
-    lam = fitted_eigenvalue(M, C, K, psi)
-    y = np.concatenate([psi, lam * psi])
-    return np.column_stack([y.real, y.imag])
+    return pair_columns(*guessed_mode(M, C, K, ratio))
 
 
 def shape_basis(M: np.ndarray, C: np.ndarray, K: np.ndarray, ratios: tuple[complex, ...]) -> np.ndarray:

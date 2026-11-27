@@ -121,6 +121,7 @@ class StateSpacePage(QtWidgets.QWidget):
         self._handled_at: float | None = None
         self._grip_start = 0.0
         self.own: view.Own = None  # your own basis's shapes (ψ₂/ψ₁ a mode), None: the modes of M and K's
+        self._lit: int | None = None  # the pair whose shape was dragged last: its columns lit in T and T⁻¹AT
         self._w_held = np.zeros(4)  # the coordinates when a pair was taken (mm): the other pair stays there
         self._budget = Budget()
         self.bindings = Bindings(StateTrial, self)
@@ -231,7 +232,7 @@ class StateSpacePage(QtWidgets.QWidget):
         # --- right: Matrices, Sizes, Shapes, Theory
         matrices = QtWidgets.QWidget()
         mv = QtWidgets.QVBoxLayout(matrices)
-        self.own_box = QtWidgets.QGroupBox("Your own shapes: drag m₂'s arrow (dashed: where it started)")
+        self.own_box = QtWidgets.QGroupBox(view.SHAPE_TITLES[view.UNDAMPED])
         ov = QtWidgets.QVBoxLayout(self.own_box)
         own_row = QtWidgets.QHBoxLayout()
         self.own_plots: list[pg.PlotWidget] = []
@@ -240,12 +241,14 @@ class StateSpacePage(QtWidgets.QWidget):
         self.own_labels: list[list[pg.TextItem]] = []  # "m₁", "m₂" by their arrows
         self.own_dots: list[DragPoint] = []
         self.own_notes: list[LiveLabel] = []
+        self.own_columns: list[LiveLabel] = []  # the ψ and λ that make the pair's columns of T
+        self.own_gauges: list[QtWidgets.QProgressBar] = []  # yours: how near A's own
         for r in range(2):
             column = QtWidgets.QVBoxLayout()
             op = pg.PlotWidget()
             _square(op, OWN_HEIGHT)
             op.setToolTip(OWN_TIP)
-            op.setAccessibleName(f"Your shape for mode {r + 1}: m₂'s phasor over m₁'s, dragged")
+            op.setAccessibleName(f"Pair {r + 1}'s shape: m₂'s phasor beside m₁'s")
             op.setTitle(f"Mode {r + 1}")
             op.setLabel("bottom", "Re")
             op.setLabel("left", "Im")
@@ -268,8 +271,23 @@ class StateSpacePage(QtWidgets.QWidget):
             op.addItem(dot, ignoreBounds=True)
             note = LiveLabel(wrap=True)
             mute(note)
+            gauge = QtWidgets.QProgressBar()
+            gauge.setRange(0, 100)
+            gauge.setFormat("How near A's own: %p %")
+            gauge.setToolTip(
+                "<p>How near your shape is to A's own mode, by the coupling it leaves: empty where you started (the "
+                "mode of M and K's), full when the red in its columns is gone, each tenth of the coupling left a "
+                "third of the way.</p>"
+            )
+            gauge.setAccessibleName(f"How near your mode {r + 1} is to A's own")
+            columns = LiveLabel(wrap=True)
+            mute(columns)
             column.addWidget(op)
+            column.addWidget(gauge)
             column.addWidget(note)
+            column.addWidget(columns)
+            self.own_gauges.append(gauge)
+            self.own_columns.append(columns)
             own_row.addLayout(column, 1)
             self.own_plots.append(op)
             self.own_items.append(items)
@@ -408,6 +426,7 @@ class StateSpacePage(QtWidgets.QWidget):
             return
         self._handled()
         if field == "basis":
+            self._lit = None
             self._draw_still()
             if not self.running:
                 self._draw_live()
@@ -442,6 +461,7 @@ class StateSpacePage(QtWidgets.QWidget):
         ratios = list(view.own_ratios(s, self.own))
         ratios[r] = view.snap(s, r, complex(x, y))
         self.own = (ratios[0], ratios[1])
+        self._lit = r
         self._handled()
         self._draw_still()
         if not self.running:
@@ -449,6 +469,7 @@ class StateSpacePage(QtWidgets.QWidget):
 
     def _on_own_reset(self) -> None:
         self.own = None
+        self._lit = None
         self._draw_still()
         if not self.running:
             self._draw_live()
@@ -618,7 +639,7 @@ class StateSpacePage(QtWidgets.QWidget):
         self.shape_plane.set_still(xp)
         for plane, labels in zip(self.pair_planes, view.labels(s, which)):
             plane.set_labels(labels)
-        m = view.matrices_view(s, which, self.own)
+        m = view.matrices_view(s, which, self.own, self._lit if which == view.OWN else None)
         self.plane_note.setText(xp.note)
         for i, button in enumerate(self.start_buttons):
             button.setToolTip(f"{TIPS['start']}<p>{view.STARTS[i]} now: {view.start_conditions(s, i)}</p>")
@@ -639,40 +660,48 @@ class StateSpacePage(QtWidgets.QWidget):
         self._name_coordinates()
 
     def _draw_own(self) -> None:
-        """Your own shapes' drag plots, above the matrices when your own basis is picked."""
-        on = self.which == view.OWN
-        self.own_box.setVisible(on)
-        if not on:
-            return
-        for r, (op, items, dot, note, o) in enumerate(
-            zip(
-                self.own_plots, self.own_items, self.own_dots, self.own_notes, view.own_view(self.live.system, self.own)
-            )
-        ):
+        """Each pair as a shape, above the matrices: m₂'s arrow beside m₁'s, dragged in your own basis."""
+        which = self.which
+        mine = which == view.OWN
+        self.own_box.setTitle(view.SHAPE_TITLES[which])
+        self.own_reset.setVisible(mine)
+        shapes = view.pair_shapes(self.live.system, which, self.own)
+        for r, o in enumerate(shapes):
+            op, items, dot = self.own_plots[r], self.own_items[r], self.own_dots[r]
+            heads, texts = self.own_heads[r], self.own_labels[r]
+            op.setTitle(o.title)
             span = o.span
             op.setRange(QtCore.QRectF(-span, -span, 2 * span, 2 * span), padding=0)
-            a, b = o.ratio
-            items[0].setData([0.0, o.m1], [0.0, 0.0])
-            items[1].setData([0.0, a], [0.0, b])
-            items[2].setData([0.0, o.undamped], [0.0, 0.0])
-            heads, texts = self.own_heads[r], self.own_labels[r]
-            heads[0].setVisible(o.m1 == 1.0)  # cut at the edge, m₁'s arrow runs on off the plot: no head
-            heads[0].setPos(1.0, 0.0)
+            m1 = o.m1[0]
+            a, b = o.m2
+            for item in (items[0], heads[0], texts[0]):
+                item.setVisible(m1 > 0)
+            for item in (items[1], heads[1], texts[1]):
+                item.setVisible(bool(a or b))
+            items[0].setData([0.0, m1], [0.0, 0.0])
+            heads[0].setVisible(m1 > 0 and not o.m1_cut)  # cut at the edge, m₁'s arrow runs on off the plot
+            heads[0].setPos(m1, 0.0)
             heads[0].setStyle(angle=180.0)
+            texts[0].setText("m₁ (to 1) →" if o.m1_cut else "m₁")
+            texts[0].setAnchor((1.0, -0.1) if o.m1_cut else (0.5, -0.1))  # under its arrow: m₂'s label is above
+            texts[0].setPos(m1 if o.m1_cut else m1 / 2, 0.0)
+            items[1].setData([0.0, a], [0.0, b])
             heads[1].setPos(a, b)
             heads[1].setStyle(angle=180.0 - math.degrees(math.atan2(b, a)))
-            texts[0].setText("m₁" if o.m1 == 1.0 else "m₁ (to 1) →")
-            texts[0].setAnchor((1.0, 1.0) if o.m1 < 1.0 else (0.5, 1.2))
-            texts[0].setPos(o.m1 if o.m1 < 1.0 else 0.5, 0.0)
             n = math.hypot(a, b) or 1.0
             # beside its arrow's middle, on the upper side, so it stays on the plot whatever the zoom: an anchor
             # off the text's center moves it off the point by that much of its width and height
             px, py = (-b / n, a / n) if a >= 0 else (b / n, -a / n)
             texts[1].setAnchor((0.5 - 0.9 * px, 0.5 + 0.9 * py))
             texts[1].setPos(a / 2, b / 2)
+            items[2].setVisible(o.start is not None)
+            items[2].setData([0.0, o.start or 0.0], [0.0, 0.0])
             dot.place(a, b)
             dot.setVisible(o.movable)
-            note.setText(o.note)
+            self.own_gauges[r].setVisible(o.closeness is not None)
+            self.own_gauges[r].setValue(round(100 * (o.closeness or 0.0)))
+            self.own_notes[r].setText(o.note)
+            self.own_columns[r].setText(o.columns)
 
     def _name_coordinates(self) -> None:
         """The coordinates plot's legend, from the planes' axes."""
@@ -686,15 +715,27 @@ class StateSpacePage(QtWidgets.QWidget):
 
     @staticmethod
     def _matrices_html(m: view.MatricesView, wide: bool = True) -> str:
-        """The steps: M, C and K; A; T and T⁻¹AT (side by side if `wide`, else one above the other); the modes. Each matrix a table as the Substructuring page's are
-        (`matrix_table`): its rows and columns labeled with their coordinates, its blocks tinted, a coupling term
-        bold in color."""
+        """The steps, the basis first, under the shapes that make it: T and T⁻¹AT (side by side if `wide`, else one
+        above the other) and the modes; then where A comes from, M, C and K, then A. Each matrix a table as the
+        Substructuring page's are (`matrix_table`): its rows and columns labeled with their coordinates, its blocks
+        tinted, a coupling term bold in color, the dragged pair's columns lit."""
         c = colors
 
         def one(g: view.Grid) -> str:
             title = f"{g.symbol}<br><span style='font-weight:normal'>{g.unit}</span>" if g.unit else g.symbol
+            lit = () if g.lit is None else (2 * g.lit, 2 * g.lit + 1)
+            color = c.mass[g.lit] if g.lit is not None else ""
             return table_html(
-                g.entries, g.rows, g.cols, g.row_groups, g.col_groups, title, nowrap=True, marked=g.marked
+                g.entries,
+                g.rows,
+                g.cols,
+                g.row_groups,
+                g.col_groups,
+                title,
+                nowrap=True,
+                marked=g.marked,
+                lit=lit,
+                lit_color=color,
             )
 
         def step(text: str) -> str:
@@ -702,16 +743,16 @@ class StateSpacePage(QtWidgets.QWidget):
 
         lines = "".join(f"<br>{line}" for line in m.modes)
         return (
-            step("1. The system, in x₁ and x₂")
-            + side_by_side(*(one(g) for g in m.given))
-            + step("2. The state z = (x₁, x₂, ẋ₁, ẋ₂): ż = Az")
-            + one(m.state)
-            + step(
-                "3. The basis's state vectors as T's columns, z = Tw (the last page's x = Vq, for the state). Then "
-                "Tẇ = ATw, and ẇ alone takes T⁻¹: T⁻¹AT"
+            step(
+                "1. Each pair's two state vectors, Re and Im of [ψ; λψ] (above), as T's columns: z = Tw (the last "
+                "page's x = Vq, for the state). Then Tẇ = ATw, and ẇ alone takes T⁻¹: T⁻¹AT"
             )
             + (side_by_side(one(m.basis), one(m.product)) if wide else one(m.basis) + "<br>" + one(m.product))
-            + f"<p>4. The modes, the same in every basis{lines}</p>"
+            + f"<p>2. The modes, the same in every basis{lines}</p>"
+            + step("3. Where A comes from: the system, in x₁ and x₂")
+            + side_by_side(*(one(g) for g in m.given))
+            + step("4. The state z = (x₁, x₂, ẋ₁, ẋ₂): ż = Az")
+            + one(m.state)
         )
 
     @coalesce.coalesced(covers=("_draw_live",))
