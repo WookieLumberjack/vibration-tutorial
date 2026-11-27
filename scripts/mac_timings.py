@@ -315,6 +315,28 @@ def _live_state(trial: str, tab: str):
     return setup
 
 
+def _undamped_pluck(tab: str):
+    """State-space modes with no damping and m₂ plucked from the end of its travel (the user's slow case,
+    2026-11-27): the motion never dies away, so the masses' path stays a full Lissajous and the coordinates fill
+    their window."""
+
+    def setup(w):
+        import numpy as np
+
+        from vib_tutorial.view_models import state_space as view
+
+        page = w.state_page
+        w.pages.setCurrentWidget(page)
+        page.c.setValue(0.0)
+        page.tabs.setCurrentIndex(getattr(view, tab))
+        page.live.hold(np.array([0.0, view.REACH]))
+        page.live.let_go()
+        page._run(True)
+        return page, 1.0
+
+    return setup
+
+
 def _turning_arrows(trial: str, tab: str):
     """`_live_bases`, with v₁ held and turned the whole time as a drag turns it (the page's own `_on_arrow_moved`,
     about once a frame), so the plane and the coordinates' whole window are described again each step."""
@@ -457,6 +479,11 @@ SCENARIOS = (
         "State-space modes: m₁ pulled, each mass's coordinates, Matrices tab",
         "the masses, three planes' paths and the four coordinates every frame (#478 Phase 4)",
         _live_state("Each mass", "TAB_MATRICES"),
+    ),
+    Scenario(
+        "State-space modes: no damping, m₂ plucked from the end of its travel, Matrices tab",
+        "the user's slow case: paths that never shrink, on all three planes and the coordinates (#478 Phase 4)",
+        _undamped_pluck("TAB_MATRICES"),
     ),
     Scenario(
         "Quarter-car: driven over its road",
