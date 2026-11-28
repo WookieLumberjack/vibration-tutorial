@@ -318,19 +318,19 @@ def test_a_pages_first_show_opens_its_theory(app):
     text = w.show_theory().toPlainText()
     assert "Start here" in text and "How a page works" in text
     leave_theory()
-    w.show_page("transient_page")
+    w.show_page("forcing_page")
     assert tab() == "Theory"  # its first show
     leave_theory()
     w.show_page("sdof_page")
     assert tab() != "Theory"  # seen: the tab the reader left
-    w.show_page("transient_page")
+    w.show_page("forcing_page")
     assert tab() != "Theory"
-    w.act("trial", "periodic_page", "1")  # a goal's trial shows its page set up, not its notes
+    w.act("trial", "pendulum_page", "1")  # a goal's trial shows its page set up, not its notes
     assert tab() != "Theory"
     w.show_page("sdof_page")
-    w.show_page("periodic_page")
+    w.show_page("pendulum_page")
     assert tab() != "Theory"  # and that was its first show
-    assert set(str(theming.settings().value(INTRODUCED)).split(",")) == {"sdof_page", "transient_page", "periodic_page"}
+    assert set(str(theming.settings().value(INTRODUCED)).split(",")) == {"sdof_page", "forcing_page", "pendulum_page"}
     practice = "⌘F2" if sys.platform == "darwin" else "Ctrl+F2"  # the keys as this platform writes them
     assert practice in text and practice in ABOUT_HTML.format(version="", keys=links.keys_html())
     listed = " ".join(keys for keys, _ in links.KEYS)
@@ -4424,8 +4424,7 @@ def test_shock_page(app):
     "name",
     [
         "sdof_page",
-        "transient_page",
-        "periodic_page",
+        "forcing_page",
         "isolation_page",
         "deriving_page",
         "rigid_body_page",

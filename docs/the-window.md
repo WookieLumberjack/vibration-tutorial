@@ -23,7 +23,7 @@ or follows them. Paused, a page that simulates as it runs (this one, Duffing & M
 The groups (each one's page here describes its pages): the first six are the course's spine, read in order;
 the next five are branches into application areas; the Appendix holds pages that are to be folded into others.
 
-1. **[One oscillator](one-oscillator.md).** Single oscillator, Pendulums, Vibration isolation, Transient response and Periodic forcing.
+1. **[One oscillator](one-oscillator.md).** Single oscillator, Pendulums, Vibration isolation and Forcing an oscillator.
 2. **[Equations](equations.md).** Deriving the equations and 3D rigid body.
 3. **[Modes](modes.md).** *Simulation & modal analysis* (the chain above), Energy methods, FRF matrix, Complex modes and Rigid body on mounts.
 4. **[Building models](building-models.md).** Modal coupling, Substructuring (CMS) and Numerical integration.

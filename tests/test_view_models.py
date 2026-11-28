@@ -157,6 +157,70 @@ def test_isolation_chart():
     assert (float(v.now.x[0]), float(v.now.y[0])) == pytest.approx((1500.0, 5.0))
 
 
+# ------------------------------------------------------------------ Forcing an oscillator
+
+
+def test_forcing_info_and_the_step_worked_example():
+    """The readouts on the defaults, as the notes' worked example rounds them, and the convolution 0.3 s after a
+    1 N push, from the run's own record (752 µm)."""
+    from vib_tutorial.core.sdof import Oscillator
+    from vib_tutorial.core.transient import Pulse, PulseKind
+    from vib_tutorial.view_models import forcing as fv
+    from vib_tutorial.view_models import live_forcing as lf
+
+    osc = fv.oscillator(fv.ForcingTrial("", ""))
+    assert osc == Oscillator()
+    text = fv.info(osc)
+    assert f"f<sub>n</sub> = {quoted('forcing', '3.18')} Hz" in text
+    assert f"T<sub>n</sub> = {quoted('forcing', '0.314')} s" in text
+    assert f"ω<sub>d</sub> = {quoted('forcing', '19.97')} rad/s" in text
+    live = lf.LiveForcing(osc)
+    live.apply(Pulse(PulseKind.STEP, 1.0))
+    for _ in range(30):
+        live.advance(1 / 60)
+    v = fv.conv_view(lf.convolution(live, 0.3), osc)
+    micro = f"{1000 * quoted('forcing', '0.752'):g} µm"
+    assert f"At {quoted('forcing', '0.3')} s after" in v.note and v.note.count(micro) == 2  # the area and the run
+    assert "Apply a force" in fv.conv_view(None, osc).note
+    assert fv.drive_note(live).startswith("Acting: a push of 1 N (held")
+
+
+def test_forcing_harmonics_the_square_wave_worked_example():
+    """The Harmonics tab's note on the page's square wave, once steady (its lines the series', to 0.05 %)."""
+    import numpy as np
+
+    from vib_tutorial.core.periodic import response_coefficients
+    from vib_tutorial.view_models import forcing as fv
+    from vib_tutorial.view_models.live_forcing import Harmonics
+
+    state = fv.ForcingTrial("", "")
+    osc, wave = fv.oscillator(state), fv.forcing(state)
+    X = response_coefficients(osc, wave, 5)
+    v = fv.harmonics_view(Harmonics(1.0, wave.coefficients(5), X, True), osc, wave, 5, True)
+    shares = [quoted("forcing", "80.6 %"), quoted("forcing", "19.1 %"), quoted("forcing", "0.3 %")]
+    assert v.note == f"The swing's power by harmonic: 3rd {shares[0]:g} %, 1st {shares[1]:g} %, 5th {shares[2]:g} %."
+    assert np.allclose(v.response_series.y, np.abs(X)) and v.receptance.x.size == 400
+    waiting = fv.harmonics_view(Harmonics(1.0, wave.coefficients(5), X, False), osc, wave, 5, False)
+    assert waiting.response.x.size == 0 and "Waiting" in waiting.note and waiting.receptance.x.size == 0
+
+
+def test_forcing_pulse_spectrum_built_by_hand():
+    import numpy as np
+
+    from vib_tutorial.core.transient import PulseKind, peak_ratio
+    from vib_tutorial.view_models import forcing as fv
+    from vib_tutorial.view_models.live_forcing import PulsePeak
+
+    points = [PulsePeak(PulseKind.RECTANGLE, 0.5, 1.85, 0.05), PulsePeak(PulseKind.HALF_SINE, 0.8, 1.65, 0.05)]
+    v = fv.pulse_view(points, 0.05, False)
+    assert v.theory == {} and list(v.points["RECTANGLE"].y) == [1.85] and v.points["RAMP"].x.size == 0
+    assert "2 pulses" in v.note and "half-sine pulse 0.8 periods long peaked at 1.65" in v.note
+    shown = fv.pulse_view(points, 0.05, True)
+    assert np.allclose(shown.theory["RAMP"].y, peak_ratio(0.05, PulseKind.RAMP, fv.RATIOS))
+    assert fv.pulse_view(points, 0.2, False).points["RECTANGLE"].x.size == 0  # another damping's points aside
+    assert fv.wave_hz(fv.ForcingTrial("", "", tune=3)) == pytest.approx(1.0610, abs=1e-4)
+
+
 # ------------------------------------------------------------------ Duffing & Mathieu
 # The page's run without the page: the simulator set up as a preset sets it, its stretches taken into a Record.
 

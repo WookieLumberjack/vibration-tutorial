@@ -1405,22 +1405,24 @@ def test_single_oscillator_worked_example_and_springs():
     assert Oscillator(1, 200, 0).natural_hz == pytest.approx(quoted("sdof", "2.25"), abs=0.005)
 
 
-def test_transient_trials():
+def test_forcing_transient_trials():
     from vib_tutorial.core.sdof import Oscillator
     from vib_tutorial.core.transient import PulseKind, peak_ratio, step_metrics
 
     osc = Oscillator()
     m = step_metrics(osc)
     assert m.overshoot == pytest.approx(0.85, abs=0.005)
-    assert 2.5 * (1 + m.overshoot) == pytest.approx(quoted("transient", "4.64"), abs=0.005)
-    assert m.peak_time == pytest.approx(quoted("transient", "0.157"), abs=0.0005)
-    assert m.settling == pytest.approx(quoted("transient", "3.8"), abs=0.05)
+    assert 2.5 * (1 + m.overshoot) == pytest.approx(quoted("forcing", "4.64"), abs=0.005)
+    assert m.peak_time == pytest.approx(quoted("forcing", "0.157"), abs=0.0005)
+    assert m.settling == pytest.approx(quoted("forcing", "3.8"), abs=0.05)
     assert step_metrics(Oscillator(1, 400, 40)).settling == pytest.approx(0.29, abs=0.005)
+    # the half-period rectangle lands at 1.85 times static with ζ = 0.05 (twice, undamped)
+    assert peak_ratio(osc.zeta, PulseKind.RECTANGLE, np.array([0.157 / osc.period]))[0] == pytest.approx(
+        1.85, abs=0.005
+    )
     assert 2 * np.sin(np.pi / 20) == pytest.approx(0.31, abs=0.005)
     r = 0.26 / osc.period
-    assert peak_ratio(0.0, PulseKind.HALF_SINE, np.array([r]))[0] == pytest.approx(
-        quoted("transient", "1.77"), abs=0.005
-    )
+    assert peak_ratio(0.0, PulseKind.HALF_SINE, np.array([r]))[0] == pytest.approx(quoted("forcing", "1.77"), abs=0.005)
     assert peak_ratio(0.05, PulseKind.HALF_SINE, np.array([r]))[0] == pytest.approx(1.65, abs=0.005)
     r = 0.864 / osc.period
     assert r == pytest.approx(2.75, abs=0.005)
@@ -1428,7 +1430,7 @@ def test_transient_trials():
     assert peak_ratio(0.05, PulseKind.RAMP, np.array([r]))[0] - 1 == pytest.approx(0.06, abs=0.005)
 
 
-def test_transient_worked_example_and_pulses():
+def test_forcing_step_worked_example_and_pulses():
     """The figures Transient response's worked example quotes, on the page's defaults (a 1 N step), from the
     rounded numbers it shows too; and its pulses' closed forms."""
     from vib_tutorial.core.sdof import Oscillator, impulse_response, step_response
@@ -1438,12 +1440,12 @@ def test_transient_worked_example_and_pulses():
     assert (osc.mass, osc.stiffness, osc.damping) == (1.0, 400.0, 2.0)
     assert (pulse.kind, pulse.amplitude) == (PulseKind.STEP, 1.0)
     zw, wd = osc.zeta * osc.omega_n, osc.omega_d
-    assert osc.natural_hz == pytest.approx(quoted("transient", "3.18"), abs=0.005)
-    assert osc.period == pytest.approx(quoted("transient", "0.314"), abs=0.0005)
-    assert osc.zeta == pytest.approx(quoted("transient", "0.05"))
+    assert osc.natural_hz == pytest.approx(quoted("forcing", "3.18"), abs=0.005)
+    assert osc.period == pytest.approx(quoted("forcing", "0.314"), abs=0.0005)
+    assert osc.zeta == pytest.approx(quoted("forcing", "0.05"))
     assert zw == pytest.approx(1.0)
-    assert wd == pytest.approx(quoted("transient", "19.97"), abs=0.005)
-    assert zw / wd == pytest.approx(quoted("transient", "0.0501"), abs=0.00005)
+    assert wd == pytest.approx(quoted("forcing", "19.97"), abs=0.005)
+    assert zw / wd == pytest.approx(quoted("forcing", "0.0501"), abs=0.00005)
     # the partial fractions: (1/400)(1/s − (s + 2)/((s + 1)² + ω_d²)) is 1/(s(s² + 2s + 400))
     for s in (0.3 + 2j, 5.0, -1 + 7j):
         assert (1 / s - (s + 2) / ((s + 1) ** 2 + wd**2)) / 400 == pytest.approx(1 / (s * (s * s + 2 * s + 400)))
@@ -1452,39 +1454,37 @@ def test_transient_worked_example_and_pulses():
     np.testing.assert_allclose(step_response(osc, t), closed, atol=1e-12)
     # the overshoot
     m = step_metrics(osc)
-    assert 0.05 * math.pi / math.sqrt(1 - 0.05**2) == pytest.approx(quoted("transient", "0.1573"), abs=0.00005)
-    assert math.exp(-0.1573) == pytest.approx(quoted("transient", "0.854"), abs=0.0005)
-    assert m.overshoot == pytest.approx(quoted("transient", "0.854"), abs=0.0005)
-    assert 1e3 / osc.stiffness == pytest.approx(quoted("transient", "2.5"))  # mm, the static deflection
-    assert 100 * m.overshoot == pytest.approx(quoted("transient", "85.4 %"), abs=0.05)
-    assert 1 + 0.854 == pytest.approx(quoted("transient", "1.854"))
-    assert 2.5 * 1.854 == pytest.approx(quoted("transient", "4.64"), abs=0.005)
-    assert 2.5 * (1 + m.overshoot) == pytest.approx(quoted("transient", "4.64"), abs=0.005)
-    assert math.pi / 19.97 == pytest.approx(quoted("transient", "0.157"), abs=0.0005)
-    assert m.peak_time == pytest.approx(quoted("transient", "0.157"), abs=0.0005)
+    assert 0.05 * math.pi / math.sqrt(1 - 0.05**2) == pytest.approx(quoted("forcing", "0.1573"), abs=0.00005)
+    assert math.exp(-0.1573) == pytest.approx(quoted("forcing", "0.854"), abs=0.0005)
+    assert m.overshoot == pytest.approx(quoted("forcing", "0.854"), abs=0.0005)
+    assert 1e3 / osc.stiffness == pytest.approx(quoted("forcing", "2.5"))  # mm, the static deflection
+    assert 100 * m.overshoot == pytest.approx(quoted("forcing", "85.4 %"), abs=0.05)
+    assert 1 + 0.854 == pytest.approx(quoted("forcing", "1.854"))
+    assert 2.5 * 1.854 == pytest.approx(quoted("forcing", "4.64"), abs=0.005)
+    assert 2.5 * (1 + m.overshoot) == pytest.approx(quoted("forcing", "4.64"), abs=0.005)
+    assert math.pi / 19.97 == pytest.approx(quoted("forcing", "0.157"), abs=0.0005)
+    assert m.peak_time == pytest.approx(quoted("forcing", "0.157"), abs=0.0005)
     assert m.settling_estimate == pytest.approx(4.0)
-    assert m.settling == pytest.approx(quoted("transient", "3.8"), abs=0.05)
-    band = quoted("transient", "2 %") / 100  # the settling band, which the envelope reaches at 0.02
-    assert band == pytest.approx(quoted("transient", "0.02"))
+    assert m.settling == pytest.approx(quoted("forcing", "3.8"), abs=0.05)
+    band = quoted("forcing", "2 %") / 100  # the settling band, which the envelope reaches at 0.02
+    assert band == pytest.approx(quoted("forcing", "0.02"))
     assert math.log(1 / band) == pytest.approx(3.9, abs=0.05)  # the 2 % rule: ln 50, rounded to 4
     assert step_metrics(Oscillator(1, 400, 2)).settling == pytest.approx(m.settling)
-    # at 0.3 s, where the convolution is drawn
-    from vib_tutorial.gui.transient import TransientTrial
-
-    assert TransientTrial.at == quoted("transient", "0.3")  # its default
-    assert wd * 0.3 == pytest.approx(quoted("transient", "5.9925"), abs=0.00005)
-    assert math.cos(5.9925) == pytest.approx(quoted("transient", "0.95805"), abs=0.000005)
-    assert math.sin(5.9925) == pytest.approx(-quoted("transient", "0.28661"), abs=0.000005)
-    assert math.exp(-0.3) == pytest.approx(quoted("transient", "0.74082"), abs=0.000005)
+    # at 0.3 s after the push, where the worked example reads the Convolution tab
+    assert quoted("forcing", "0.3") == 0.3
+    assert wd * 0.3 == pytest.approx(quoted("forcing", "5.9925"), abs=0.00005)
+    assert math.cos(5.9925) == pytest.approx(quoted("forcing", "0.95805"), abs=0.000005)
+    assert math.sin(5.9925) == pytest.approx(-quoted("forcing", "0.28661"), abs=0.000005)
+    assert math.exp(-0.3) == pytest.approx(quoted("forcing", "0.74082"), abs=0.000005)
     bracket = 1 - 0.74082 * (0.95805 - 0.0501 * 0.28661)
-    assert bracket == pytest.approx(quoted("transient", "0.3009"), abs=0.00005)
-    assert 2.5 * bracket == pytest.approx(quoted("transient", "0.752"), abs=0.0005)
+    assert bracket == pytest.approx(quoted("forcing", "0.3009"), abs=0.00005)
+    assert 2.5 * bracket == pytest.approx(quoted("forcing", "0.752"), abs=0.0005)
     x = float(pulse_response(osc, pulse, np.array([0.0, 0.3]))[-1])
-    assert x * 1e3 == pytest.approx(quoted("transient", "0.752"), abs=0.0005)
-    assert convolution(osc, pulse, 0.3)[3] * 1e3 == pytest.approx(quoted("transient", "0.752"), abs=0.0005)
+    assert x * 1e3 == pytest.approx(quoted("forcing", "0.752"), abs=0.0005)
+    assert convolution(osc, pulse, 0.3)[3] * 1e3 == pytest.approx(quoted("forcing", "0.752"), abs=0.0005)
     # h and H
     assert osc.time_constant == pytest.approx(1.0)
-    assert 2 * osc.zeta * osc.natural_hz == pytest.approx(quoted("transient", "0.318"), abs=0.0005)
+    assert 2 * osc.zeta * osc.natural_hz == pytest.approx(quoted("forcing", "0.318"), abs=0.0005)
     assert 1 / (osc.damping * osc.omega_n) == pytest.approx(0.025)
     # the impulse trial's first swing, 4.6 mm, a little under I/mω_n = 5 mm
     t = np.linspace(0, 0.1, 2001)
@@ -1504,8 +1504,8 @@ def test_transient_worked_example_and_pulses():
     # the half-sine's worst: 1.77 times static near T = 0.8 T_n
     ratios = np.linspace(0.7, 0.9, 201)
     peaks = peak_ratio(0.0, PulseKind.HALF_SINE, ratios)
-    assert peaks.max() == pytest.approx(quoted("transient", "1.77"), abs=0.005)
-    assert ratios[peaks.argmax()] == pytest.approx(quoted("transient", "0.8"), abs=0.03)
+    assert peaks.max() == pytest.approx(quoted("forcing", "1.77"), abs=0.005)
+    assert ratios[peaks.argmax()] == pytest.approx(quoted("forcing", "0.8"), abs=0.03)
 
 
 def test_damping_models_trials():
@@ -1792,7 +1792,7 @@ def test_signals_trials():
     assert 100 * noise.std() / noise.mean() == pytest.approx(quoted("signals", "100 %"), rel=0.03)
 
 
-def test_periodic_trials():
+def test_forcing_periodic_trials():
     import math
 
     from vib_tutorial.core.periodic import (
@@ -1810,7 +1810,7 @@ def test_periodic_trials():
     sq = Forcing(Wave.SQUARE)
     assert np.max(series(sq.coefficients(5), 1.0, t)) - 1 == pytest.approx(0.19, abs=0.005)
     fine = np.linspace(0.0, 0.01, 20001)
-    assert np.max(series(sq.coefficients(401), 1.0, fine)) - 1 == pytest.approx(quoted("periodic", "0.18"), abs=0.005)
+    assert np.max(series(sq.coefficients(401), 1.0, fine)) - 1 == pytest.approx(quoted("forcing", "0.18"), abs=0.005)
     third = Forcing(Wave.SQUARE, freq_hz=osc.natural_hz / 3)
     assert 4 / (3 * math.pi) == pytest.approx(0.42, abs=0.005) and 1 / (2 * osc.omega_n) == pytest.approx(0.025)
     X = np.abs(response_coefficients(osc, third, 3))
@@ -1832,7 +1832,7 @@ def test_periodic_trials():
     assert series_error(osc, sq1, 9) == pytest.approx(0.0065, abs=0.00005)
 
 
-def test_periodic_worked_example_and_series():
+def test_forcing_square_wave_worked_example_and_series():
     """The figures Periodic forcing's worked example and its notes on the series quote, on the page's defaults."""
     import math
 
@@ -1846,12 +1846,12 @@ def test_periodic_worked_example_and_series():
     sq = Forcing(Wave.SQUARE)
     C = np.abs(sq.coefficients(20000))
     assert C[1] ** 2 / 2 == pytest.approx(8 / math.pi**2)
-    assert 100 * 8 / math.pi**2 == pytest.approx(quoted("periodic", "81.1 %"), abs=0.05)
+    assert 100 * 8 / math.pi**2 == pytest.approx(quoted("forcing", "81.1 %"), abs=0.05)
     assert np.sum(C[1:] ** 2) / 2 == pytest.approx(1.0, abs=1e-4)  # Parseval: the mean square F²
-    assert 100 * np.sum(C[1:6] ** 2) / 2 == pytest.approx(quoted("periodic", "93.3 %"), abs=0.05)
+    assert 100 * np.sum(C[1:6] ** 2) / 2 == pytest.approx(quoted("forcing", "93.3 %"), abs=0.05)
     gibbs = 100 * (sici(math.pi)[0] / math.pi - 0.5)
-    assert gibbs == pytest.approx(quoted("periodic", "8.95 %"), abs=0.005)
-    assert gibbs == pytest.approx(quoted("periodic", "9 %"), abs=0.5)  # the Background's round figure
+    assert gibbs == pytest.approx(quoted("forcing", "8.95 %"), abs=0.005)
+    assert gibbs == pytest.approx(quoted("forcing", "9 %"), abs=0.5)  # the Background's round figure
     t = np.linspace(0.0, 1.0, 40001)
     assert np.mean(sq.force(t[:-1]) * np.sin(2 * math.pi * t[:-1])) == pytest.approx(2 / math.pi, abs=1e-4)
     assert np.mean(sq.force(t[:-1]) * np.sin(4 * math.pi * t[:-1])) == pytest.approx(0.0, abs=1e-4)
@@ -1860,54 +1860,54 @@ def test_periodic_worked_example_and_series():
     osc, fo = Oscillator(), Forcing()
     assert (osc.mass, osc.stiffness, osc.damping) == (1.0, 400.0, 2.0)
     assert (fo.wave, fo.amplitude, fo.freq_hz) == (Wave.SQUARE, 1.0, 1.0)
-    assert osc.natural_hz == pytest.approx(quoted("periodic", "3.18"), abs=0.005)
-    assert osc.zeta == pytest.approx(quoted("periodic", "0.05"))
+    assert osc.natural_hz == pytest.approx(quoted("forcing", "3.18"), abs=0.005)
+    assert osc.zeta == pytest.approx(quoted("forcing", "0.05"))
     C = fo.coefficients(5)
-    harmonics = [quoted("periodic", "1.273"), quoted("periodic", "0.4244"), quoted("periodic", "0.255")]
+    harmonics = [quoted("forcing", "1.273"), quoted("forcing", "0.4244"), quoted("forcing", "0.255")]
     assert np.all(np.abs(np.abs(C[[1, 3, 5]]) - harmonics) <= [5e-4, 5e-5, 5e-4])
-    assert 1e3 / osc.stiffness == pytest.approx(quoted("periodic", "2.5"))  # mm/N, the static
+    assert 1e3 / osc.stiffness == pytest.approx(quoted("forcing", "2.5"))  # mm/N, the static
     assert np.all(C[[0, 2, 4]] == 0)
     r = 2 * math.pi * np.array([1, 3, 5]) / osc.omega_n
     assert r == pytest.approx(
-        [quoted("periodic", "0.314"), quoted("periodic", "0.942"), quoted("periodic", "1.571")], abs=5e-4
+        [quoted("forcing", "0.314"), quoted("forcing", "0.942"), quoted("forcing", "1.571")], abs=5e-4
     )
-    assert 1 - r[0] ** 2 == pytest.approx(quoted("periodic", "0.9013"), abs=5e-5)
-    assert 2 * osc.zeta * r[0] == pytest.approx(quoted("periodic", "0.0314"), abs=5e-5)
-    assert 1 - r[2] ** 2 == pytest.approx(-quoted("periodic", "1.4674"), abs=5e-5)
-    assert 2 * osc.zeta * r[2] == pytest.approx(quoted("periodic", "0.1571"), abs=5e-5)
-    assert math.hypot(0.9013, 0.0314) == pytest.approx(quoted("periodic", "0.902"), abs=5e-4)
-    assert math.hypot(1.4674, 0.1571) == pytest.approx(quoted("periodic", "1.476"), abs=5e-4)
+    assert 1 - r[0] ** 2 == pytest.approx(quoted("forcing", "0.9013"), abs=5e-5)
+    assert 2 * osc.zeta * r[0] == pytest.approx(quoted("forcing", "0.0314"), abs=5e-5)
+    assert 1 - r[2] ** 2 == pytest.approx(-quoted("forcing", "1.4674"), abs=5e-5)
+    assert 2 * osc.zeta * r[2] == pytest.approx(quoted("forcing", "0.1571"), abs=5e-5)
+    assert math.hypot(0.9013, 0.0314) == pytest.approx(quoted("forcing", "0.902"), abs=5e-4)
+    assert math.hypot(1.4674, 0.1571) == pytest.approx(quoted("forcing", "1.476"), abs=5e-4)
     H = np.abs(receptance(osc, np.array([1.0, 3.0, 5.0]))) * 1e3  # mm/N
     assert H == pytest.approx(
-        [quoted("periodic", "2.77"), quoted("periodic", "17.10"), quoted("periodic", "1.69")], abs=0.005
+        [quoted("forcing", "2.77"), quoted("forcing", "17.10"), quoted("forcing", "1.69")], abs=0.005
     )
     assert (2.5 / 0.902, 2.5 / 1.476) == pytest.approx(
-        (quoted("periodic", "2.77"), quoted("periodic", "1.69")), abs=0.005
+        (quoted("forcing", "2.77"), quoted("forcing", "1.69")), abs=0.005
     )  # from the rounded figures
     X = response_coefficients(osc, fo, 5)
     amps = np.abs(X[[1, 3, 5]]) * 1e3
-    shown = np.array([quoted("periodic", "3.53"), quoted("periodic", "7.26"), quoted("periodic", "0.431")])
+    shown = np.array([quoted("forcing", "3.53"), quoted("forcing", "7.26"), quoted("forcing", "0.431")])
     assert np.all(np.abs(amps - shown) <= [0.005, 0.005, 0.0005])
     rounded = (1.273 * 2.77, 0.4244 * 17.10, 0.255 * 1.69)
     assert np.all(np.abs(np.array(rounded) - shown) <= [0.005, 0.005, 0.0005])
     lags = -np.degrees(np.angle(X[[1, 3, 5]] / C[[1, 3, 5]]))
     assert lags == pytest.approx(
-        [quoted("periodic", "2.0"), quoted("periodic", "40.1"), quoted("periodic", "173.9")], abs=0.05
+        [quoted("forcing", "2.0"), quoted("forcing", "40.1"), quoted("forcing", "173.9")], abs=0.05
     )
     assert amps[1] / amps[0] == pytest.approx(2, abs=0.1)  # "about twice its fundamental"
     for parts in (amps, shown):
         shares = 100 * parts**2 / np.sum(parts**2)
         assert shares == pytest.approx(
-            [quoted("periodic", "19.1 %"), quoted("periodic", "80.6 %"), quoted("periodic", "0.3 %")], abs=0.05
+            [quoted("forcing", "19.1 %"), quoted("forcing", "80.6 %"), quoted("forcing", "0.3 %")], abs=0.05
         )
         assert math.sqrt(np.sum(parts**2) / 2) == pytest.approx(5.72, abs=0.005)
-        assert np.sum(parts) == pytest.approx(quoted("periodic", "11.2"), abs=0.05)
+        assert np.sum(parts) == pytest.approx(quoted("forcing", "11.2"), abs=0.05)
     t = np.linspace(0.0, 1.0, 4000, endpoint=False)
     exact = periodic_steady(osc, fo, t)
     assert np.sqrt(np.mean(exact**2)) * 1e3 == pytest.approx(5.72, abs=0.005)
     assert (exact.min() * 1e3, exact.max() * 1e3) == pytest.approx((-10.0, 10.0), abs=0.05)
     err = np.max(np.abs(series(X, 1.0, t) - exact)) / np.max(np.abs(exact))
-    assert 100 * err == pytest.approx(quoted("periodic", "2.02 %"), abs=0.005)
+    assert 100 * err == pytest.approx(quoted("forcing", "2.02 %"), abs=0.005)
 
 
 def test_energy_methods_trials():

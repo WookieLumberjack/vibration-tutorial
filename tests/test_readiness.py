@@ -136,6 +136,43 @@ def _sdof_views(state):
     )
 
 
+def _forcing_views(state):
+    from vib_tutorial.view_models import forcing as v
+    from vib_tutorial.view_models import live_forcing as lf
+
+    osc = v.oscillator(state)
+    live = lf.LiveForcing(osc)
+    push = live.apply(v.pulse(state))
+    live.advance(1.0)
+    live.set_wave(v.forcing(state))
+    live.advance(0.5)
+    peak = lf.pulse_peak(live, push)
+    return (
+        v.info(osc),
+        v.drive_note(live),
+        v.conv_view(lf.convolution(live), osc),
+        v.conv_view(None, osc),
+        v.pulse_view([peak] if peak is not None else [], osc.zeta, True),
+        v.harmonics_view(lf.harmonics(live, state.harmonics), osc, v.forcing(state), state.harmonics, True),
+        v.harmonics_view(None, osc, v.forcing(state), state.harmonics, False),
+    )
+
+
+def _forcing() -> Ready:
+    from vib_tutorial.gui import forcing_trials
+    from vib_tutorial.view_models.forcing import ForcingTrial
+
+    return Ready(
+        "forcing_page",
+        lambda: ForcingTrial("", ""),
+        lambda setup: ForcingTrial("", "", **setup),
+        _forcing_views,
+        lambda: forcing_trials.TRIALS,
+        lambda: forcing_trials.PROBLEMS,
+        qt_free_notes=True,
+    )
+
+
 def _sdof() -> Ready:
     from vib_tutorial.gui import sdof_trials
     from vib_tutorial.view_models.sdof import SdofTrial
@@ -281,7 +318,7 @@ def _state() -> Ready:
     )
 
 
-READY = {r.page: r for r in (_isolation(), _duffing(), _sdof(), _pendulum(), _bases(), _state())}
+READY = {r.page: r for r in (_isolation(), _forcing(), _duffing(), _sdof(), _pendulum(), _bases(), _state())}
 QT_FREE_NOTES = ["glossary", *(name for name, r in READY.items() if r.qt_free_notes)]
 
 

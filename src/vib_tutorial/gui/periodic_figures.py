@@ -50,9 +50,9 @@ def harmonics_svg() -> str:
         fig.math_label(left - 8, bot_y - bot_h + 5, "F", fg, "end"),
         fig.math_label(left - 8, bot_y + bot_h + 5, "−F", fg, "end"),
         fig.text(left + span * 0.75, bot_y - 22, "their sum", colors.force),
-        fig.math_label(left + span, bot_y + bot_h + 18, "T", fg, "middle"),
+        fig.math_label(left + span, bot_y + bot_h + 18, "T<sub>0</sub>", fg, "middle"),
         fig.line(left + span, bot_y + 3, left + span, bot_y - 3, muted, 1.0),
-        fig.math_label(left + span, top_y + 18, "T", fg, "middle"),
+        fig.math_label(left + span, top_y + 18, "T<sub>0</sub>", fg, "middle"),
         fig.line(left + span, top_y + 3, left + span, top_y - 3, muted, 1.0),
     ]
     return fig.svg(380, 232, "".join(parts))

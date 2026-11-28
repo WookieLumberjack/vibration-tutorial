@@ -139,14 +139,16 @@ def test_a_prediction_is_answered_from_the_large_note(window):
     """A step that asks a prediction shows its question and choices; a choice answers it and the note follows."""
     from PySide6 import QtWidgets
 
-    from vib_tutorial.gui import transient
+    from vib_tutorial.gui import forcing as transient
 
     w = window
     w.show()
-    w.show_page("transient_page")
+    w.show_page("forcing_page")
+    box = w.forcing_page.trials
+    box.after_play, box.played = False, True  # a live page asks once handled: here, at once
     w.set_present(1)
     w.next_trial()  # the first trial asks first
-    overlay, box = w.trial_overlay, w.transient_page.trials
+    overlay = w.trial_overlay
     assert box.asking == 0 and overlay.isVisible()
     assert overlay.body.text() == box.question.text()
     buttons = [overlay.choices.itemAt(k).widget() for k in range(overlay.choices.count())]
