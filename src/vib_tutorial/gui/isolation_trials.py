@@ -426,7 +426,8 @@ PROBLEMS = (
 
 TIPS = {
     "mass": "<p>The machine's mass M.</p>",
-    "rpm": "<p>Its running speed.</p>",
+    "rpm": "<p>Its running speed. Running, it changes at once; stopped, it's the speed Run up goes to. The clock "
+    "under the plots shows the speed now, with ▲ or ▼ while it climbs or slows.</p>",
     "unbalance": "<p>Its unbalance m<sub>e</sub>e: an off-center mass times its radius. Its force is "
     "m<sub>e</sub>eΩ².</p>",
     "deflection": "<p>How far the mounts sag under the machine's weight. Since k = Mg/δ, the natural frequency "
@@ -441,13 +442,16 @@ TIPS = {
     "target": "<p>The isolation wanted at the running speed: the share of the unbalance's force kept off the "
     "floor.</p>",
     "ramp": "<p>How long Run up and Run down take to change the speed, at a steady rate.</p>",
-    "run_up": "<p>Run the machine up from standstill to the Speed box's speed, at a steady rate over the time "
-    "beside it, through the mounts' resonance. The Floor force tab builds the force on the floor as it goes.</p>",
-    "run_down": "<p>Run the machine down to a stop over the time beside it: it coasts through resonance the other "
-    "way.</p>",
+    "run_up": "<p>Run the machine up to the Speed box's speed at a steady rate (from standstill in the time "
+    "below), through the mounts' resonance; lit while it climbs, and pressed again it holds the speed it's "
+    "reached. The Floor force tab builds the force on the floor as it goes. The page opens with the machine "
+    "stopped, so a pull and let go rings it freely.</p>",
+    "run_down": "<p>Run the machine down to a stop at the same rate: it coasts through resonance the other way. "
+    "Lit while it slows; pressed again, it holds the speed.</p>",
     "shaking": "<p><b>The machine:</b> its unbalance shakes it, and the mounts pass some of that force to the floor. "
-    "<b>The floor:</b> the unbalance stops and the floor under the mounts moves ±0.1 mm at the speed, as from a "
-    "machine nearby; the mounts pass some of that motion to the machine. Both share are the transmissibility, and "
+    "<b>The floor:</b> the unbalance stops and the floor under the mounts moves ±0.1 mm at the speed's frequency, "
+    "as from a machine nearby: the same ±0.1 mm at every speed, not growing as the unbalance's force does. The "
+    "mounts pass some of that motion to the machine. Both share are the transmissibility, and "
     "their points land on one curve.</p>",
     "theory": "<p>Draw the theory over what's measured: this isolator's transmissibility and plain mounts' at "
     "ζ = 0, 0.1, 0.3 and 0.7; on the Floor force tab, the steady force at each speed.</p>",

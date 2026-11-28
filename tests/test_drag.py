@@ -103,6 +103,8 @@ def _show(w, page, app) -> None:
 def test_dragging_the_isolation_speed_line_sets_the_speed(main_window, app):
     p = main_window.isolation_page
     _show(main_window, p, app)
+    p.load_trial(0)  # running at its speed (the page opens with the machine stopped)
+    p.loop.enabled = False
     line = p.speed_line
     r0 = p.iso.speed_hz / p.iso.natural_hz
     assert line.data_value() == pytest.approx(r0)
