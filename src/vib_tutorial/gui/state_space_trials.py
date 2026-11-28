@@ -23,7 +23,6 @@ from ..view_models.state_space import (
     OWN,
     STATE,
     TAB_MATRICES,
-    TAB_SHAPES,
     TAB_SIZES,
     UNDAMPED,
     StateTrial,
@@ -89,7 +88,7 @@ TRIALS = (
         "A symmetric pair",
         "Both masses 1 kg, with the same dampers. Now the damping is proportional, <m>C = −3M + 0.01K</m>, and the "
         "modes of <m>M</m> and <m>K</m> uncouple them too: started in mode 2, mode 1's pair stays at zero on the Sizes "
-        "tab, and <m>T<sup>−1</sup>AT</m> has no red. The shapes are real (the Shapes tab): the masses move exactly "
+        "tab, and <m>T<sup>−1</sup>AT</m> has no red. The shapes are real (the Matrices tab): the masses move exactly "
         "together or exactly opposed.",
         m2=1.0,
         basis=UNDAMPED,
@@ -100,12 +99,11 @@ TRIALS = (
         "Heavier dampers: complex shapes",
         "Each damper 5 N·s/m. In mode 1, <m>m<sub>2</sub></m> lags <m>m<sub>1</sub></m> by 18.8°: the masses don't "
         "reach their peaks together, so on the plane of <m>x<sub>1</sub></m> and <m>x<sub>2</sub></m> the mode "
-        "alone traces an ellipse, not a line, spanned by <m>Re ψ</m> and <m>Im ψ</m>. The Shapes tab draws each "
-        "mass's part of <m>ψ</m> as an arrow: they point apart by the lag.",
+        "alone traces an ellipse, not a line, spanned by <m>Re ψ</m> and <m>Im ψ</m>. On the Matrices tab, "
+        "mode 1's shape draws each mass's part of <m>ψ</m> as an arrow: they point apart by the lag.",
         c=5.0,
         basis=STATE,
         start=STATE_ONE,
-        tab=TAB_SHAPES,
     ),
     StateTrial(
         "Find A's modes by hand",

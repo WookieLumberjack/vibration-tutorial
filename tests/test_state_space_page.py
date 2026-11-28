@@ -56,7 +56,7 @@ def test_it_opens_at_rest_on_its_system_with_things_to_try_after_the_controls(pa
     left = page.trials.parentWidget()
     boxes = [w for w in left.findChildren(QtWidgets.QGroupBox) if w.parentWidget() is left]
     assert [b.title() for b in boxes] == ["Two masses", "The planes' coordinates", "Start from", "Things to try"]
-    assert [page.tabs.tabText(i) for i in range(page.tabs.count())] == ["Matrices", "Sizes", "Shapes", "Theory"]
+    assert [page.tabs.tabText(i) for i in range(page.tabs.count())] == ["Matrices", "Sizes", "Theory"]
     assert page.practice_state() == view.StateTrial("", "")
     assert "dampers still do" in page.matrices_note.text() and "f = 2.421 Hz" in page.matrices.text()
     assert [p.labels.title for p in page.pair_planes] == ["Mode 1 of M and K", "Mode 2 of M and K"]
@@ -151,11 +151,11 @@ def test_the_sizes_tab_shows_the_dampers_coupling(page):
     assert all(points(item) for item in page.size_items)
 
 
-def test_the_shapes_tab_and_the_plane_show_complex_shapes(page):
+def test_the_matrices_tab_and_the_plane_show_complex_shapes(page):
     page.load_trial(trial("Heavier dampers"))
-    assert page.tabs.currentIndex() == view.TAB_SHAPES
-    assert page.shape_notes[0].text().startswith("m₂ lags m₁ by 18.8°")
-    (_, b), (c, d) = (page.phasor_items[0][i].getData() for i in range(2))
+    assert page.tabs.currentIndex() == view.TAB_MATRICES
+    assert "Complex: m₂ lags m₁ by 18.8°" in page.own_notes[0].text()
+    (_, b), (c, d) = (page.own_items[0][i].getData() for i in range(2))
     assert b[1] == pytest.approx(0.0, abs=1e-12)  # m₁ along +Re
     assert np.degrees(np.arctan2(d[1], c[1])) == pytest.approx(-18.77, abs=0.01)
     assert "ellipse" in page.plane_note.text()

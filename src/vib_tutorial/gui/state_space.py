@@ -8,9 +8,9 @@ the reader has handled the masses). Center: the two masses between their walls (
 mass, or drag its grips to change m, k and c as it runs), the plane of the masses' displacements with the
 state-space modes' shapes (`state_planes.ShapePlane`), the two planes of the state's coordinate pairs
 (`state_planes.PairPlane`: drag to set a pair), the run's controls, and the four coordinates against time. Right:
-the matrices' steps from M, C, K to T⁻¹AT (or, written complex, Y⁻¹AY), its coupling marked, and in your own basis each mode's shape to
-drag (Matrices), each pair's size on a log axis in both
-modal bases (Sizes), each mode's shape as phasors (Shapes), and the Theory.
+the basis's pairs as shapes (in your own basis, dragged) and the matrices' steps from M, C, K to T⁻¹AT (or, written
+complex, Y⁻¹AY), its coupling marked (Matrices), each pair's size on a log axis in both modal bases (Sizes), and the
+Theory.
 
 The masses are stepped as they run (`view_models/live_bases.LiveBases`, exactly, the last page's run); what the page
 shows is `view_models/state_space.py`'s; its trials, problems, tips and notes are `state_space_trials.py`'s (no
@@ -59,7 +59,6 @@ __all__ = ["NOTES_HTML", "PROBLEMS", "TRIALS", "StateSpacePage"]
 
 STRIP_SECONDS = 8.0  # the coordinates' and the Sizes tab's window
 TRAIL_SECONDS = 2.0  # the planes' paths
-PHASOR_HEIGHT = 250  # px: the Shapes tab's plots
 OWN_HEIGHT = 200  # px: your own basis's drag plots, above the matrices
 PLAYED_AFTER = 2.0  # s of run after the reader's first change: they've handled it, predictions on
 SYSTEM_FIELDS = ("m1", "m2", "k1", "k2", "k3", "c")
@@ -87,14 +86,9 @@ OWN_TIP = (
     "of M and K's. The basis's pair for this mode is made from your shape as A's own are, Re and Im of [ψ; λψ], with "
     "the λ your shape asks for. Watch the red in T⁻¹AT under this mode's columns: it goes only at A's own shape.</p>"
 )
-SHAPES_TIP = (
-    "<p>Each mode's shape ψ, a mass's part as an arrow in the complex plane (a phasor), beside the undamped mode's "
-    "real shape, dashed. The angle between the masses' arrows is the phase between them: 0° or 180° when the shape "
-    "is real, other angles when the dampers make it complex.</p>"
-)
 
 
-def _square(plot_: pg.PlotWidget, height: int = PHASOR_HEIGHT) -> None:
+def _square(plot_: pg.PlotWidget, height: int = OWN_HEIGHT) -> None:
     """A phasor plot: its aspect locked, a fixed height, and narrow enough that two side by side don't widen the
     pane (the window fits 1280 px)."""
     plot_.setMenuEnabled(False)
@@ -331,46 +325,10 @@ class StateSpacePage(QtWidgets.QWidget):
         sv.addWidget(self.sizes_plot, 1)
         sv.addWidget(self.sizes_note)
 
-        shapes = QtWidgets.QWidget()
-        hv = QtWidgets.QVBoxLayout(shapes)
-        shape_row = QtWidgets.QHBoxLayout()
-        self.phasor_plots: list[pg.PlotWidget] = []
-        self.phasor_items: list[list[pg.PlotDataItem]] = []  # each mass's ψ, then φ, then the unit circle
-        self.phasor_labels: list[list[pg.TextItem]] = []
-        self.shape_notes: list[LiveLabel] = []
-        for r in range(2):
-            column = QtWidgets.QVBoxLayout()
-            sp = pg.PlotWidget()
-            _square(sp)
-            sp.setToolTip(SHAPES_TIP)
-            sp.setAccessibleName(f"Mode {r + 1}'s shape as phasors, a mass each")
-            sp.setTitle(f"Mode {r + 1}")
-            sp.setLabel("bottom", "Re")
-            sp.setLabel("left", "Im")
-            sp.setRange(QtCore.QRectF(-1.1, -1.1, 2.2, 2.2), padding=0)
-            items = [pg.PlotDataItem() for _ in range(5)]
-            for item in items:
-                sp.addItem(item, ignoreBounds=True)
-            texts = [pg.TextItem(f"m{'₁₂'[i]}", anchor=(0.0, 1.0)) for i in range(2)]
-            for text in texts:
-                sp.addItem(text, ignoreBounds=True)
-            note = LiveLabel(wrap=True)
-            mute(note)
-            column.addWidget(sp)
-            column.addWidget(note)
-            shape_row.addLayout(column, 1)
-            self.phasor_plots.append(sp)
-            self.phasor_items.append(items)
-            self.phasor_labels.append(texts)
-            self.shape_notes.append(note)
-        hv.addLayout(shape_row)
-        hv.addStretch(1)
-
         self.notes = theory(NOTES_HTML)
         self.tabs = QtWidgets.QTabWidget()
         self.tabs.addTab(scrolling(matrices), "Matrices")
         self.tabs.addTab(sizes, "Sizes")
-        self.tabs.addTab(shapes, "Shapes")
         self.tabs.addTab(self.notes, "Theory")
 
         three_panes(self, left, centre, self.tabs, sizes=(300, 780, 560))
@@ -615,12 +573,6 @@ class StateSpacePage(QtWidgets.QWidget):
             item.setPen(pg.mkPen(c.mass[k // 2], width=1 if k % 2 else 2.5))
         for k, item in enumerate(self.size_items):
             item.setPen(pg.mkPen(c.mass[k % 2], width=1 if k < 2 else 2.5))
-        for items, texts in zip(self.phasor_items, self.phasor_labels):
-            for i in range(2):
-                items[i].setPen(pg.mkPen(c.mass[i], width=3))
-                items[2 + i].setPen(pg.mkPen(c.grey, width=1.5, style=dash))
-                texts[i].setColor(c.mass[i])
-            items[4].setPen(pg.mkPen(c.faint, width=1))
         for items, dot, heads, texts in zip(self.own_items, self.own_dots, self.own_heads, self.own_labels):
             items[0].setPen(pg.mkPen(c.mass[0], width=3))
             items[1].setPen(pg.mkPen(c.mass[1], width=3))
@@ -644,7 +596,7 @@ class StateSpacePage(QtWidgets.QWidget):
     @coalesce.coalesced
     def _draw_still(self, *_: object) -> None:
         """What moves only when the reader changes something: the shapes on the plane, the planes' labels, the
-        matrices, the Shapes tab."""
+        matrices."""
         s, which = self.live.system, self.which
         xp = view.x_plane(s)
         self.shape_plane.set_still(xp)
@@ -659,15 +611,6 @@ class StateSpacePage(QtWidgets.QWidget):
         self.matrices.set_variants(self._matrices_html(m, True), self._matrices_html(m, False))
         self.matrices_note.setText(m.note)
         self.sizes_note.setText(view.sizes_note(s))
-        circle = np.linspace(0.0, 2 * np.pi, 97)
-        for items, texts, note, ph in zip(self.phasor_items, self.phasor_labels, self.shape_notes, view.shapes_view(s)):
-            for i in range(2):
-                a, b = ph.masses[i]
-                items[i].setData([0.0, a], [0.0, b])
-                items[2 + i].setData([0.0, ph.undamped[i][0]], [0.0, 0.0])
-                texts[i].setPos(a * 1.08, b * 1.08 + 0.05)
-            items[4].setData(np.cos(circle), np.sin(circle))
-            note.setText(ph.note)
         self._draw_own()
         self._name_coordinates()
 
