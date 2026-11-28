@@ -14,7 +14,11 @@ The check-in's findings shaped it: on the moving mass, the arrows' labels swappe
 columns either side of the body, or written on a square mass, the words left the arrows too little room, and the
 square outgrew the moving mass beside it.
 
-Working on it: `tests/test_sdof_page.py` reads its rows. Colors are theme roles' (`style.role`), so `apply_theme`
+A body that moves up and down (Vibration isolation's machine) takes `vertical=True`: the same diagram turned to
+match, a column a force, its arrow up or down from a slim body across them, its symbol and size under it, the
+net's column after a rule and the aside ones after another.
+
+Working on it: `tests/test_sdof_page.py` reads its rows, `tests/test_isolation_page.py` its columns. Colors are theme roles' (`style.role`), so `apply_theme`
 redraws them. The view's width is in its own units, so the column and the arrows' room keep their shares of the
 pane, the column wide enough for its words at the pane's narrowest (`setMinimumWidth`).
 """
@@ -37,6 +41,7 @@ SIZES = -RIGHT  # the sizes' right edge, the column's
 COLUMN = 1.55  # the words' column's width
 LEFT = SIZES - COLUMN  # the view's left edge, the symbols'
 GAP = 0.32  # between rows
+COLUMN_GAP = 0.62  # between columns (vertical)
 TEXT_EVERY = 0.2  # s between rewrites of the sizes
 TIP = (
     "<p>The forces on the mass now, a row each, its size on the left: the arrow leaves the side the force pushes "
@@ -46,11 +51,25 @@ TIP = (
 )
 
 
+VERTICAL_TIP = (
+    "<p>The forces on the body now, a column each, its symbol and size under it: the arrow leaves the side the force "
+    "pushes the body toward, up or down as the body moves, its length the force's size (the largest of the last few "
+    "seconds fills the room). The dashed column is their sum, the mass times its acceleration; after the second "
+    "rule, a force that isn't on the body (the one on the floor).</p>"
+)
+
+
 class FreeBodyView(pg.PlotWidget):
     def __init__(
-        self, parent: QtWidgets.QWidget | None = None, name: str = "The forces on the mass", tip: str = TIP
+        self,
+        parent: QtWidgets.QWidget | None = None,
+        name: str = "The forces on the mass",
+        tip: str | None = None,
+        vertical: bool = False,
     ) -> None:
         super().__init__(parent)
+        self.vertical = vertical
+        tip = tip if tip is not None else VERTICAL_TIP if vertical else TIP
         self.setAccessibleName(name)
         self.setToolTip(tip)
         self.setMenuEnabled(False)
@@ -105,9 +124,15 @@ class FreeBodyView(pg.PlotWidget):
             length = (arrow.value * body.aside_scale if aside else float(body.length(arrow))) * ROOM
             start = HALF if length >= 0 else -HALF
             tip = start + length
-            shaft.setData([start, tip], [y, y])
             shown = abs(length) > 0.02
             head.setVisible(shown)
+            if self.vertical:  # a column at x = -y: up is up
+                shaft.setData([-y, -y], [start, tip])
+                if shown:
+                    head.setPos(-y, tip)
+                    head.setStyle(angle=90 if length > 0 else -90)
+                continue
+            shaft.setData([start, tip], [y, y])
             if shown:
                 head.setPos(tip, y)
                 head.setStyle(angle=180 if length > 0 else 0)
@@ -127,13 +152,17 @@ class FreeBodyView(pg.PlotWidget):
         """Row i of n from the top: the net's (the last but the aside rows) a half row further down, under the
         rule, and the aside rows another half row down, under theirs."""
         net = n - 1 - self._aside
-        return -GAP * (i + (0.5 if i >= net and net > 0 else 0.0) + (0.5 if i > net else 0.0))
+        gap = COLUMN_GAP if self.vertical else GAP
+        return -gap * (i + (0.5 if i >= net and net > 0 else 0.0) + (0.5 if i > net else 0.0))
 
     def _build(self, arrows: tuple[Arrow, ...]) -> None:
         for item in (*self.shafts, *self.heads, *self.symbols, *self.sizes):
             self.removeItem(item)
         self.shafts, self.heads, self.symbols, self.sizes = [], [], [], []
         n = len(arrows)
+        if self.vertical:
+            self._build_columns(arrows)
+            return
         for i, arrow in enumerate(arrows):
             colour = role(arrow.role)
             dash = QtCore.Qt.PenStyle.DashLine if arrow.name == "net" else QtCore.Qt.PenStyle.SolidLine
@@ -163,4 +192,41 @@ class FreeBodyView(pg.PlotWidget):
         else:
             self.aside_rule.setData([], [])
         self.setRange(QtCore.QRectF(LEFT - 0.05, last - GAP, RIGHT - LEFT + 0.1, 2 * GAP - last), padding=0)
+        self._written = -1.0
+
+    def _build_columns(self, arrows: tuple[Arrow, ...]) -> None:
+        """`_build` turned (vertical): a column a force at x = −`_row_y`, its words under the arrows' room."""
+        n = len(arrows)
+        words = -HALF - ROOM - 0.08  # the symbols' top; the sizes a line under them
+        for i, arrow in enumerate(arrows):
+            colour = role(arrow.role)
+            dash = QtCore.Qt.PenStyle.DashLine if arrow.name == "net" else QtCore.Qt.PenStyle.SolidLine
+            x = -self._row_y(i, n)
+            shaft = pg.PlotDataItem(pen=pg.mkPen(colour, width=3, style=dash))
+            head = pg.ArrowItem(angle=90, headLen=12, tipAngle=40, pen=None, brush=colour)
+            symbol = pg.TextItem(arrow.symbol, color=colour, anchor=(0.5, 0.0))
+            symbol.setPos(x, words)
+            size = pg.TextItem(fmt(abs(arrow.value), arrow.unit), color=colour, anchor=(0.5, -1.0))
+            size.setPos(x, words)
+            for item in (shaft, head, symbol, size):
+                item.setZValue(4)
+                self.addItem(item)
+            self.shafts.append(shaft)
+            self.heads.append(head)
+            self.symbols.append(symbol)
+            self.sizes.append(size)
+        net = n - 1 - self._aside
+        first, end = -self._row_y(0, n), -self._row_y(net, n)
+        half = 0.5 * COLUMN_GAP
+        self.block.setRect(QtCore.QRectF(first - half, -HALF, end - first + 2 * half, 2 * HALF))
+        low, high = words - 0.75, HALF + ROOM
+        rule_x = 0.5 * (-self._row_y(net - 1, n) + end) if net > 0 else end - COLUMN_GAP
+        self.rule.setData([rule_x, rule_x], [low, high])
+        if self._aside:
+            x = 0.5 * (end - self._row_y(net + 1, n))
+            self.aside_rule.setData([x, x], [low, high])
+        else:
+            self.aside_rule.setData([], [])
+        last = -self._row_y(n - 1, n)
+        self.setRange(QtCore.QRectF(first - half, low, last - first + 2 * half, high + 0.05 - low), padding=0)
         self._written = -1.0
