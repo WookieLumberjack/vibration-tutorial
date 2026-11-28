@@ -263,6 +263,53 @@ def forward_links() -> list[str]:
     return found
 
 
+BEHIND = re.compile(r"\bearlier\b|\babove\b|\bbefore this\b|\blast page\b", re.I)
+
+
+def pointers_the_wrong_way() -> list[str]:
+    """The links whose sentence points the wrong way through the course (#478, the Theory notes audit's A1: the
+    reorder left "next" and "later" on pages that had moved): to an earlier page while saying "later", "ahead" or
+    "next", to a later page while saying "earlier" or "the page before", or "next" to a page that isn't the next."""
+    from vib_tutorial.gui.links import course_map, paths_html
+    from vib_tutorial.gui.notes_pages import page_html
+
+    order = [name for _, pages in COURSE for name, *_ in pages]
+    found = []
+    for i, name in enumerate(order):
+        html = page_html(name).replace(course_map(), "").replace(paths_html(), "")
+        html = re.sub(r'<p class="next".*?</p>', "", html, flags=re.S)  # the footer's "Next: … →"
+        text = re.sub(r'<a href="page:(\w+)[^"]*">', "\x00\\1\x00", html)
+        text = re.sub(r"<[^>]+>", " ", text).replace("&amp;", "&")
+        for m in re.finditer("\x00(\\w+)\x00", text):
+            target = m.group(1)
+            if target not in order or target == name:
+                continue
+            start = max(text.rfind(c, 0, m.start()) for c in ".!?(;") + 1
+            ends = [e for e in (text.find(c, m.end()) for c in ".!?);") if e >= 0]
+            sentence = text[start : min(ends, default=len(text))]
+            if sentence.count("\x00") > 2:  # two links in one clause: which word is whose can't be told
+                continue
+            at = m.start() - start
+            before = re.sub("\x00\\w+\x00", " ", sentence[:at]).split()[-4:]
+            after = re.sub("\x00\\w+\x00", " ", sentence[at:]).split()[1:8]
+            sentence = " ".join([*before, "…", *after])  # the words beside the link: "Fatigue page, next"
+            j = order.index(target)
+            ahead, behind = AHEAD.search(sentence), BEHIND.search(sentence)
+            wrong = (
+                (j < i and ahead and not behind)
+                or (j > i and behind and not ahead)
+                or (re.search(r"\bnext\b", sentence, re.I) and j > i and j != i + 1 and "later" not in sentence)
+            )
+            if wrong:
+                found.append(f"{PAGE_TITLES[name]} → {PAGE_TITLES[target]}: {sentence}")
+    return found
+
+
+def test_a_pointer_says_the_right_way_through_the_course():
+    found = pointers_the_wrong_way()
+    assert not found, "\n".join(found)
+
+
 def test_prose_says_when_a_link_goes_ahead():
     """Each page uses only ideas from the pages before it: a link to a later page is a pointer, and says so
     ("later", "ahead", "next"), so that the reader knows the page doesn't lean on it."""
