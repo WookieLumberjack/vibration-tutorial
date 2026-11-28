@@ -16,11 +16,9 @@ the last page's `live_bases.LiveBases` (free, no rail), and each panel has a fun
 - `sizes(s, x, v)`: the **Sizes** tab: each pair's size, √(w₁² + w₂²), against time, in the undamped modes and in the
   state-space modes, so the dampers' coupling of the undamped modes shows beside the state-space modes' clean
   decays (straight lines on its log axis).
-- `shapes_view(s)`: the **Shapes** tab: each mode's ψ as phasors, one a mass, turned so m₁'s lies along the real
-  axis (then m₂'s angle is the phase between them), beside the undamped mode's φ.
 - `start_state(s, start)`: where a start puts the masses (x, v).
 - `pair_shapes(s, basis, own)`: each pair of the basis as a shape on the Matrices tab, m₂'s part as a phasor
-  beside m₁'s, with the ψ and λ whose Re and Im of [ψ; λψ] are its columns of T (every basis's are: a mass alone
+  beside m₁'s (a state-space mode's note says how far m₂ lags or leads), with the ψ and λ whose Re and Im of [ψ; λψ] are its columns of T (every basis's are: a mass alone
   and iω̂, a mode of M and K and iω, A's own) and what it passes to the other pair. In the fourth basis, the
   reader's own (`core/state_modes.shape_basis`), m₂'s phasor ρ = ψ₂/ψ₁ is dragged (`snap`: within `SNAP` of the
   plot's half-width of A's own shape, onto it, so the red can be seen to go), with a gauge of how near A's it is.
@@ -61,7 +59,7 @@ from .text import number as sig
 
 __all__ = ["GRIPS", "MM", "StateTrial"]
 
-TAB_MATRICES, TAB_SIZES, TAB_SHAPES = range(3)
+TAB_MATRICES, TAB_SIZES = range(2)
 MASS, UNDAMPED, STATE, OWN = range(4)  # the bases, as BASES, then the reader's own
 BASIS_NAMES = ("Each mass: x and ẋ", "Modes of M and K: q and q̇", "State-space modes", "Your own: shapes you drag")
 REAL, COMPLEX = range(2)  # how the Matrices tab writes the basis: T's Re y and Im y, or Y's y and ȳ
@@ -446,42 +444,19 @@ def sizes_note(s: TwoMass) -> str:
     return first + second
 
 
-# ------------------------------------------------------------------ the Shapes tab
+# ------------------------------------------------------------------ a mode's phase
 
 
-@dataclass(frozen=True)
-class Phasors:
-    title: str
-    masses: tuple[tuple[float, float], tuple[float, float]]  # each mass's ψ as (Re, Im)
-    undamped: tuple[tuple[float, float], tuple[float, float]]  # each mass's φ (real)
-    note: str
-
-
-def shapes_view(s: TwoMass) -> tuple[Phasors, ...]:
-    """Each mode's ψ, a phasor a mass, beside the undamped mode's φ (see the module)."""
-    M, _, K = s.matrices()
-    _, V = undamped_modes(M, K)
-    out = []
-    for r, m in enumerate(modes(s)):
-        p = m.shape * np.exp(-1j * np.angle(m.shape[0]))  # turned so m₁'s phasor is along +Re: m₂'s angle is the phase
-        masses = ((float(p[0].real), float(p[0].imag)), (float(p[1].real), float(p[1].imag)))
-        sign = 1.0 if V[0, r] >= 0 else -1.0
-        phi = ((float(sign * V[0, r]), 0.0), (float(sign * V[1, r]), 0.0))
-        if not m.swings:
-            note = "Overdamped: no swing, so no phase. Its shape is real, and so is its second's."
-        else:
-            off = _off_line(m.phase)
-            ideal, kind = ("0°", "in step") if abs(m.phase) < 90 else ("180°", "opposed")
-            if abs(off) < 0.05:
-                note = f"The masses move exactly {kind}: ψ is real, the undamped mode's own shape."
-            else:
-                way = "lags" if m.phase < 0 else "leads"
-                note = (
-                    f"m₂ {way} m₁ by {sig(abs(m.phase), 3)}°, not the {ideal} of moving {kind}: ψ is complex, so the masses don't "
-                    "reach their peaks together."
-                )
-        out.append(Phasors(f"Mode {r + 1}", masses, phi, note))
-    return tuple(out)
+def phase_note(m: StateMode) -> str:
+    """How a swinging mode's masses move together: exactly in step or opposed (ψ real), or m₂ lagging or leading m₁."""
+    ideal, kind = ("0°", "in step") if abs(m.phase) < 90 else ("180°", "opposed")
+    if abs(_off_line(m.phase)) < 0.05:
+        return f"Real: the masses move exactly {kind}, as the mode of M and K."
+    way = "lags" if m.phase < 0 else "leads"
+    return (
+        f"Complex: m₂ {way} m₁ by {sig(abs(m.phase), 3)}°, not the {ideal} of moving {kind}, so the masses don't "
+        "reach their peaks together."
+    )
 
 
 # ------------------------------------------------------------------ the starts
@@ -633,7 +608,7 @@ def pair_shapes(s: TwoMass, which: int, own: Own = None, written: int = REAL) ->
                 start = phi[r].real
                 title = f"State-space mode {r + 1}" if which == STATE else f"Your mode {r + 1}"
                 note = (
-                    f"A's own mode {r + 1}: its pair passes nothing to mode {other}'s."
+                    f"{phase_note(m)} A's own mode {r + 1}: its pair passes nothing to mode {other}'s."
                     if m.swings
                     else f"Mode {r + 1} is overdamped: its pair is A's own, two real decays, and passes nothing on."
                 )

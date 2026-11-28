@@ -1,5 +1,5 @@
 """State-space modes' view model (`view_models/state_space.py`): the planes' coordinates and labels, the matrices'
-steps and their marked coupling, the Sizes tab's coupled and clean decays, the Shapes tab's phasors, the starts, and
+steps and their marked coupling, the Sizes tab's coupled and clean decays, the modes' phases, the starts, and
 `LiveBases.hold_state`."""
 
 from __future__ import annotations
@@ -89,20 +89,19 @@ def test_the_sizes_tab_shows_the_coupling_and_the_clean_decay():
 
 
 def test_the_shapes_and_the_x_plane():
-    one, two = v.shapes_view(DEFAULT)
-    assert one.note.startswith("m₂ lags m₁ by 4.51°, not the 0° of moving in step")
-    assert two.note.startswith("m₂ lags m₁ by 173°, not the 180° of moving opposed")
-    assert one.undamped[0][1] == 0.0 and one.masses[0][1] != 0.0
+    one, two = (sh.note for sh in v.pair_shapes(DEFAULT, v.STATE))
+    assert "Complex: m₂ lags m₁ by 4.51°, not the 0° of moving in step" in one
+    assert "Complex: m₂ lags m₁ by 173°, not the 180° of moving opposed" in two
     p = v.x_plane(DEFAULT)
     assert "6.7° out of step" in p.note and all(sh.swings for sh in p.shapes)
     ex, ey = p.shapes[0].ellipse
     assert ex.size == ey.size == 121 and np.ptp(ex) > 0
     real = v.x_plane(SYMMETRIC)
     assert "along a line" in real.note and real.shapes[0].im == pytest.approx((0.0, 0.0), abs=1e-9)
-    for sh in v.shapes_view(SYMMETRIC):
-        assert sh.note.startswith("The masses move exactly")
-    heavy = v.shapes_view(TwoMass(m2=2.0, c=20.0))
-    assert heavy[1].note.startswith("Overdamped")
+    for sh in v.pair_shapes(SYMMETRIC, v.STATE):
+        assert "Real: the masses move exactly" in sh.note
+    heavy = v.pair_shapes(TwoMass(m2=2.0, c=20.0), v.STATE)
+    assert "overdamped" in heavy[1].note
     assert v.x_plane(TwoMass(m2=2.0, c=60.0)).note.startswith("Both modes overdamped")
 
 

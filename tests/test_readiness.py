@@ -254,7 +254,6 @@ def _state_views(state):
         v.matrices_view(s, state.basis, own, None, state.written),
         v.matrices_view(s, state.basis, own, None, v.COMPLEX),
         v.sizes(s, x, xd),
-        v.shapes_view(s),
         v.pair_shapes(s, state.basis, own, state.written),
         lb.energy_view(*live.since_change()),
     )
