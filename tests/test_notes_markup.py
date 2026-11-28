@@ -132,6 +132,19 @@ def test_a_page_lists_only_symbols_known_by_then_and_each_letter_once():
         assert not twice, f"{page}'s notation gives {sorted(twice)} two meanings"
 
 
+def test_a_symbols_other_meanings_name_their_page_not_above_or_below():
+    """A row's "also …" caveat prints on every page whose table shows the row, and in the glossary, so "above" or
+    "below" is false on some of them (the Theory notes audit's A2: Vibration isolation's T and N rows said "a
+    pulse's length, above", the pulses coming two pages later): it names the page instead."""
+    bad = [
+        s.key
+        for s in notation.SYMBOLS
+        for part in re.findall(r"\(([^()]*\balso\b[^()]*)\)", s.meaning)
+        if re.search(r"\b(above|below|earlier|later)\b", part)
+    ]
+    assert not bad, bad
+
+
 def test_glossary_lists_every_symbol_by_course_group():
     html = all_notes()["glossary"]
     for group, _ in links.COURSE:
