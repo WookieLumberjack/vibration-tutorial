@@ -381,6 +381,23 @@ def _live_pendulum(trial: str, tab: str):
     return setup
 
 
+def _live_isolation(trial: str, tab: str):
+    """Vibration isolation's trial `trial`, live (its frame loop steps the machine), on tab `tab` (a
+    `view_models.isolation` TAB_ name), at 1× (#478 Phase 4)."""
+
+    def setup(w):
+        from vib_tutorial.gui import isolation
+        from vib_tutorial.view_models import isolation as view
+
+        page = w.isolation_page
+        w.pages.setCurrentWidget(page)
+        page.load_trial(next(i for i, t in enumerate(isolation.TRIALS) if t.name.startswith(trial)))
+        page.tabs.setCurrentIndex(getattr(view, tab))
+        return page, 1.0
+
+    return setup
+
+
 SCENARIOS = (
     Scenario("Simulation: 4 masses, resonance building up", "baseline: the first trial", _sim_trial),
     Scenario("Simulation: 8 masses at 1e8 N/m, 50 Hz", "#202 linear steps in Rust, #203 strip chart", _stiff(0.0)),
@@ -454,6 +471,21 @@ SCENARIOS = (
             _live_pendulum("Nearly over the top", tab),
         )
         for name, tab in (("Period", "TAB_PERIOD"), ("Phase plane", "TAB_PHASE"), ("Energy", "TAB_ENERGY"))
+    ),
+    Scenario(
+        "Vibration isolation: soft mounts at speed, Transmissibility tab",
+        "the machine, its forces and the 25 Hz traces every frame, a dwell landing (#478 Phase 4)",
+        _live_isolation("Soft mounts", "TAB_T"),
+    ),
+    Scenario(
+        "Vibration isolation: running up through resonance, Floor force tab",
+        "the floor force built turn by turn as the speed climbs (#478 Phase 4)",
+        _live_isolation("Running up", "TAB_FORCE"),
+    ),
+    Scenario(
+        "Vibration isolation: the floor shaking, Transmissibility tab",
+        "the floor drawn moving under the mounts (#478 Phase 4)",
+        _live_isolation("The floor shakes", "TAB_T"),
     ),
     Scenario(
         "Coordinates & bases: one mass plucked, Coupling tab",

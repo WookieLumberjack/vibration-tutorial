@@ -647,6 +647,7 @@ PAGE_CLASSES = {
 # and export without Qt (`notes_pages.page_html`; `tests/test_readiness.py`'s `qt_free_notes`).
 NOTES_MODULES = {
     "sdof_page": "sdof_trials",
+    "isolation_page": "isolation_trials",
     "pendulum_page": "pendulum_trials",
     "bases_page": "bases_trials",
     "state_page": "state_space_trials",

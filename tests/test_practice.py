@@ -430,8 +430,7 @@ def test_a_placement_is_judged_by_where_the_guess_lands():
 
 def test_the_placements_answers_are_the_pages_numbers():
     """Each trial asked as a Placement has the answer its page works out (and its notes quote)."""
-    from vib_tutorial.gui import pendulum, sdof, transient
-    from vib_tutorial.view_models import isolation
+    from vib_tutorial.gui import isolation, pendulum, sdof, transient
 
     def placement(trials, start: str) -> Placement:
         p = next(t.predict for t in trials if isinstance(t.predict, Placement) and t.predict.prompt.startswith(start))

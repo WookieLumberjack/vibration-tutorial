@@ -16,9 +16,12 @@ from notes_quoting import quoted
 
 import vib_tutorial.view_models as view_models
 from vib_tutorial.core.isolation import Isolator, Mount, deflection_for
+from vib_tutorial.gui.isolation_trials import TRIALS
 from vib_tutorial.view_models import duffing
 from vib_tutorial.view_models import isolation as view
-from vib_tutorial.view_models.isolation import TRIALS, IsolationTrial, isolator
+from vib_tutorial.view_models.isolation import IsolationTrial, isolator
+from vib_tutorial.view_models.live_isolation import FLOOR, MACHINE, by_speed
+from vib_tutorial.view_models.recorder import Point
 
 MODULES = [f"vib_tutorial.view_models.{m.name}" for m in pkgutil.iter_modules(view_models.__path__)]
 
@@ -43,13 +46,19 @@ def defaults() -> Isolator:
     return isolator(IsolationTrial("", ""))
 
 
+def at_speed(t: IsolationTrial, shaking: int = MACHINE) -> str:
+    """The readout once the trial's speed has landed its T (the theory's: a dwell lands it to 0.05 %)."""
+    iso = isolator(t)
+    return view.steady_note(iso, iso.at_speed()[2], shaking)
+
+
 def test_isolation_readouts_print_the_worked_example():
     """The page's readouts on its defaults show the worked example's figures, as the notes round them."""
     iso = defaults()
     info = view.mount_info(iso)
     assert f"c = {quoted('isolation', '442.9')} N·s/m" in info
     assert f"f<sub>n</sub> = {quoted('isolation', '7.048')} Hz" in info
-    note = view.transmissibility(iso).note
+    note = at_speed(IsolationTrial("", ""))
     assert f"{quoted('isolation', '22.6')} N reaches the floor" in note
     assert f"T = {quoted('isolation', '0.0916')}" in note
     assert f"isolation {quoted('isolation', '90.8 %'):g} % (-{quoted('isolation', '20.8')} dB)" in note
@@ -58,8 +67,8 @@ def test_isolation_readouts_print_the_worked_example():
 
 
 def test_isolation_trials_readouts_say_what_their_notes_do():
-    """Each trial's note, against the page's readout once the trial is set up."""
-    notes = {t.name: view.transmissibility(isolator(t)).note for t in TRIALS}
+    """Each trial's note, against the page's readout once the trial's speed has landed its T."""
+    notes = {t.name: at_speed(t, t.shaking) for t in TRIALS}
     infos = {t.name: view.mount_info(isolator(t)) for t in TRIALS}
     assert "isolation 90.8 %" in notes["Soft mounts"]  # "91 % isolation"
     assert "f<sub>n</sub> = 28.78 Hz" in infos["Stiff mounts"]  # 28.8 Hz
@@ -68,42 +77,67 @@ def test_isolation_trials_readouts_say_what_their_notes_do():
     assert "T = 0.0701" in notes["An elastically supported damper"]  # 7.0 %
     assert "T = 0.038," in notes["Two stages"]  # 3.8 %
     assert "±27.1 µm" in notes["An inertia block"]  # ±27 µm instead of ±109 µm
+    assert "the machine ±9.16 µm: T = 0.0916" in notes["The floor shakes instead"]
     run = next(t for t in TRIALS if t.name == "Running up through resonance")
-    assert "Through resonance (423 rpm" in view.start_up_view(isolator(run), run.ramp).note  # 420 rpm
+    assert "f<sub>n</sub> = 7.048 Hz (423 rpm)" in view.mount_info(isolator(run))  # 420 rpm
 
 
 def test_isolation_amplifying_mounts_say_so_everywhere():
     """Below √2 f_n the readouts say "amplified", never a negative isolation."""
-    stiff = isolator(IsolationTrial("", "", deflection_mm=0.3))
-    for text in (view.transmissibility(stiff).note, view.chart(stiff).note):
+    stiff = IsolationTrial("", "", deflection_mm=0.3)
+    for text in (at_speed(stiff), view.chart(isolator(stiff)).note):
         assert "amplified 3.86 times" in text and not re.search(r"-[\d.]+ %", text)
-    assert "isolating" not in view.chart(stiff).note
+    assert "isolating" not in view.chart(isolator(stiff)).note
 
 
-def test_isolation_transmissibility_curves():
-    iso = defaults()
-    v = view.transmissibility(iso)
-    assert len(v.family) == len(view.FAMILY) and all(c.x is view.RATIOS for c in v.family)
-    # every plain mount passes T = 1 at √2 f_n, whatever its damping
-    for c in v.family:
+def test_isolation_transmissibility_is_built_from_the_points_and_the_theory_on_request():
+    state = IsolationTrial("", "")
+    iso = isolator(state)
+    fn = iso.natural_hz
+    k = view.key(state)
+    points = [
+        Point(25.0, complex(0.09, 0.01), (k, MACHINE)),
+        Point(10.0, complex(0.9, 0.1), (k, MACHINE)),
+        Point(25.0, complex(0.0916, 0.0), (k, FLOOR)),
+        Point(25.0, complex(0.2, 0.0), (view.key(IsolationTrial("", "", zeta=0.3)), MACHINE)),  # before a change
+    ]
+    v = view.t_view(state, points, False)
+    assert list(v.machine.x) == pytest.approx([10.0 / fn, 25.0 / fn]) and v.machine.y[1] == pytest.approx(
+        abs(0.09 + 0.01j)
+    )
+    assert list(v.floor.x) == pytest.approx([25.0 / fn]) and v.earlier.x.size == 1
+    assert v.isolator.x.size == 0 and v.family == ()  # no theory until asked for
+    assert "fall on one curve" in v.note and v.speed == pytest.approx(25.0 / fn)
+    shown = view.t_view(state, points, True)
+    assert len(shown.family) == len(view.FAMILY) and all(c.x is view.RATIOS for c in shown.family)
+    for c in shown.family:  # every plain mount passes T = 1 at √2 f_n, whatever its damping
         assert np.interp(math.sqrt(2), c.x, c.y) == pytest.approx(1.0, abs=2e-3)
-    # the resonant peak falls as the damping rises (ζ = 0's misses r = 1 on the grid, so stays finite)
-    peaks = [np.nanmax(c.y) for c in v.family]
+    peaks = [np.nanmax(c.y) for c in shown.family]  # the resonant peak falls as the damping rises
     assert peaks[0] > 100 and peaks == sorted(peaks, reverse=True)
-    r, T = (float(a[0]) for a in v.now)
-    assert (r, T) == pytest.approx((iso.speed_hz / iso.natural_hz, iso.at_speed()[2]))
-    assert np.interp(r, *v.isolator) == pytest.approx(T, rel=1e-3)
-    # the floor force is T times the unbalance's, and the marker sits on it
-    assert np.allclose(v.floor.y, iso.transmissibility(v.rigid.x / 60) * v.rigid.y)
-    assert v.rpm_range == (v.rigid.x[0], v.rigid.x[-1]) and v.rpm_range[0] < iso.rpm < v.rpm_range[1]
-    assert float(v.force_now.y[0]) == pytest.approx(iso.at_speed()[1])
+    assert np.interp(25.0 / fn, *shown.isolator) == pytest.approx(iso.at_speed()[2], rel=1e-3)
+    assert "Run the machine" in view.t_view(state, [], False).note
+    # (a key that only differs in speed or unbalance is the same mounts)
+    assert view.key(IsolationTrial("", "", rpm=900.0, unbalance=0.02)) == k
+    bare = view.t_view(IsolationTrial("", "", zeta=0.0), [], True)
+    assert np.isfinite(bare.isolator.y).all()  # the resonance is left out
 
 
-def test_isolation_markers_and_undamped_mounts():
-    off = view.transmissibility(isolator(IsolationTrial("", "", rpm=60.0 * 7.048 * 30)))  # r = 30, off the plot
-    assert off.now.x.size == 0
-    bare = view.transmissibility(isolator(IsolationTrial("", "", zeta=0.0)))
-    assert np.isfinite(bare.isolator.y).all() and np.isfinite(bare.floor.y).all()  # the resonance is left out
+def test_isolation_floor_force_tab():
+    state = IsolationTrial("", "")
+    iso = isolator(state)
+    rpm, peaks = np.array([300.0, 423.0, 600.0]), np.array([10.0, 111.0, 40.0])
+    v = view.force_view(state, rpm, peaks, True)
+    assert "111 N at 423 rpm" in v.note and v.title == "Force on the floor" and v.unit == "N"
+    assert np.allclose(v.rigid.y, iso.force_at(v.rigid.x / 60))
+    assert np.allclose(v.theory.y, iso.transmissibility(v.rigid.x / 60) * v.rigid.y)
+    assert v.rpm_range[1] >= 1.25 * iso.rpm
+    floor = view.force_view(IsolationTrial("", "", shaking=FLOOR), np.empty(0), np.empty(0), False)
+    assert floor.title == "Machine's motion" and floor.theory.x.size == 0 and "Run the machine up" in floor.note
+    # each whole turn's peak: a steady sine's peak at its speed
+    t = np.linspace(0.0, 1.0, 10001)
+    phase = 2 * np.pi * 10 * t
+    r, pk = by_speed(t, np.full(t.size, 10.0), phase, 3.0 * np.cos(phase))
+    assert r == pytest.approx(600.0) and pk == pytest.approx(3.0, rel=1e-4) and r.size == 9
 
 
 def test_isolation_design_note():
@@ -111,27 +145,6 @@ def test_isolation_design_note():
     assert "a sag of 4.37 mm or more" in view.design_note(iso, 0.9)
     assert 1e3 * deflection_for(iso.speed_hz, 0.9) == pytest.approx(4.37, abs=0.005)
     assert view.design_note(iso, 1.0) == ""  # no mount isolates everything
-
-
-def test_isolation_start_up_view():
-    iso = defaults()
-    v = view.start_up_view(iso, 2.0)
-    assert v.speed.x.size <= 6001 and v.t_end > 2.0
-    assert v.speed.y[-1] == pytest.approx(iso.rpm) and v.resonance_rpm == pytest.approx(60 * iso.natural_hz)
-    assert np.allclose(v.rigid.y, iso.force_at(v.speed.y / 60))
-    assert "running, 22.6 N and ±109 µm" in v.note
-
-
-def test_isolation_let_go_view():
-    iso = defaults()
-    v = view.let_go_view(iso, -0.5e-3)
-    assert v.x.y[0] == pytest.approx(-0.5e-3) and not v.speed.y.any() and not v.force.y.any()
-    crossings = np.flatnonzero(np.diff(np.sign(v.x.y)) != 0)
-    period = 2 * np.mean(np.diff(v.x.x[crossings]))
-    assert 1 / period == pytest.approx(iso.natural_hz * math.sqrt(1 - iso.zeta**2), rel=0.01)
-    assert "rings on its mounts and dies away, at f<sub>n</sub> = 7.05 Hz" in v.note
-    two = isolator(IsolationTrial("", "", mount=Mount.TWO_STAGE))
-    assert "one stage of plain mounts would ring" in view.let_go_view(two, 1e-3).note
 
 
 def test_isolation_chart():

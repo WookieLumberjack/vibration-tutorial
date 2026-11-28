@@ -111,7 +111,7 @@ def test_dragging_the_isolation_speed_line_sets_the_speed(main_window, app):
     drag(p.tr_plot, scene_at(p.tr_plot, line.value(), y), scene_at(p.tr_plot, math.log10(0.8), y), app)
     assert p.iso.speed_hz / p.iso.natural_hz == pytest.approx(0.8, rel=0.03)  # below √2: amplified
     assert p.rpm.value() == pytest.approx(0.8 * p.iso.natural_hz * 60.0, rel=0.03)
-    assert "amplified" in p.tr_note.text()
+    assert p.live.speed_hz == pytest.approx(p.iso.speed_hz)  # the live machine runs at it at once
 
 
 def test_dragging_the_quarter_car_dot_changes_the_damper(main_window, app):

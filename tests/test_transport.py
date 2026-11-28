@@ -12,9 +12,9 @@ def _settle(w) -> None:
 
 def test_the_bar_drives_a_playback_page(main_window):
     w = main_window
-    w.show_page("isolation_page")
+    w.show_page("quarter_car_page")
     _settle(w)
-    bar, pb = w.run_bar, w.isolation_page.playback
+    bar, pb = w.run_bar, w.quarter_car_page.playback
     assert bar.source is not None and bar.source.run is pb.run
     assert bar.run.isEnabled() and bar.run.text() == "Start" and not pb.run.running
     bar.run.click()

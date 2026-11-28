@@ -1655,6 +1655,11 @@ def test_isolation_trials():
     assert Isolator(mount=Mount.TWO_STAGE, rpm=3000).at_speed()[2] == pytest.approx(0.002, abs=0.0005)
     assert Isolator(rpm=3000).at_speed()[2] == pytest.approx(0.025, abs=0.0005)
     assert Isolator(block=300).at_speed()[0] == pytest.approx(27e-6, abs=0.5e-6)
+    # The floor shakes instead: ±0.1 mm at 25 Hz moves the machine ±9.16 µm, T = 0.0916 (the force's share)
+    from vib_tutorial.view_models.live_isolation import FLOOR_AMPLITUDE
+
+    assert FLOOR_AMPLITUDE == 0.1e-3 and soft.speed_hz == 25.0
+    assert FLOOR_AMPLITUDE * T == pytest.approx(9.16e-6, abs=0.005e-6) and T == pytest.approx(0.0916, abs=5e-5)
 
 
 def test_isolation_worked_example():
