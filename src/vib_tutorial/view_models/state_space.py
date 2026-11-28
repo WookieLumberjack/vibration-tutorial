@@ -554,10 +554,16 @@ def _complex(z: complex) -> str:
 
 
 SHAPE_TITLES = (
-    "Each pair as a shape: m₁'s part along Re, m₂'s beside it",
-    "Each pair as a shape: m₁'s part along Re, m₂'s beside it",
-    "Each pair as a shape: m₁'s part along Re, m₂'s beside it (dashed: the mode of M and K's)",
-    "Your own shapes: drag m₂'s arrow (dashed: where it started)",
+    "Each mass's pair as a shape",
+    "The modes of M and K as shapes",
+    "The state-space modes' shapes",
+    "Your own shapes",
+)
+SHAPE_KEYS = (  # under the box's title, which sets the box's least width: kept short, the key wraps
+    "m₁'s part along Re, m₂'s beside it.",
+    "m₁'s part along Re, m₂'s beside it.",
+    "m₁'s part along Re, m₂'s beside it. Dashed: the mode of M and K's.",
+    "Drag m₂'s arrow. Dashed: where it started.",
 )
 
 
@@ -593,7 +599,7 @@ def pair_shapes(s: TwoMass, which: int, own: Own = None, written: int = REAL) ->
             )
         elif which == UNDAMPED:
             psi, lam = V[:, r].astype(complex), complex(0.0, omega[r])
-            title = f"Mode {r + 1} of M and K"
+            title = f"Mode {r + 1}"
             kind = "in step" if phi[r].real > 0 else "opposed"
             note = f"Real: the masses exactly {kind}, as the last page's mode. " + (
                 f"Its pair passes nothing to mode {other}'s: the damping is proportional, or there is none."
@@ -606,7 +612,7 @@ def pair_shapes(s: TwoMass, which: int, own: Own = None, written: int = REAL) ->
             if which == STATE or not m.swings:
                 psi, lam = m.shape, m.eigenvalues[0]
                 start = phi[r].real
-                title = f"State-space mode {r + 1}" if which == STATE else f"Your mode {r + 1}"
+                title = f"Mode {r + 1}" if which == STATE else f"Your mode {r + 1}"
                 note = (
                     f"{phase_note(m)} A's own mode {r + 1}: its pair passes nothing to mode {other}'s."
                     if m.swings

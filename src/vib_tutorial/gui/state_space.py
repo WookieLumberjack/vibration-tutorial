@@ -223,11 +223,14 @@ class StateSpacePage(QtWidgets.QWidget):
         cv.addWidget(self.w_plot, 2)
         cv.addWidget(self.readout)
 
-        # --- right: Matrices, Sizes, Shapes, Theory
+        # --- right: Matrices, Sizes, Theory
         matrices = QtWidgets.QWidget()
         mv = QtWidgets.QVBoxLayout(matrices)
         self.own_box = QtWidgets.QGroupBox(view.SHAPE_TITLES[view.UNDAMPED])
         ov = QtWidgets.QVBoxLayout(self.own_box)
+        self.own_key = LiveLabel(wrap=True)
+        mute(self.own_key)
+        ov.addWidget(self.own_key)
         own_row = QtWidgets.QHBoxLayout()
         self.own_plots: list[pg.PlotWidget] = []
         self.own_items: list[list[pg.PlotDataItem]] = []  # m₁'s arrow, m₂'s, where it started
@@ -619,6 +622,7 @@ class StateSpacePage(QtWidgets.QWidget):
         which = self.which
         mine = which == view.OWN
         self.own_box.setTitle(view.SHAPE_TITLES[which])
+        self.own_key.setText(view.SHAPE_KEYS[which])
         self.own_reset.setVisible(mine)
         shapes = view.pair_shapes(self.live.system, which, self.own, self.written.currentIndex())
         for r, o in enumerate(shapes):
