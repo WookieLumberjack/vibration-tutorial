@@ -106,12 +106,12 @@ class IsolationPage(QtWidgets.QWidget):
         self.rpm = machine.number("Speed:", 0.0, 1e5, 1500.0, 0, " rpm", TIPS["rpm"])
         self.unbalance = machine.number("Unbalance mₑe:", 0.0, 100.0, 0.01, 5, " kg·m", TIPS["unbalance"])
         self.block = machine.number("Inertia block:", 0.0, 1e6, 0.0, 1, " kg", TIPS["block"])
-        self.run_up = QtWidgets.QPushButton("Run up")
+        self.run_up = ActionToggle("Run up", "Running up: click to hold")  # lit while the speed climbs
         self.run_up.setToolTip(TIPS["run_up"])
-        self.run_up.clicked.connect(self._on_run_up)
-        self.run_down = QtWidgets.QPushButton("Run down")
+        self.run_up.toggled.connect(self._on_run_up)
+        self.run_down = ActionToggle("Run down", "Running down: click to hold")
         self.run_down.setToolTip(TIPS["run_down"])
-        self.run_down.clicked.connect(self._on_run_down)
+        self.run_down.toggled.connect(self._on_run_down)
         self.ramp = machine.number("Run up/down in:", 0.1, 600.0, 2.0, 1, " s", TIPS["ramp"])
         ramps = FlowLayout()
         ramps.add(self.run_up, self.run_down)
@@ -183,6 +183,8 @@ class IsolationPage(QtWidgets.QWidget):
         self.scrub = Scrub(self.strip, self.force_strip)
         self.scrub.scrubbed.connect(self._on_scrubbed)
         self.readout = LiveLabel(wrap=True)
+        # room for its longest texts, so a longer one (the floor's, a steady state's) doesn't lay the page out again
+        self.readout.setMinimumHeight(3 * self.readout.fontMetrics().lineSpacing())
 
         centre = QtWidgets.QWidget()
         cv = QtWidgets.QVBoxLayout(centre)
@@ -355,11 +357,13 @@ class IsolationPage(QtWidgets.QWidget):
         self.reset()
         self._handled_at = None
         self.trials.show_note(t.note)
-        if t.start == view.START_RUN_UP:
-            self.live.set_speed(0.0)
+        if t.start == view.START_RUN:  # at its speed from rest
+            self.live.set_speed(t.rpm)
+        elif t.start == view.START_RUN_UP:
             self.live.set_speed(t.rpm, t.ramp)
-            self.live.edits.clear()
-            self.live.changed_at = t.ramp
+            set_quietly(self.run_up, True)
+        self.live.edits.clear()
+        self.live.changed_at = t.ramp if t.start == view.START_RUN_UP else 0.0
         if t.start is not None:
             self._run(True)
         self._draw_tab()
@@ -373,7 +377,13 @@ class IsolationPage(QtWidgets.QWidget):
             self._handled()
             if self.sweep is not None and not self._sweeping_now:
                 self.sweep_button.setChecked(False)  # the reader took the speed over
-            self.live.set_speed(self.rpm.value())
+            live = self.live
+            if self._sweeping_now or (live.target > 0 and not self.run_down.isChecked()):
+                if self.run_up.isChecked():  # climbing: on to the new speed at the same rate
+                    live.set_speed(self.rpm.value(), abs(TWO_PI_RPM * self.rpm.value() - live.omega) / live.rate)
+                else:
+                    live.set_speed(self.rpm.value())  # running: at once, the angle running on
+            # stopped (or running down), the box is the speed Run up goes to
             self._draw_speed()
         elif field == "shaking":
             self._handled()
@@ -422,16 +432,26 @@ class IsolationPage(QtWidgets.QWidget):
             self._draw_live()
             self._draw_tab()
 
-    def _on_run_up(self) -> None:
-        self._handled()
-        self.live.set_speed(self.rpm.value(), self.ramp.value())
-        if not self.running:
-            self._run(True)
+    def _on_run_up(self, on: bool) -> None:
+        self._ramp(on, self.run_up, self.run_down, self.rpm.value())
 
-    def _on_run_down(self) -> None:
-        self._handled()
+    def _on_run_down(self, on: bool) -> None:
         self._stop_sweep()
-        self.live.set_speed(0.0, self.ramp.value())
+        self._ramp(on, self.run_down, self.run_up, 0.0)
+
+    def _ramp(self, on: bool, button: ActionToggle, other: ActionToggle, rpm: float) -> None:
+        """Run up or down to `rpm` over the ramp's time, from the speed now (`on`), or hold the speed it's at."""
+        self._handled()
+        live = self.live
+        if not on:  # pressed again: hold the speed it's reached
+            live.set_speed(60.0 * live.speed_hz)
+            return
+        set_quietly(other, False)
+        full = max(self.rpm.value(), 60.0 * live.speed_hz, 1e-9)  # the whole ramp's span, in its time
+        seconds = self.ramp.value() * abs(rpm - 60.0 * live.speed_hz) / full
+        live.set_speed(rpm, seconds)
+        if not live.ramping:
+            set_quietly(button, False)
         if not self.running:
             self._run(True)
 
@@ -492,9 +512,11 @@ class IsolationPage(QtWidgets.QWidget):
         return self.live.t
 
     def reset(self) -> None:
-        """Back to rest at t = 0, at the Speed box's speed, waiting for Start; the measured points kept."""
+        """Back to rest at t = 0, the machine stopped, waiting for Start or Run up; the measured points kept."""
         self.live.reset()
-        self.live.set_speed(self.rpm.value())
+        self.live.set_speed(0.0)
+        for button in (self.run_up, self.run_down):
+            set_quietly(button, False)
         self.live.edits.clear()
         self.live.changed_at = 0.0
         self.arrows.reset()
@@ -564,7 +586,10 @@ class IsolationPage(QtWidgets.QWidget):
         if rpm is None:
             return
         self._sweeping_now = True
+        for button in (self.run_up, self.run_down):
+            set_quietly(button, False)
         self.rpm.setValue(round(rpm, 1))
+        self.live.set_speed(self.rpm.value())  # stopped or not, the sweep runs it at this speed
         self._sweeping_now = False
 
     def _stop_sweep(self) -> None:
@@ -601,6 +626,8 @@ class IsolationPage(QtWidgets.QWidget):
         self.scrub.apply_theme()
         self.marks.apply_theme()
         self.speed_line.apply_theme()
+        for button in (self.run_up, self.run_down, self.sweep_button):
+            button.apply_theme()
         dash = QtCore.Qt.PenStyle.DashLine
         self.x_item.setPen(pg.mkPen(c.mass[0], width=2))
         self.g_item.setPen(pg.mkPen(c.grey, width=1.5))
@@ -658,10 +685,15 @@ class IsolationPage(QtWidgets.QWidget):
         forces = float(np.abs(y[recent][:, [COL["floor"], COL["unbalance"]]]).max()) if recent.any() else 0.0
         self.body.set_scale(max(swing, 1e-6), max(forces, 1e-6))
         self._draw_body()
-        self.clock.setText(f"t = {sig(end, 4)} s, {60 * live.speed_hz:.0f} rpm")
+        way = (" ▲" if live.target > live.omega else " ▼") if live.ramping else ""
+        self.clock.setText(f"t = {sig(end, 4)} s, {60 * live.speed_hz:.0f} rpm{way}")
         self._show_readout()
-        self.run_up.setEnabled(live.target < TWO_PI_RPM * self.rpm.value() * (1 - 1e-9))
-        self.run_down.setEnabled(live.target > 0)
+        if not live.ramping:  # the ramp has ended: its button goes out
+            for button in (self.run_up, self.run_down):
+                if button.isChecked():
+                    set_quietly(button, False)
+        self.run_up.setEnabled(self.run_up.isChecked() or live.target < TWO_PI_RPM * self.rpm.value() * (1 - 1e-9))
+        self.run_down.setEnabled(self.run_down.isChecked() or live.target > 0)
         if frame and self.tabs.currentIndex() == view.TAB_FORCE and end - self._forced_at >= FORCE_EVERY:
             self._draw_force()
 
@@ -683,7 +715,7 @@ class IsolationPage(QtWidgets.QWidget):
         rpm = 60 * live.speed_hz
         if live.ramping:
             way = "up" if live.target > live.omega else "down"
-            self.readout.setText(f"Running {way}: {rpm:.0f} rpm.")
+            self.readout.setText(f"Running {way}: {rpm:.0f} rpm; {self._input_text()}.")
             return
         if rpm <= 0:
             self.readout.setText("Stopped. Pull the machine and let go, or Run up.")
@@ -694,7 +726,16 @@ class IsolationPage(QtWidgets.QWidget):
             iso = dataclasses.replace(self.iso, rpm=rpm)
             self.readout.setText(view.steady_note(iso, abs(points[-1].response), live.shaking))
         else:
-            self.readout.setText(f"At {rpm:.0f} rpm: waiting for the mounts' own ring to die away…")
+            self.readout.setText(
+                f"At {rpm:.0f} rpm, {self._input_text()}: waiting for the mounts' own ring to die away…"
+            )
+
+    def _input_text(self) -> str:
+        """What shakes it now, at the speed now: the unbalance's force, or the floor's motion (fixed)."""
+        live = self.live
+        if live.shaking == FLOOR:
+            return f"the floor moves ±{fmt(li.FLOOR_AMPLITUDE, 'm')} at {sig(live.speed_hz)} Hz"
+        return f"the unbalance pulls ±{fmt(float(live.iso.force_at(live.speed_hz)), 'N')} (mₑeΩ²)"
 
     @coalesce.coalesced
     def _draw_tab(self, *_: object) -> None:
@@ -706,7 +747,8 @@ class IsolationPage(QtWidgets.QWidget):
         elif i == view.TAB_CHART:
             self._draw_chart()
 
-    def _draw_tr(self) -> None:
+    @coalesce.coalesced
+    def _draw_tr(self, *_: object) -> None:
         state = self.practice_state()
         v = view.t_view(state, self.recorder.points, state.theory)
         self.machine_points.setData(*v.machine)
@@ -727,7 +769,8 @@ class IsolationPage(QtWidgets.QWidget):
         out = "x" if self.live.shaking == FLOOR else "floor"
         return li.by_speed(t[i:], y[i:, COL["speed"]], y[i:, COL["phase"]], y[i:, COL[out]])
 
-    def _draw_force(self) -> None:
+    @coalesce.coalesced
+    def _draw_force(self, *_: object) -> None:
         self._forced_at = self.live.t
         state = dataclasses.replace(self.practice_state(), shaking=self.live.shaking)
         rpm, peaks = self._force_turns()
@@ -740,7 +783,8 @@ class IsolationPage(QtWidgets.QWidget):
         self.force_plot.setXRange(*v.rpm_range, padding=0)
         self.force_note.setText(v.note)
 
-    def _draw_chart(self) -> None:
+    @coalesce.coalesced
+    def _draw_chart(self, *_: object) -> None:
         iso = self.iso
         self.design_note.setText(view.design_note(iso, self.target.value() / 100.0))
         ch = view.chart(iso)

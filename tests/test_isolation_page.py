@@ -56,7 +56,7 @@ def test_it_opens_at_rest_on_its_system_with_things_to_try_after_the_controls(pa
     assert tabs == ["Transmissibility", "Floor force", "Design chart", "Theory"]
     assert page.practice_state() == view.IsolationTrial("", "")
     assert 5 <= len(isolation.TRIALS) <= 8
-    assert not page.run_up.isEnabled() and page.run_down.isEnabled()  # at speed already
+    assert page.live.speed_hz == 0 and page.run_up.isEnabled() and not page.run_down.isEnabled()  # stopped
     assert page.stiffness_ratio.isHidden() and page.stage_mass.isHidden()  # the plain mount's
 
 
@@ -65,6 +65,7 @@ def test_a_steady_speed_lands_its_transmissibility(page):
     assert page.running and page.tabs.currentIndex() == view.TAB_T
     page.step(1.0)
     assert points(page.machine_points) == 0 and "waiting" in page.readout.text()  # still ringing on its mounts
+    assert "the unbalance pulls ±247 N" in page.readout.text()  # what drives it, at this speed
     page.step(4.0)
     r, T = (10 ** float(a[0]) for a in page.machine_points.getData())  # drawn on log axes: its data are the logs
     iso = page.iso
@@ -80,7 +81,9 @@ def test_the_floor_shaking_lands_on_the_same_curve(page):
     page.step(5.0)
     page.shaking.setCurrentIndex(FLOOR)
     assert page.live.shaking == FLOOR
-    page.step(6.0)
+    page.step(1.0)
+    assert "the floor moves ±100 µm at 25 Hz" in page.readout.text()
+    page.step(5.0)
     (rm,), (Tm,) = page.machine_points.getData()
     (rf,), (Tf,) = page.floor_points.getData()
     assert rf == pytest.approx(rm) and Tf == pytest.approx(Tm, rel=1e-3)
@@ -91,15 +94,21 @@ def test_the_floor_shaking_lands_on_the_same_curve(page):
 def test_a_run_up_builds_the_floor_force_by_speed(page):
     page.load_trial(trial("Running up"))
     assert page.tabs.currentIndex() == view.TAB_FORCE and page.live.ramping and page.live.speed_hz == 0
-    page.step(3.0)
+    assert page.run_up.isChecked() and "Running up" in page.run_up.text()  # lit while it climbs
+    page.step(1.0)
+    assert page.clock.text().endswith("rpm ▲")
+    page.step(2.0)
     rpm, peak = page.built_item.getData()
     peak = 10**peak  # drawn on a log axis: its data are the logs
     assert peak.max() == pytest.approx(111.0, rel=0.02) and rpm[-1] == pytest.approx(1500.0)
     assert "Largest so far: 111 N" in page.force_note.text()
-    assert not page.live.ramping and not page.run_up.isEnabled()
+    assert not page.live.ramping and not page.run_up.isEnabled() and not page.run_up.isChecked()
     page.run_down.click()  # it coasts back down through resonance
     page.step(1.0)
     assert page.live.ramping and "Running down" in page.readout.text() and page.run_up.isEnabled()
+    assert page.run_down.isChecked() and page.clock.text().endswith("rpm ▼")
+    page.run_down.click()  # pressed again: it holds the speed it's reached
+    assert not page.live.ramping and 0 < page.live.speed_hz < 25.0
 
 
 def test_the_grips_change_the_machine_and_its_mounts_as_it_runs(page, app):
@@ -121,15 +130,19 @@ def test_the_grips_change_the_machine_and_its_mounts_as_it_runs(page, app):
     assert page.live.iso == view.isolator(s) and page.running and page.live.edits
 
 
-def test_a_pull_holds_the_machine_and_lets_it_ring(page, app):
-    page.rpm.setValue(0.0)
-    page.reset()
+def test_the_page_opens_stopped_so_a_pull_rings_freely(page, app):
     body = page.body
     centre = body.machine.rect().center()
     drag(body, centre, centre + QtCore.QPointF(0.0, 0.15), app)
     assert page.running and page.live.held_at is None and page.live.x > 0
     page.step(0.5)
     assert np.abs(page.x_item.getData()[1]).max() > 0
+    assert page.live.speed_hz == 0 and not page.unbalance_item.getData()[1].any()  # no unbalance turning
+    page.rpm.setValue(900.0)  # stopped, the box is where Run up goes
+    assert page.live.speed_hz == 0
+    page.run_up.click()
+    page.step(page.ramp.value() * 900 / 900 + 0.1)
+    assert page.live.speed_hz == pytest.approx(15.0) and not page.run_up.isChecked()
 
 
 def test_a_change_of_kind_shows_its_boxes_and_carries_on(page):
