@@ -629,9 +629,11 @@ class IsolationPage(QtWidgets.QWidget):
         for button in (self.run_up, self.run_down, self.sweep_button):
             button.apply_theme()
         dash = QtCore.Qt.PenStyle.DashLine
-        self.x_item.setPen(pg.mkPen(c.mass[0], width=2))
-        self.g_item.setPen(pg.mkPen(c.grey, width=1.5))
-        self.floor_item.setPen(pg.mkPen(c.force, width=2))
+        # 1 px, the time plots' dense 25 Hz bands: Qt's fast path (wider ones cost 2x and more on Retina: the
+        # floor-shaking scenario's two full-height bands painted in 17.7 ms a frame on the Mac, 44.5 fps)
+        self.x_item.setPen(pg.mkPen(c.mass[0], width=1))
+        self.g_item.setPen(pg.mkPen(c.grey, width=1))
+        self.floor_item.setPen(pg.mkPen(c.force, width=1))
         self.unbalance_item.setPen(pg.mkPen(c.grey, width=1))
         for item, z in zip(self.family_items, FAMILY):
             item.setPen(pg.mkPen(c.grey if z else c.faint, width=1))
