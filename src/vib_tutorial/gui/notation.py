@@ -64,7 +64,13 @@ SYMBOLS = (
         "m/N",
         "sdof_page",
     ),
-    Symbol("phi", "φ", "phase of the response behind the force (also a mode shape, below)", "rad, °", "sdof_page"),
+    Symbol(
+        "phi",
+        "φ",
+        "phase of the response behind the force (also a mode shape, from the Simulation page on)",
+        "rad, °",
+        "sdof_page",
+    ),
     Symbol(
         "s",
         "s, s<sub>1</sub>, s<sub>2</sub>",
@@ -222,7 +228,7 @@ SYMBOLS = (
     Symbol(
         "tau_conv",
         "τ",
-        "the time of an earlier slice of force, in Duhamel's integral (τ is also a time constant, above)",
+        "the time of an earlier slice of force, in Duhamel's integral (τ is also a decay's time constant: Single oscillator)",
         "s",
         "transient_page",
         "convolution",
@@ -262,7 +268,7 @@ SYMBOLS = (
     Symbol(
         "r_pulse",
         "r",
-        "a pulse's length in natural periods, T/T<sub>n</sub> (r is also a frequency ratio, above)",
+        "a pulse's length in natural periods, T/T<sub>n</sub> (r is also a frequency ratio: Single oscillator)",
         "–",
         "transient_page",
         "pulses",
@@ -363,7 +369,7 @@ SYMBOLS = (
     Symbol(
         "T_trans",
         "T",
-        "transmissibility: the force (or motion) passed through, over that applied (T is also a pulse's length, above, and kinetic energy, below)",
+        "transmissibility: the force (or motion) passed through, over that applied (T is also kinetic energy, from Single oscillator on, and a pulse's length: Transient response)",
         "–",
         "isolation_page",
     ),
@@ -377,7 +383,7 @@ SYMBOLS = (
     Symbol(
         "delta_sag",
         "δ",
-        "a mount's static deflection under its load (δ is also the log decrement, above)",
+        "a mount's static deflection under its load (δ is also the log decrement: Single oscillator)",
         "m",
         "isolation_page",
         "static-deflection",
@@ -386,7 +392,7 @@ SYMBOLS = (
     Symbol(
         "N_relax",
         "N",
-        "a relaxation mount's series spring over its main spring, Nk (N is also a number of harmonics, above)",
+        "a relaxation mount's series spring over its main spring, Nk (N is also a number of harmonics: Periodic forcing)",
         "–",
         "isolation_page",
         "relaxation",
@@ -394,7 +400,7 @@ SYMBOLS = (
     Symbol(
         "phi_turn",
         "φ, Ω̇",
-        "the angle an unbalance has turned, ∫Ω dt; the rate its speed climbs (φ is also a phase, above)",
+        "the angle an unbalance has turned, ∫Ω dt; the rate its speed climbs (φ is also a phase: Single oscillator)",
         "rad, rad/s²",
         "isolation_page",
         "start-up",
@@ -812,7 +818,7 @@ SYMBOLS = (
         "kg/m³",
         "continuum_page",
     ),
-    Symbol("wavenumber", "κ, c", "wavenumber; wave speed (c also damping above)", "rad/m, m/s", "continuum_page"),
+    Symbol("wavenumber", "κ, c", "wavenumber; wave speed (c is also damping)", "rad/m, m/s", "continuum_page"),
     Symbol(
         "mk_mesh",
         "m, k",
