@@ -194,3 +194,17 @@ def test_reset_and_defaults(page, main_window):
     assert page.live.t == 0 and not page.running and page.live.shaking == FLOOR
     main_window.restore_defaults()
     assert page.practice_state().shaking == MACHINE and page.live.shaking == MACHINE
+
+
+def test_the_forces_stand_up_as_the_machine_moves(page):
+    """The free-body diagram is turned to match the machine (the user's walkthrough): a column a force, its arrow
+    up or down, its symbol and size under it."""
+    page.load_trial(trial("Soft mounts"))
+    page.step(0.4)
+    forces = page.forces
+    assert forces.vertical and [s for s, _ in forces.rows()] == ["kx", "cẋ", "f", "Mẍ", "floor"]
+    for shaft in forces.shafts:
+        x, _ = shaft.getData()
+        assert x[0] == x[1]  # each arrow is upright
+    xs = [shaft.getData()[0][0] for shaft in forces.shafts]
+    assert xs == sorted(xs)  # the columns left to right, in the rows' order

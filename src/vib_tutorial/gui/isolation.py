@@ -154,7 +154,7 @@ class IsolationPage(QtWidgets.QWidget):
         self.body.released.connect(self._on_let_go)
         self.body.grip_taken.connect(self._on_grip_taken)
         self.body.grip_moved.connect(self._on_grip_moved)
-        self.forces = FreeBodyView()
+        self.forces = FreeBodyView(name="The forces on the machine", vertical=True)  # up and down, as it moves
         row, self.speed, self.run_button, self.reset_button, self.clock = run_row(self)
         self.run_button.toggled.connect(self._on_run)
         self.reset_button.setToolTip(
@@ -190,8 +190,8 @@ class IsolationPage(QtWidgets.QWidget):
         cv = QtWidgets.QVBoxLayout(centre)
         cv.setContentsMargins(0, 0, 0, 0)
         top = QtWidgets.QHBoxLayout()
-        top.addWidget(self.body, 3)
-        top.addWidget(self.forces, 2)
+        top.addWidget(self.body, 1)
+        top.addWidget(self.forces, 1)
         cv.addLayout(top, 3)
         cv.addLayout(row)
         cv.addWidget(self.strip, 2)
