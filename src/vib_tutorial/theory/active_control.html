@@ -34,7 +34,8 @@ move together in mode 1, so it is damped, and against each other in mode 2, whic
 designed to damp one mode (with the others ignored) <b>spills over</b> into the modes it wasn't designed for, and
 the unmodelled ones can go unstable <cite>balas</cite>. Collocated, dual sensor–actuator pairs (a velocity sensor
 with a force actuator at the same point, along the same line) avoid this: their transfer functions have
-alternating poles and zeros, and the phase stays between 0 and −180°.</p>
+alternating poles and zeros, and the phase stays between 0 and −180° in the receptance (displacement over force),
+between +90° and −90° in the mobility, the velocity sensor's.</p>
 
 <h3><a name="lag"></a>Lag</h3>
 <p>Real actuators, amplifiers, filters and digital controllers lag. The page puts two first-order lags of
@@ -42,8 +43,8 @@ alternating poles and zeros, and the phase stays between 0 and −180°.</p>
 <m>ẋ<sub>s</sub></m>/(1 + i<m>Ωτ</m>)² for a motion at <m>Ω</m>. The power it takes out of a collocated mass goes as
 <m>g</m> times the real part of 1/(1 + i<m>Ωτ</m>)², which is (1 − <m>Ω</m>²<m>τ</m>²)/(1 +
 <m>Ω</m>²<m>τ</m>²)²: positive damping below <m>Ω</m> = 1/<m>τ</m>, and above it the force, lagging the
-velocity by more than 90°, feeds the motion. One lag alone never lags more than 90°, so it only adds stiffness;
-two can, and with enough gain a mode of the loop pushed up there goes unstable. A time delay does it sooner. This
+velocity by more than 90°, feeds the motion. One lag alone never lags more than 90°: the damping it gives
+shrinks as <m>Ωτ</m> grows, the rest of its force a stiffness, but it never turns negative. Two can, and with enough gain a mode of the loop pushed up there goes unstable. A time delay does it sooner. This
 is why practical active damping uses modest gains, roll-off filters, and collocated pairs.</p>
 
 <h3><a name="state-feedback"></a>State feedback and observers</h3>

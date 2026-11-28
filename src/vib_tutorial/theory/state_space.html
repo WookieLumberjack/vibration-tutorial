@@ -28,10 +28,10 @@ time, on two planes, and the question is which two numbers go together.</p>
 <p>Try a motion that keeps its shape, <m>z = y e<sup>λt</sup></m>. Then <m>Ay = λy</m>: <m>y</m> is an
 eigenvector of <m>A</m>, and <m>λ</m> its eigenvalue. <m>A</m> is 4×4, so there are four. Since <m>A</m> is
 real, any complex ones come in conjugate pairs,</p>
-<eq>\lambda_r,\ \bar\lambda_r = \sigma_r \pm i\omega_r, \qquad y_r = \begin{bmatrix} \psi_r \\ \lambda_r \psi_r \end{bmatrix}</eq>
+<eq>\lambda_r,\ \bar\lambda_r = \sigma_r \pm i\omega_{d,r}, \qquad y_r = \begin{bmatrix} \psi_r \\ \lambda_r \psi_r \end{bmatrix}</eq>
 <p>one pair a mode. The upper half, <m>ψ<sub>r</sub></m>, is the masses' displacements; the lower half is their
 velocities, <m>λ</m> times as much, since <m>ẋ = λx</m> for such a motion. Each pair is a mode that swings at
-<m>ω<sub>r</sub></m> and dies away at the rate <m>σ<sub>r</sub></m> (negative), just as the single oscillator's
+<m>ω<sub>d,r</sub></m> (its damped frequency; <m>ω<sub>r</sub></m> is the undamped mode's) and dies away at the rate <m>σ<sub>r</sub></m> (negative), just as the single oscillator's
 poles were <m>σ ± iω<sub>d</sub></m>. Its damping ratio is <m>ζ = −σ/|λ|</m>. None of this needs the damping to
 be proportional, or small.</p>
 
@@ -114,7 +114,10 @@ mode 2's shape. The inertia and spring forces never do that, <m>φ<sub>2</sub>�
 φ<sub>2</sub>ᵀKφ<sub>1</sub> = 0</m>, and the dampers' don't either when the damping is <b>proportional</b>, as
 when <m>C = αM + βK</m>: then <m>φ<sub>2</sub>ᵀCφ<sub>1</sub> = αφ<sub>2</sub>ᵀMφ<sub>1</sub> +
 βφ<sub>2</sub>ᵀKφ<sub>1</sub> = 0</m>. (The general test is <m>CM<sup>−1</sup>K = KM<sup>−1</sup>C</m>
-<cite>caughey</cite>.) The symmetric pair's dampers are proportional: with <m>M = I</m>, <m>C = −3M + 0.01K</m>.
+<cite>caughey</cite>.) The symmetric pair's dampers are proportional: with <m>M = I</m>, <m>C = −3M + 0.01K</m>. The
+<m>α</m> is negative because the three dampers are equal while the walls' springs are four times the middle one:
+<m>C</m>'s off-diagonal sets <m>β</m> = 0.01, which leaves its diagonal 3 too large, and <m>α</m> takes it back
+(<m>C</m> is still positive, as dampers are).
 With a 2 kg <m>m<sub>2</sub></m> no <m>α</m> and <m>β</m> fit, and <m>c̃<sub>12</sub></m> is −0.51 N·s/m: the
 heavier mass turned the modes, the springs' forces turned with them (the modes come from <m>M</m> and <m>K</m>),
 but the dampers stayed where they were.</li>

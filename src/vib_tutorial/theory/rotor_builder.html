@@ -37,7 +37,7 @@ turning DOFs in both planes, the x plane's matrices and the y plane's are the sa
 <a href="page:rotor_page#beam-elements">Beam finite elements</a>, Jeffcott rotor page).</p>
 <p>By default the element is Timoshenko's, which shears and whose sections' turning has inertia (Nelson's
 rotating element <cite>nelson-1980</cite>, with Friedman and Kosmatka's matrices
-<cite>friedman-kosmatka</cite>). The alternative is Euler–Bernoulli's with that inertia kept, a Rayleigh beam <cite>rayleigh</cite>
+<cite>friedman-kosmatka</cite>). The alternative is Euler–Bernoulli's with that inertia kept, a Rayleigh beam <cite>rayleigh-sound</cite>
 (Nelson and McVaugh's element <cite>nelson-mcvaugh</cite>). The shear enters through</p>
 <eq>\varphi_s = \frac{12EI}{\kappa_s G_m A_s L_e^2}</eq>
 <p>with <m>L<sub>e</sub></m> the element's length, <m>G<sub>m</sub> = E/2(1 + ν)</m> the shear modulus, and
@@ -98,8 +98,9 @@ polar inertia twice its diametral one, so each element's share of <m>G</m> is tw
 matrix, between the x plane's slopes and the y plane's.</p>
 <p>A whirling, tilting disk meets the gyroscopic moment as a stiffness: positive for a forward whirl (its
 frequency rises with the speed), negative for a backward one (it falls). A free body, held by nothing, shows
-it on its own: its tilt becomes a slow forward whirl, the nutation, at <m>I<sub>p</sub>Ω/I<sub>d</sub></m>
-(the Gyroscope page's top).</p>
+it on its own: its tilt becomes a forward whirl, the nutation, at <m>I<sub>p</sub>Ω/I<sub>d</sub></m> (the
+Gyroscope page's top, whose fast precession it is): fast for a disk, about 2Ω as <m>I<sub>p</sub> ≈ 2I<sub>d</sub></m>,
+and slow for a long shaft such as the trial's, whose <m>I<sub>p</sub>/I<sub>d</sub></m> is 0.00375.</p>
 
 <h3><a name="assembly"></a>Assembly</h3>
 <p>Each part adds its matrices at its nodes' DOFs, as the Frame builder's elements did. No transformation is
