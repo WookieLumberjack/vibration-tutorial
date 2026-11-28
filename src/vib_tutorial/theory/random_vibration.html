@@ -69,8 +69,8 @@ through the band's width <m>δ<sub>b</sub> = √(1 − m<sub>1</sub><sup>2</sup>
 
 <h3><a name="welch"></a>Estimating it from a record</h3>
 <p><b>Welch's method</b> <cite>welch</cite> cuts the record into blocks, windows each (Hann), Fourier transforms
-them and averages <m>|Y|<sup>2</sup></m>. (<a href="page:signals_page#windows">Signals &amp; spectra</a>, later in
-the course, takes the windows and the averaging apart.) Two errors trade against each other:</p>
+them and averages <m>|Y|<sup>2</sup></m>. (<a href="page:signals_page#windows">Signals &amp; spectra</a>, the page
+before this one, takes the windows and the averaging apart.) Two errors trade against each other:</p>
 <ul>
 <li><b>Bias</b>: the lines are <m>Δf = f<sub>s</sub></m>/block apart, and the window smears each over a few. A
 peak narrower than that comes out low and wide. Put four or more lines across the half-power width
@@ -111,7 +111,7 @@ The test adds sines, fixed or swept, to the random profile. A sine of amplitude 
 σ<sub>random</sub><sup>2</sup> + ΣA<sup>2</sup>/2</m>.</li>
 </ul>
 <p>How long to run, and how to shorten a long life into a short test at a higher level, is a question of
-fatigue damage: the <a href="page:fatigue_page">Fatigue</a> page, next.</p>
+fatigue damage: the <a href="page:fatigue_page">Fatigue</a> page, later.</p>
 
 <h3><a name="computing"></a>How this page computes it</h3>
 <p>The simulated record comes from the exact update, its input synthesized to have the PSD asked for, so the
