@@ -25,6 +25,7 @@ def notes() -> dict[str, str]:
         energy_methods,
         fatigue,
         fluid_structure,
+        forcing,
         frame_builder,
         frf_matrix,
         gyroscope,
@@ -35,7 +36,6 @@ def notes() -> dict[str, str]:
         nonlinear_forces,
         oma,
         pendulum,
-        periodic,
         quarter_car,
         random_vibration,
         rigid_body,
@@ -50,14 +50,13 @@ def notes() -> dict[str, str]:
         state_space,
         test_planning,
         torsional,
-        transient,
         variability,
         vibroacoustics,
     )
 
     return {
         "sdof_page": sdof.NOTES_HTML,
-        "transient_page": transient.NOTES_HTML,
+        "forcing_page": forcing.NOTES_HTML,
         "isolation_page": isolation.NOTES_HTML,
         "deriving_page": deriving.NOTES_HTML,
         "bases_page": bases.NOTES_HTML,
@@ -95,7 +94,6 @@ def notes() -> dict[str, str]:
         "fatigue_page": fatigue.NOTES_HTML,
         "integration_page": integration.NOTES_HTML,
         "energy_page": energy_methods.NOTES_HTML,
-        "periodic_page": periodic.NOTES_HTML,
         "gyroscope_page": gyroscope.NOTES_HTML,
         "rigid_body_page": rigid_body.NOTES_HTML,
     }

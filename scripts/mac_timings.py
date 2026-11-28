@@ -381,6 +381,23 @@ def _live_pendulum(trial: str, tab: str):
     return setup
 
 
+def _live_forcing(trial: str, tab: str):
+    """Forcing an oscillator's trial `trial`, live (its frame loop steps the mass), on tab `tab` (a
+    `view_models.forcing` TAB_ name), at 1× (#478 Phase 4)."""
+
+    def setup(w):
+        from vib_tutorial.gui import forcing
+        from vib_tutorial.view_models import forcing as view
+
+        page = w.forcing_page
+        w.pages.setCurrentWidget(page)
+        page.load_trial(next(i for i, t in enumerate(forcing.TRIALS) if t.name.startswith(trial)))
+        page.tabs.setCurrentIndex(getattr(view, tab))
+        return page, 1.0
+
+    return setup
+
+
 def _live_isolation(trial: str, tab: str):
     """Vibration isolation's trial `trial`, live (its frame loop steps the machine), on tab `tab` (a
     `view_models.isolation` TAB_ name), at 1× (#478 Phase 4)."""
@@ -471,6 +488,16 @@ SCENARIOS = (
             _live_pendulum("Nearly over the top", tab),
         )
         for name, tab in (("Period", "TAB_PERIOD"), ("Phase plane", "TAB_PHASE"), ("Energy", "TAB_ENERGY"))
+    ),
+    Scenario(
+        "Forcing an oscillator: a rectangular pulse, Convolution tab",
+        "the mass, its forces, and Duhamel's integral redrawn from the record 10 times a second (#478 Phase 4)",
+        _live_forcing("Watch the convolution", "TAB_CONV"),
+    ),
+    Scenario(
+        "Forcing an oscillator: a square wave at a third, Harmonics tab",
+        "the wave's harmonics fitted from the steady run 4 times a second (#478 Phase 4)",
+        _live_forcing("A square wave at a third", "TAB_HARM"),
     ),
     Scenario(
         "Vibration isolation: soft mounts at speed, Transmissibility tab",

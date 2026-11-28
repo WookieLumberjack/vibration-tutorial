@@ -61,8 +61,7 @@ The course runs through 11 groups of pages, in the order the app's tabs take the
 - [Single oscillator](docs/one-oscillator.md#single-oscillator): one mass on a spring and a damper: free decay, resonance, half-power, beats, poles, and the damper's law: viscous, hysteretic, friction, viscoelastic
 - [Pendulums](docs/one-oscillator.md#pendulums): gravity as the spring, large swings that soften, and the rotational form of every one-mass formula
 - [Vibration isolation](docs/one-oscillator.md#vibration-isolation): a machine on mounts: transmissibility, static deflection, damping, two stages, start-up
-- [Transient response](docs/one-oscillator.md#transient-response): an impulse, a step or a pulse: the impulse response, convolution, and how long a pulse has to be
-- [Periodic forcing](docs/one-oscillator.md#periodic-forcing): a repeating force as a Fourier series: harmonics, Gibbs, resonance through a harmonic
+- [Forcing an oscillator](docs/one-oscillator.md#forcing-an-oscillator): hits, pushes, pulses and periodic forces on the live mass: the impulse response, convolution, the Laplace transform, pulse spectra, Fourier series and resonance through a harmonic
 
 **[Equations](docs/equations.md)**
 

@@ -1024,8 +1024,25 @@ def single_oscillator():
     save(w, "single_oscillator")
 
 
-def transient_response():
-    lesson("transient_page", 3, "transient_response")  # the convolution
+def forcing():
+    """The live mass driven by a square wave at a third of f_n, steady, its harmonics measured over the series'."""
+    from PySide6 import QtWidgets
+
+    from vib_tutorial.gui import forcing as page_module
+
+    w = window()
+    page = w.forcing_page
+    w.pages.setCurrentWidget(page)
+    page.loop.enabled = False
+    page.load_trial(next(i for i, t in enumerate(page_module.TRIALS) if t.name.startswith("A square wave")))
+    page.step(9.0)
+    page.theory.setChecked(True)
+    page._run(False)
+    settle()
+    for label in page.findChildren(QtWidgets.QLabel):
+        if label.isVisible() and len(label.text()) > 40:
+            print(" ", label.text())
+    save(w, "forcing")
 
 
 def single_oscillator_damping():
@@ -1134,10 +1151,6 @@ def state_space_modes():
     page.tabs.setCurrentIndex(0)  # the Matrices, its red terms
     settle()
     save(w, "state_space_modes")
-
-
-def periodic_forcing():
-    lesson("periodic_page", 1, "periodic_forcing")  # resonance through the third harmonic
 
 
 def energy_methods():
@@ -1443,12 +1456,11 @@ SHOTS = [
     continuum_beam,
     continuum_waves,
     single_oscillator,
-    transient_response,
+    forcing,
     single_oscillator_damping,
     vibration_isolation,
     signals_spectra,
     pendulums,
-    periodic_forcing,
     deriving_equations,
     deriving_pendulum,
     coordinates_bases,

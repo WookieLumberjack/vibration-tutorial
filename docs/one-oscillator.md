@@ -11,8 +11,7 @@ The pages in the order the app's tabs take them.
 - [Single oscillator](#single-oscillator): one mass on a spring and a damper: free decay, resonance, half-power, beats, poles, and the damper's law: viscous, hysteretic, friction, viscoelastic
 - [Pendulums](#pendulums): gravity as the spring, large swings that soften, and the rotational form of every one-mass formula
 - [Vibration isolation](#vibration-isolation): a machine on mounts: transmissibility, static deflection, damping, two stages, start-up
-- [Transient response](#transient-response): an impulse, a step or a pulse: the impulse response, convolution, and how long a pulse has to be
-- [Periodic forcing](#periodic-forcing): a repeating force as a Fourier series: harmonics, Gibbs, resonance through a harmonic
+- [Forcing an oscillator](#forcing-an-oscillator): hits, pushes, pulses and periodic forces on the live mass: the impulse response, convolution, the Laplace transform, pulse spectra, Fourier series and resonance through a harmonic
 
 ## Single oscillator
 
@@ -72,26 +71,21 @@ it runs, and an inertia block can be added. The *Design chart* gives the sag eac
 
 ![Vibration isolation page: a 100 kg machine with a 0.01 kg·m unbalance on mounts that sag 5 mm (f<sub>n</sub> = 7.05 Hz, 423 rpm), live; a sweep has measured its transmissibility at 12 speeds from 0.4 to 5 f<sub>n</sub>, on the theory's curve, and then, the floor shaking ±0.1 mm at 1500 rpm, the machine moves ±9.16 µm: T = 0.0916, the floor's point on the machine's, 90.8 % isolation either way](images/vibration_isolation.png)
 
-## Transient response
+## Forcing an oscillator
 
-An impulse, a step, a ramp, a rectangular or a half-sine pulse on the oscillator. The response is the
-convolution of the force with the impulse response h(t), and the page draws the integral itself at any
-instant (the force, h flipped and slid, and their product, whose area is the response there). Its tabs
-set h(t) beside its Fourier transform, the receptance; measure a step's overshoot and settling time; and
-plot each pulse's peak response against its length over the natural period, the shock spectrum's
-single-oscillator form. The Theory brings in the Laplace transform: the transfer function, its poles, and
-partial fractions back to time.
+The Single oscillator's mass, live, forced as it runs. *Apply* fires a one-off force from that moment, on
+whatever the mass is doing: a hit (an impulse), a push held until *Let go*, a ramp, a rectangular or a
+half-sine pulse. Hit it twice and the second ring adds to the first's: superposition, by hand. *Wave*
+switches on a periodic force (a square, sawtooth or triangle wave, a rectified sine, a pulse train or
+hammer blows), and its third harmonic can resonate the mass from a third of f<sub>n</sub>. The tabs build
+what the two old pages showed from the run itself: the *Convolution* (Duhamel's integral at any instant,
+the force, h flipped and slid, their product, whose area matches the run), the *Pulse spectrum* (each pulse
+applied from rest lands its peak against its length over the natural period, the theory's curves on
+request) and the *Harmonics* (the force's and the response's lines, measured from the steady run). The
+Theory covers the impulse response, convolution, the Laplace transform and partial fractions, pulses,
+Fourier series, Gibbs and the steady state found from one period.
 
-![Transient response page, a 0.2 s rectangular pulse of 1 N: at t = 0.3 s the area under f(τ) h(t − τ) is −2.58 mm, the exact response there; the peak, 4.64 mm, is 1.85 times static at T/T<sub>n</sub> = 0.637, on the pulse spectrum's rectangle curve](images/transient_response.png)
-
-## Periodic forcing
-
-A force that repeats (a square, sawtooth or triangle wave, a rectified sine, a pulse or impulse train) as
-its Fourier series, each harmonic through H(kω₀), against the exact steady state (one period stepped
-from the state that repeats). The harmonics' bars, the Gibbs overshoot, how fast smooth and sharp waves
-converge, and resonance through a harmonic: a slow drive whose third harmonic sits on f<sub>n</sub>.
-
-![Periodic forcing page: a square wave at f<sub>n</sub>/3 = 1.06 Hz on the 3.18 Hz oscillator; its third harmonic swings the mass 10.6 mm, 89.7 % of the response's power, three times the fundamental's 3.58 mm, and seven harmonics come within 0.67 % of the exact steady state](images/periodic_forcing.png)
+![Forcing an oscillator page: a ±1 N square wave at f<sub>n</sub>/3 = 1.06 Hz on the 3.18 Hz oscillator, live; once steady, the Harmonics tab measures its third harmonic swinging the mass three times as far as the fundamental, 89.7 % of the swing's power, on the series' lines](images/forcing.png)
 
 ---
 

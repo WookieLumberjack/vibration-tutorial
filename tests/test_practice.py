@@ -334,24 +334,24 @@ def test_course_map_counts_the_problems_solved(app, main_window):
 
     practice.reset_progress()
     assert sdof.notes_html() is sdof.NOTES_HTML
-    first, second = practice.problems("transient_page")[:2]
-    total = len(practice.problems("transient_page"))
+    first, second = practice.problems("forcing_page")[:2]
+    total = len(practice.problems("forcing_page"))
     practice.mark_solved(first)
-    assert practice.progress() == {"transient_page": (1, total)}
+    assert practice.progress() == {"forcing_page": (1, total)}
     assert f"(1 of {total} solved)" in page_html("sdof_page")
     main_window.show_page("sdof_page")
     page = main_window.pages.currentWidget()
     main_window.show_theory()
     assert f"(1 of {total} solved)" in page.notes.toPlainText()
-    for p in practice.problems("transient_page"):
+    for p in practice.problems("forcing_page"):
         practice.mark_solved(p)
     page.tabs.setCurrentIndex(0)
     main_window.show_theory()  # the map is redrawn as the notes show
     assert f"all {total} problems solved" in page.notes.toPlainText()
     window = main_window.open_practice_window()
-    assert f"({total}/{total})" in window._page_items["transient_page"].text(0)
+    assert f"({total}/{total})" in window._page_items["forcing_page"].text(0)
     window.reset()
-    assert practice.progress() == {} and "(0/" in window._page_items["transient_page"].text(0)
+    assert practice.progress() == {} and "(0/" in window._page_items["forcing_page"].text(0)
     assert second.key  # two problems at least, so "1 of" was a part
 
 
@@ -430,7 +430,7 @@ def test_a_placement_is_judged_by_where_the_guess_lands():
 
 def test_the_placements_answers_are_the_pages_numbers():
     """Each trial asked as a Placement has the answer its page works out (and its notes quote)."""
-    from vib_tutorial.gui import isolation, pendulum, sdof, transient
+    from vib_tutorial.gui import forcing, isolation, pendulum, sdof
 
     def placement(trials, start: str) -> Placement:
         p = next(t.predict for t in trials if isinstance(t.predict, Placement) and t.predict.prompt.startswith(start))
@@ -440,7 +440,7 @@ def test_the_placements_answers_are_the_pages_numbers():
     assert placement(sdof.TRIALS, "1 N on").answer == pytest.approx((1.0 / 400.0) / (2 * 0.05))
     zeta = 0.05
     step = 2.5e-3 * (1 + math.exp(-zeta * math.pi / math.sqrt(1 - zeta**2)))
-    assert placement(transient.TRIALS, "1 N switched").answer == pytest.approx(step, rel=2e-3)
+    assert placement(forcing.TRIALS, "1 N pushed").answer == pytest.approx(step, rel=2e-3)
     from vib_tutorial.core.pendulum import Pendulum, period
 
     quarter = period(Pendulum(length=0.25), math.radians(10))  # its swings' periods, as they land

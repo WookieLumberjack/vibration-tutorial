@@ -2,8 +2,10 @@
 runs, changed as it runs.
 
 The run steps the oscillator exactly (`foh.FohSteps` on `Oscillator.matrices`, the force linear between samples,
-`STEPS` a period of the oscillator, of the wave and of the shortest pulse acting), driven by the forces the reader
-applies. Each acts from the moment it is applied, on whatever the mass is doing, so a second hit lands on the
+`STEPS` a period of the oscillator and `EDGE_STEPS` of the wave and of the shortest pulse acting), driven by the
+forces the reader applies. Each sample is the force's mean over its step (`_sampled`), so an edge anywhere keeps its
+impulse and place, and a hammer's blow inside a step lands at its own instant (`_blow_within`): each force's
+response is its closed form to 0.05 %, and each wave's harmonics the series. Each acts from the moment it is applied, on whatever the mass is doing, so a second hit lands on the
 first's motion: the response is the sum of each force's own (superposition, seen rather than told).
 
 - `apply(pulse)`: a one-off force from now (`core/transient.Pulse`): a hit (an impulse, a jump in momentum I/m,
@@ -56,8 +58,12 @@ STEPS = 100  # steps a period of the oscillator
 EDGE_STEPS = 400  # of the wave and of the shortest pulse acting: a jump, smeared over a step, is within ~0.2 %
 MAX_STEP = 1.0 / 512  # s
 MAX_STEPS = 100_000  # in one advance
-PERIODS = 3  # whole periods in each estimate of the harmonics
+PERIODS = (
+    1  # whole periods in each estimate of the harmonics (two windows: the older still rings, so short ones land sooner)
+)
 TOLERANCE = 0.005  # the two estimates' relative difference that counts as steady
+FITTED = 50  # harmonics fitted in a window, whatever's shown
+SUB = 128  # points a step the force is averaged over
 QUIET = 0.01  # a pulse lands its peak only if the mass was within this of the pulse's own response, at rest
 MARK_GAP = 0.25  # s: changes closer than this share one mark
 COLUMNS = ("x", "v", "f")
@@ -149,12 +155,13 @@ class LiveForcing:
         return float(self.force_at(np.array([self.t + 1e-6 * self.step_size()]))[0])
 
     def _sampled(self, t: np.ndarray, h: float) -> np.ndarray:
-        """The force as the steps take it: at an edge that falls on a sample (a square wave's, a pulse's), the
-        mean of its two sides. Taken linear between samples, a jump is centered between the samples either side
-        of it; an edge on a sample, given its new value, would be centered half a step early, and a wave whose
-        edges fall on samples now and then ran a sixth of a step ahead (2.5 mrad on a square wave's response)."""
-        eps = 1e-6 * h
-        return 0.5 * (self.force_at(t - eps) + self.force_at(t + eps))
+        """The force as the steps take it: each sample the force's mean over the step around it (`SUB` points).
+        Taken linear between such samples, a jump anywhere in a step keeps its impulse and its place: sampled at
+        the instants instead, an edge between samples was smeared a fraction of a step early or late, differently
+        each period when the period isn't a whole number of steps, and one period's response differed from the
+        next by 0.6 % (an edge on a sample, given its new value, was half a step early every time)."""
+        offsets = h * ((np.arange(SUB) + 0.5) / SUB - 0.5)
+        return self.force_at(t[:, None] + offsets[None, :]).mean(axis=1)
 
     # ------------------------------------------------------------- what the reader does
     def _acting(self) -> bool:
@@ -275,9 +282,10 @@ class LiveForcing:
         n = self.clock.steps(duration, h, MAX_STEPS)
         while n > 0:
             m = n
-            if self._next_blow < math.inf:  # up to the next hammer blow's step, where it lands
-                m = min(n, max(round((self._next_blow - self.t) / h), 0))
-                if m == 0:
+            blow = self._next_blow
+            if blow < math.inf:  # up to the end of the step a hammer blow falls in
+                m = min(n, max(math.ceil((blow - self.t) / h - 1e-9), 0))
+                if m == 0:  # it falls on this instant: a jump in momentum now
                     assert self.wave is not None, "a blow belongs to a hammer train"
                     self._hit(self.wave.amplitude)
                     self._next_blow += self.wave.period
@@ -287,10 +295,25 @@ class LiveForcing:
             z = self._stepper(h).run(f[:, None])
             self.t = float(ts[-1])
             self.z = z[-1].copy()
+            if blow <= self.t:  # the blow fell inside the last step: its jump, carried on to the step's end
+                assert self.wave is not None, "a blow belongs to a hammer train"
+                self._blow_within(blow, self.wave.amplitude)
+                z[-1] = self.z
+                self._next_blow += self.wave.period
             self.record.extend(ts, np.column_stack([z, f]))
             total += m
             n -= m
         return total
+
+    def _blow_within(self, at: float, impulse: float) -> None:
+        """A blow at `at`, inside the step just taken: its momentum jump I/m, carried on freely to the step's end
+        (the system is linear: the jump's own response adds), so it lands at its own instant, not a step's."""
+        import scipy.linalg
+
+        A, _ = self.osc.matrices()
+        self.z = self.z + scipy.linalg.expm(A * (self.t - at)) @ np.array([0.0, impulse / self.osc.mass])
+        self.hits.append((at, impulse))
+        self._steps = {}  # the stepper restarts from the new state
 
     def since_change(self) -> tuple[np.ndarray, np.ndarray]:
         n = self.record.size
@@ -369,10 +392,11 @@ def harmonics(live: LiveForcing, count: int) -> Harmonics | None:
     estimates = []
     for end in (float(t[-1]), float(t[-1]) - span):
         i0, i1 = np.searchsorted(t, [end - span, end], side="right")
-        if i1 - i0 < 8 * PERIODS * (count + 1):
+        if i1 - i0 < 4 * (max(count, FITTED) + 1):
             return None
-        estimates.append((_fit(shifted[i0:i1], y[i0:i1, COL["f"]], wave.freq_hz, count),
-                          _fit(shifted[i0:i1], y[i0:i1, COL["x"]], wave.freq_hz, count)))  # fmt: skip
+        fitted = max(count, FITTED)  # the harmonics above those shown fitted too, so a jump's don't leak into them
+        estimates.append((_fit(shifted[i0:i1], y[i0:i1, COL["f"]], wave.freq_hz, fitted)[: count + 1],
+                          _fit(shifted[i0:i1], y[i0:i1, COL["x"]], wave.freq_hz, fitted)[: count + 1]))  # fmt: skip
     (fn, xn), (_, xb) = estimates
     if wave.wave is Wave.IMPULSES:  # the blows aren't in the force column: their series is the train's own
         fn = wave.coefficients(count)
@@ -391,6 +415,7 @@ class Convolution:
     area: float  # ∫ F h dτ + Σ I h: the motion at `at`, from the forces alone
     x: float  # the motion the run recorded there
     since: float  # the integral's start: the last change (a reset, a let-go, a change of the system)
+    at: float  # the instant it's worked out at
 
 
 def convolution(live: LiveForcing, at: float | None = None) -> Convolution | None:
@@ -406,11 +431,26 @@ def convolution(live: LiveForcing, at: float | None = None) -> Convolution | Non
     if i1 - i0 < 2:
         return None
     tau, f = t[i0:i1], y[i0:i1, COL["f"]]
+    if tau[0] > since:  # from the start itself: the first step's slice of force counts too
+        tau, f = np.concatenate([[since], tau]), np.concatenate([[f[0]], f])
+    inside = tau < at  # to the instant itself: h(at − τ) starts from 0 there, and a trapezium across it was off
+    f_at = float(np.interp(at, tau, f))
+    tau, f = np.concatenate([tau[inside], [at]]), np.concatenate([f[inside], [f_at]])
     h = impulse_response(osc, at - tau)
     product = f * h
     hits = tuple((th, imp) for th, imp in live.hits if since <= th <= at)
     area = float(np.trapezoid(product, tau)) + sum(
         imp * float(impulse_response(osc, np.array([at - th]))[0]) for th, imp in hits
     )
-    x = float(np.interp(at, t[:n], y[:n, COL["x"]]))
-    return Convolution(tau, f, h, product, hits, area, x, since)
+    x = _hermite(t, y[:, COL["x"]], y[:, COL["v"]], at)
+    return Convolution(tau, f, h, product, hits, area, x, since, at)
+
+
+def _hermite(t: np.ndarray, x: np.ndarray, v: np.ndarray, at: float) -> float:
+    """x at `at` between two samples, from their x and v (cubic Hermite): within a millionth where a straight line
+    between them was off by a third of a micrometer (a readout's last digit)."""
+    i = int(np.clip(np.searchsorted(t, at) - 1, 0, t.size - 2))
+    h = float(t[i + 1] - t[i])
+    s = (at - float(t[i])) / h
+    h00, h10, h01, h11 = 2 * s**3 - 3 * s**2 + 1, s**3 - 2 * s**2 + s, -2 * s**3 + 3 * s**2, s**3 - s**2
+    return float(h00 * x[i] + h10 * h * v[i] + h01 * x[i + 1] + h11 * h * v[i + 1])

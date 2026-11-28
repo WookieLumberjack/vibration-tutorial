@@ -68,14 +68,16 @@ def test_playback_walks_the_span_pauses_at_its_end_and_scrubs(app):
 
 
 def test_a_trial_with_a_prediction_asks_it_before_it_runs(main_window, app):
-    """On a page that asks before it runs (Transient response; the live pages ask after play)."""
+    """A trial's prediction asked before it runs (a live page asks once the reader has handled it, `test_sdof_page`:
+    here it's handled already, so it asks at once)."""
     from vib_tutorial.core.practice import Prediction
-    from vib_tutorial.gui.transient import TRIALS
+    from vib_tutorial.gui.forcing import TRIALS
 
     w = main_window
-    p = w.transient_page
+    p = w.forcing_page
     w.pages.setCurrentWidget(p)
     box = p.trials
+    box.after_play, box.played = False, True
     i = next(k for k, t in enumerate(TRIALS) if isinstance(t.predict, Prediction))
     prediction = TRIALS[i].predict
     assert isinstance(prediction, Prediction)
@@ -117,12 +119,13 @@ def test_a_placement_is_guessed_on_its_plot(main_window, app):
     """A Placement (#409 I-6): the plot hides its curves and shows the span while the reader drags the line, the
     trial runs on the guess, which stays on the plot, dashed, with the verdict; Defaults takes it away."""
     from vib_tutorial.core.practice import Placement
-    from vib_tutorial.gui.transient import TRIALS
+    from vib_tutorial.gui.forcing import TRIALS
 
     w = main_window
-    p = w.transient_page
+    p = w.forcing_page
     w.pages.setCurrentWidget(p)
     box = p.trials
+    box.after_play, box.played = False, True  # (as above)
     t = next(t for t in TRIALS if isinstance(t.predict, Placement))
     place = t.predict
     assert isinstance(place, Placement)
@@ -143,52 +146,18 @@ def test_a_placement_is_guessed_on_its_plot(main_window, app):
     assert box.guessed is None and not box.ask.isVisible()
 
 
-@pytest.mark.parametrize(
-    ("attr", "module"),
-    [
-        ("transient_page", "transient"),
-        ("periodic_page", "periodic"),
-    ],
-)
-def test_the_one_mass_pages_ask_their_predictions_first(main_window, app, attr, module):
-    import importlib
-
-    from vib_tutorial.core.practice import Placement
-
-    trials = importlib.import_module(f"vib_tutorial.gui.{module}").TRIALS
-    w = main_window
-    p = getattr(w, attr)
-    w.pages.setCurrentWidget(p)
-    box = p.trials
-    asked = [k for k, t in enumerate(trials) if t.predict is not None]
-    assert len(asked) >= len(trials) // 2  # most of them ask
-    before = p.practice_state()
-    for i in asked:
-        box.combo.pick(trials[i].name)
-        assert box.asking == i and box.ask.isVisible()
-        assert p.practice_state() == before  # nothing set up until it's answered
-        guess = trials[i].predict
-        if isinstance(guess, Placement):
-            box.place_guess(guess.answer)
-            assert "Close" in box.verdict.text() and box.note.isVisible()
-        else:
-            box.answer(guess.answer)
-            assert "Right" in box.verdict.text() and box.note.isVisible()
-        w.restore_defaults()
-        before = p.practice_state()
-
-
 def test_a_goals_links_set_up_its_trial_and_ask_its_problem(main_window, app):
     """(conftest points the settings at the worker's own file: the Practice window reads them.)"""
     from PySide6 import QtCore as Core
 
     w = main_window
-    browser = w.transient_page.notes
-    w._wire_links(w.transient_page)
-    browser.anchorClicked.emit(Core.QUrl("trial:transient_page#1"))
-    p = w.transient_page
+    p = w.forcing_page
+    p.trials.after_play, p.trials.played = False, True  # (handled already: it asks)
+    browser = p.notes
+    w._wire_links(p)
+    browser.anchorClicked.emit(Core.QUrl("trial:forcing_page#1"))
     assert w.pages.currentWidget() is p and p.trials.asking == 0 and p.trials.ask.isVisible()
-    browser.anchorClicked.emit(Core.QUrl("practice:transient_page#impulse-peak"))
+    browser.anchorClicked.emit(Core.QUrl("practice:forcing_page#impulse-peak"))
     pw = w.practice_window
     assert pw is not None and pw.problem is not None and pw.problem.key == "impulse-peak"
 

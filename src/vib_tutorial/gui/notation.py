@@ -216,13 +216,13 @@ SYMBOLS = (
         "pendulum_page",
         "large-swings",
     ),
-    Symbol("impulse", "I", "an impulse, ∫f dt: a hammer blow's", "N·s", "transient_page", "impulse-response"),
+    Symbol("impulse", "I", "an impulse, ∫f dt: a hammer blow's", "N·s", "forcing_page", "impulse-response"),
     Symbol(
         "h_t",
         "h(t)",
         "impulse response: the displacement after a unit impulse on the mass at rest",
         "m/(N·s)",
-        "transient_page",
+        "forcing_page",
         "impulse-response",
     ),
     Symbol(
@@ -230,7 +230,7 @@ SYMBOLS = (
         "τ",
         "the time of an earlier slice of force, in Duhamel's integral (τ is also a decay's time constant: Single oscillator)",
         "s",
-        "transient_page",
+        "forcing_page",
         "convolution",
     ),
     Symbol(
@@ -238,7 +238,7 @@ SYMBOLS = (
         "X(s), F(s)",
         "the Laplace transforms of x(t) and f(t); on s = iΩ, their Fourier transforms X(Ω), F(Ω)",
         "m·s, N·s",
-        "transient_page",
+        "forcing_page",
         "laplace",
     ),
     Symbol(
@@ -246,7 +246,7 @@ SYMBOLS = (
         "H(s)",
         "transfer function, X(s)/F(s) = 1/(m s² + c s + k): the Laplace transform of h(t)",
         "m/N",
-        "transient_page",
+        "forcing_page",
         "transfer-function",
     ),
     Symbol(
@@ -254,7 +254,7 @@ SYMBOLS = (
         "M<sub>p</sub>, t<sub>p</sub>, t<sub>s</sub>",
         "a step response's overshoot (a fraction of the static), its peak time and its settling time",
         "–, s, s",
-        "transient_page",
+        "forcing_page",
         "step-response",
     ),
     Symbol(
@@ -262,34 +262,26 @@ SYMBOLS = (
         "T, T<sub>n</sub>",
         "a pulse's length (a ramp's rise time); the natural period, 2π/ω<sub>n</sub>",
         "s",
-        "transient_page",
-        "pulses",
-    ),
-    Symbol(
-        "r_pulse",
-        "r",
-        "a pulse's length in natural periods, T/T<sub>n</sub> (r is also a frequency ratio: Single oscillator)",
-        "–",
-        "transient_page",
+        "forcing_page",
         "pulses",
     ),
     Symbol(
         "period",
-        "T, f<sub>0</sub>, ω<sub>0</sub>",
-        "a periodic force's period; its fundamental frequency, 1/T and 2π/T",
+        "T<sub>0</sub>, f<sub>0</sub>, ω<sub>0</sub>",
+        "a periodic force's period; its fundamental frequency, 1/T<sub>0</sub> and 2π/T<sub>0</sub>",
         "s, Hz, rad/s",
-        "periodic_page",
+        "forcing_page",
         "fourier-series",
     ),
     Symbol(
-        "j_harm", "j", "a harmonic's number: harmonic j is at jf<sub>0</sub>", "–", "periodic_page", "fourier-series"
+        "j_harm", "j", "a harmonic's number: harmonic j is at jf<sub>0</sub>", "–", "forcing_page", "fourier-series"
     ),
     Symbol(
         "fourier",
         "a<sub>0</sub>, a<sub>j</sub>, b<sub>j</sub>",
         "a Fourier series' mean, and its cosine and sine coefficients",
         "as f",
-        "periodic_page",
+        "forcing_page",
         "coefficients",
     ),
     Symbol(
@@ -298,18 +290,18 @@ SYMBOLS = (
         "harmonic j's complex amplitude: the force's, a<sub>j</sub> − ib<sub>j</sub>, and the response's, "
         "H(jω<sub>0</sub>)C<sub>j</sub>",
         "N, m",
-        "periodic_page",
+        "forcing_page",
         "complex-form",
     ),
-    Symbol("N_kept", "N", "the number of harmonics a series keeps", "–", "periodic_page", "gibbs"),
-    Symbol("duty", "d", "the fraction of each period a rectangular pulse is on", "–", "periodic_page", "shapes"),
+    Symbol("N_kept", "N", "the number of harmonics a series keeps", "–", "forcing_page", "gibbs"),
+    Symbol("duty", "d", "the fraction of each period a rectangular pulse is on", "–", "forcing_page", "shapes"),
     Symbol(
         "state_period",
         "z, z<sub>0</sub>, z<sub>p</sub>, Φ<sub>T</sub>",
         "the state [x, ẋ]; where a steady period starts; where one period of the force leaves it from rest; "
         "what one period of free motion does to a state",
         "m and m/s, –",
-        "periodic_page",
+        "forcing_page",
         "exact",
     ),
     Symbol(
@@ -369,7 +361,7 @@ SYMBOLS = (
     Symbol(
         "T_trans",
         "T",
-        "transmissibility: the force (or motion) passed through, over that applied (T is also kinetic energy, from Single oscillator on, and a pulse's length: Transient response)",
+        "transmissibility: the force (or motion) passed through, over that applied (T is also kinetic energy, from Single oscillator on, and a pulse's length: Forcing an oscillator)",
         "–",
         "isolation_page",
     ),
@@ -392,7 +384,7 @@ SYMBOLS = (
     Symbol(
         "N_relax",
         "N",
-        "a relaxation mount's series spring over its main spring, Nk (N is also a number of harmonics: Periodic forcing)",
+        "a relaxation mount's series spring over its main spring, Nk (N is also a number of harmonics: Forcing an oscillator)",
         "–",
         "isolation_page",
         "relaxation",

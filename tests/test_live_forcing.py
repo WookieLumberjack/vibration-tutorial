@@ -8,6 +8,7 @@ import math
 
 import numpy as np
 import pytest
+from notes_quoting import quoted
 
 from vib_tutorial.core.periodic import Forcing, Wave, response_coefficients
 from vib_tutorial.core.sdof import Oscillator, impulse_response, step_response
@@ -46,7 +47,7 @@ def test_each_force_applied_as_it_runs_is_its_closed_form(kind, length):
     run(live, 2.0)
     t, x = recorded(live)
     ref = pulse_response(OSC, Pulse(kind, 1.0, length), t - push.start)
-    assert np.max(np.abs(x - ref)) <= 5e-4 * np.max(np.abs(ref))
+    assert np.max(np.abs(x - ref)) <= quoted("forcing", "0.05 %") / 100 * np.max(np.abs(ref))  # as the notes say
 
 
 def test_a_second_hit_lands_on_the_first_ones_motion():
@@ -156,7 +157,7 @@ def test_hammer_blows_land_once_a_period():
     live.set_wave(Forcing(Wave.IMPULSES, 0.01, 2.0))
     run(live, 2.0)
     times = np.array([t for t, _ in live.hits])
-    assert times.size == 4 and np.diff(times) == pytest.approx(0.5, abs=live.step_size())
+    assert times[:5] == pytest.approx([0.0, 0.5, 1.0, 1.5, 2.0], abs=1e-9)  # each at its own instant, not a step's
 
 
 def test_duhamels_integral_is_the_recorded_motion():
