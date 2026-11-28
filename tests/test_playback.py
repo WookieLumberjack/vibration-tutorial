@@ -67,61 +67,13 @@ def test_playback_walks_the_span_pauses_at_its_end_and_scrubs(app):
     close_graphics(page)
 
 
-def test_the_machine_runs_up_on_its_mounts_and_a_pull_lets_it_ring(main_window, app):
-    from vib_tutorial.gui.isolation_view import MOST, SWING
-    from vib_tutorial.view_models.isolation import TAB_CHART, TAB_START, TRIALS
-
-    w = main_window
-    w.resize(1280, 800)
-    p = w.isolation_page
-    w.pages.setCurrentWidget(p)
-    pb, view = p.playback, p.body
-    pb.loop.enabled = False
-
-    # A trial plays the run-up: the machine, its unbalance and the forces are the record's, as drawn.
-    p.load_trial(next(i for i, tr in enumerate(TRIALS) if tr.name.startswith("Running up")))
-    for _ in range(5):
-        app.processEvents()
-    assert pb.running and pb.t == 0.0 and p.tabs.currentIndex() == TAB_START and p.pulled_to is None
-    pb._tick(0.3)
-    v = p.record
-    x, stage, phase, floor, force = view.state
-    assert force == pytest.approx(np.interp(pb.t, *v.force))
-    t, xs = p.sx_item.getData()
-    assert x == pytest.approx(np.interp(pb.t, t, xs)) and floor == pytest.approx(np.interp(pb.t, *v.floor))
-    assert phase == pytest.approx(np.interp(pb.t, *v.phase)) and phase > 0 and stage == 0.0
-    assert view.gain == pytest.approx(SWING / np.max(np.abs(xs)))
-
-    # Pull it down and let go: stopped, it rings on its mounts, from there.
-    view.grab()  # laid out: the machine has its place on screen
-    pb.seek(0.0)
-    vb = view.plotItem.vb
-    centre = view.machine.rect().center()
-    gain = view.gain  # (let go, it's drawn to the new record's scale)
-    hand = vb.mapViewToScene(centre)
-    to = vb.mapViewToScene(QtCore.QPointF(centre.x(), centre.y() - 0.5 * MOST))
-    drag(view, hand, to, app)
-    assert not view.held and pb.running and pb.t == 0.0
-    assert p.pulled_to == pytest.approx(-0.5 * MOST / gain, rel=0.05)
-    t, s = p.speed_item.getData()
-    assert not s.any() and p.sx_item.getData()[1][0] == pytest.approx(p.pulled_to)
-    assert "let go, stopped" in p.start_note.text()
-
-    # Another tab and back keeps it; a box runs it up again.
-    p.tabs.setCurrentIndex(TAB_CHART)
-    p.tabs.setCurrentIndex(TAB_START)
-    assert p.pulled_to is not None and not p.speed_item.getData()[1].any()
-    p.rpm.setValue(1200.0)
-    assert p.pulled_to is None and p.speed_item.getData()[1][-1] == pytest.approx(1200.0)
-
-
 def test_a_trial_with_a_prediction_asks_it_before_it_runs(main_window, app):
-    """On a page that asks before it runs (Vibration isolation, played back; the live pages ask after play)."""
+    """On a page that asks before it runs (Transient response; the live pages ask after play)."""
     from vib_tutorial.core.practice import Prediction
-    from vib_tutorial.view_models.isolation import TRIALS
+    from vib_tutorial.gui.transient import TRIALS
 
     w = main_window
-    p = w.isolation_page
+    p = w.transient_page
     w.pages.setCurrentWidget(p)
     box = p.trials
     i = next(k for k, t in enumerate(TRIALS) if isinstance(t.predict, Prediction))
@@ -130,7 +82,7 @@ def test_a_trial_with_a_prediction_asks_it_before_it_runs(main_window, app):
     before = p.practice_state()
     box.combo.pick(TRIALS[i].name)
     assert box.asking == i and box.ask.isVisible() and "Predict first" in box.question.text()
-    assert p.practice_state() == before and not p.playback.running  # nothing set up yet
+    assert p.practice_state() == before  # nothing set up yet
     buttons = [box.choices.itemAt(k).widget() for k in range(box.choices.count())]
     order = prediction.shown_order()  # shuffled, the same each time
     assert [b.text() for b in buttons] == [prediction.choices[k] for k in order]
@@ -141,7 +93,6 @@ def test_a_trial_with_a_prediction_asks_it_before_it_runs(main_window, app):
     assert box.asking is None and not box.ask.isVisible() and "Not quite" in box.verdict.text()
     assert prediction.choices[prediction.answer] in box.verdict.text()
     assert prediction.why[wrong] and prediction.why[wrong][:20] in box.verdict.text()  # why the one picked is wrong
-    assert p.playback.running  # it ran (its setup may be the page's opening one)
     assert box.note.isVisible() and box.note.text()
 
     box.combo.pick(TRIALS[i].name)  # again: asked again
@@ -166,10 +117,10 @@ def test_a_placement_is_guessed_on_its_plot(main_window, app):
     """A Placement (#409 I-6): the plot hides its curves and shows the span while the reader drags the line, the
     trial runs on the guess, which stays on the plot, dashed, with the verdict; Defaults takes it away."""
     from vib_tutorial.core.practice import Placement
-    from vib_tutorial.view_models.isolation import TRIALS
+    from vib_tutorial.gui.transient import TRIALS
 
     w = main_window
-    p = w.isolation_page
+    p = w.transient_page
     w.pages.setCurrentWidget(p)
     box = p.trials
     t = next(t for t in TRIALS if isinstance(t.predict, Placement))
@@ -185,7 +136,7 @@ def test_a_placement_is_guessed_on_its_plot(main_window, app):
     guess = lo + 0.05 * (hi - lo)  # well short
     assert not place.judge(guess)[0]
     box.place_guess(guess)
-    assert box.line is None and all(c.isVisible() for c in shown) and p.playback.running
+    assert box.line is None and all(c.isVisible() for c in shown)
     assert "Not quite" in box.verdict.text() and place.low[:20] in box.verdict.text()
     assert box.guessed is not None and box.guessed in item.items
     w.restore_defaults()
@@ -197,7 +148,6 @@ def test_a_placement_is_guessed_on_its_plot(main_window, app):
     [
         ("transient_page", "transient"),
         ("periodic_page", "periodic"),
-        ("isolation_page", "isolation"),
     ],
 )
 def test_the_one_mass_pages_ask_their_predictions_first(main_window, app, attr, module):
@@ -233,14 +183,14 @@ def test_a_goals_links_set_up_its_trial_and_ask_its_problem(main_window, app):
     from PySide6 import QtCore as Core
 
     w = main_window
-    browser = w.isolation_page.notes
-    w._wire_links(w.isolation_page)
-    browser.anchorClicked.emit(Core.QUrl("trial:isolation_page#1"))
-    p = w.isolation_page
+    browser = w.transient_page.notes
+    w._wire_links(w.transient_page)
+    browser.anchorClicked.emit(Core.QUrl("trial:transient_page#1"))
+    p = w.transient_page
     assert w.pages.currentWidget() is p and p.trials.asking == 0 and p.trials.ask.isVisible()
-    browser.anchorClicked.emit(Core.QUrl("practice:isolation_page#mount-frequency"))
+    browser.anchorClicked.emit(Core.QUrl("practice:transient_page#impulse-peak"))
     pw = w.practice_window
-    assert pw is not None and pw.problem is not None and pw.problem.key == "mount-frequency"
+    assert pw is not None and pw.problem is not None and pw.problem.key == "impulse-peak"
 
 
 def test_a_cursors_plot_draws_its_curves_from_pixmaps(app):
@@ -290,7 +240,7 @@ def test_make_app_sizes_the_pixmap_cache_once_the_app_is_made():
 
 def test_the_pixmap_cache_holds_a_large_retina_windows_held_curves(main_window):
     """A held curve's pixmap lives in QPixmapCache: at 2× a played-back page's (the Single oscillator's, then
-    Pendulums', now Vibration isolation's), in a 1700 px window, outgrew its
+    Pendulums', then Vibration isolation's, now the Quarter-car's), in a 1700 px window, outgrew its
     default 10 MB, so the cache dropped them every frame (20 ms a frame on the Mac, #409 N-2). The limit holds
     a few pages' worth."""
     import pyqtgraph as pg
@@ -303,7 +253,7 @@ def test_the_pixmap_cache_holds_a_large_retina_windows_held_curves(main_window):
     assert QtGui.QPixmapCache.cacheLimit() == plot_patches.PIXMAP_CACHE_MB * 1024
     w = main_window
     w.resize(1700, 1030)  # 1000 px for the pages, below the buttons' row
-    p = w.isolation_page
+    p = w.quarter_car_page
     w.pages.setCurrentWidget(p)
     QtWidgets.QApplication.processEvents()
     cached = QtWidgets.QGraphicsItem.CacheMode.DeviceCoordinateCache

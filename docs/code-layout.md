@@ -177,19 +177,19 @@
   A mode shape swings on a plot by `gui/mode_swing.py`'s `ModeSwing` (Re(ψ e<sup>iθ</sup>) and its moving
   nodes, on its own frame loop): Complex modes and Modal coupling.
   A closed-form response is played back in time by `gui/playback.py`'s `Playback` (Start, Reset, a
-  speed, and a time cursor on its plots), which moves the page's body: Pendulums' pendulum
-  (`gui/pendulum_view.py`, each kind drawn and turned with the mouse) and Vibration isolation's machine on
-  its mounts (`gui/isolation_view.py`). A page rebuilt to #478's standard runs its body live instead: the
+  speed, and a time cursor on its plots), which moves the page's body: the Quarter-car's car over its road
+  (`gui/quarter_car_view.py`). A page rebuilt to #478's standard runs its body live instead: the
   Single oscillator's mass (`view_models/live_mass.py`, the chain's `Simulator` with one
-  mass or `core/arm_mass.py`'s Zener arm), drawn with its grips (`gui/live_body.py`) and its forces beside it on the mass held still
+  mass or `core/arm_mass.py`'s Zener arm), Vibration isolation's machine on its mounts
+  (`view_models/live_isolation.py`, drawn with its grips by `gui/isolation_view.py`), drawn with its grips (`gui/live_body.py`) and its forces beside it on the mass held still
   (`gui/free_body_view.py`), with the
   parts they share (`gui/live_parts.py`: the energy tab, the damping laws' loop tab, the change marks, the run's controls). A page's practice specs can sit on
   the page as challenges, checked live as its controls move (`gui/challenge.py`'s `ChallengeBox`).
 - `view_models/`: what a page shows, worked out without Qt (its curves, markers, ranges and readout
   texts, from its settings), so its readouts are tested as printed and its plots could be drawn
-  elsewhere; the page's widget only binds them. Vibration isolation and Duffing & Mathieu have one
-  so far (`view_models/isolation.py`, `view_models/duffing.py`: a page that runs keeps its run's
-  record there too), and `tests/test_view_models.py` checks them.
+  elsewhere; the page's widget only binds them. Every page rebuilt to #478's standard has one, and Duffing &
+  Mathieu (`view_models/duffing.py`: a page that runs keeps its run's record there too);
+  `tests/test_view_models.py` checks them.
 - The Theory notes are HTML files in `theory/`, read by `gui/links.py`'s `load_notes`. Their display
   equations are written in LaTeX and typeset by [ziamath](https://github.com/cdelker/ziamath)
   (`gui/maths.py`); the app's text is set in the bundled IBM Plex Sans and inline math in the bundled STIX Two Text font (`fonts/`, both under the SIL Open

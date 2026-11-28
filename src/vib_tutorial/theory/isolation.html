@@ -33,6 +33,12 @@ figure sets them side by side.</p>
 <m>T ≈ 1/r²</m> (40 dB a decade). Below <m>√2 f<sub>n</sub></m> it amplifies. So isolation needs a mount
 whose <m>f<sub>n</sub></m> is well <i>below</i> the running speed: a soft one. The <b>isolation</b> is
 <m>1 − T</m>, often quoted in dB as <m>20 log T</m>.</p>
+<p>On the page you measure <m>T</m>, as a test rig does. Hold the machine at a speed: at first it rings on its
+mounts at <m>f<sub>n</sub></m> as well as following the unbalance, and once that ring has died away (a few of
+the mounts' time constants, <m>1/ζω<sub>n</sub></m>) the floor's force over the unbalance's is steady, and its
+point lands on the <i>Transmissibility</i> tab. Switch what shakes to the floor and the point is the machine's
+motion over the floor's instead: it lands on the same curve. <i>Sweep</i> steps the speed across the resonance,
+a point at each.</p>
 
 <h3><a name="static-deflection"></a>Static deflection</h3>
 <p>A mount's stiffness under a machine of weight <m>Mg</m> is set by how far it sags,
@@ -101,8 +107,9 @@ has modes: see <a href="page:mounts_page#six-dof">Rigid body on mounts</a>.</li>
 <p>Running up to speed, the machine passes through the mounts' resonance. The unbalance's force there is
 smaller than at speed, <m>(f<sub>n</sub>/f)²</m> of it, and the faster the run up the less time the resonance
 has to build (the Single oscillator page's time constant): so lightly damped mounts are usually tolerable, and
-a slow run up or coast down through resonance is the hazard. The <i>Start-up</i> tab steps it exactly. The
-unbalance has turned through <m>φ = ∫Ω dt</m>, and its force along the mount is</p>
+a slow run up or coast down through resonance is the hazard. <i>Run up</i> and <i>Run down</i> change the speed
+at a steady rate as it runs, and the <i>Floor force</i> tab builds each turn's largest force against the speed.
+The unbalance has turned through <m>φ = ∫Ω dt</m>, and its force along the mount is</p>
 <eq>f(t) = m_e e\,\bigl(\Omega^2\cos\varphi + \dot\Omega\sin\varphi\bigr)</eq>
 <p>as the speed climbs: the second part is the push that speeds the unbalance up.</p>
 
@@ -122,11 +129,11 @@ unbalance has turned through <m>φ = ∫Ω dt</m>, and its force along the mount
 moves <m>(m<sub>e</sub>e/M) r²/11.585</m> = 100 µm × 12.58/11.585 = 109 µm. Running up in 2 s, it passes
 <m>f<sub>n</sub></m> where the unbalance makes only <m>(7.048/25)²</m> = 0.0795 of its running force,
 19.6 N; held there, <m>T ≈ 1/2ζ</m> = 10 would pass 196 N, but the run up is through before that can build,
-and the floor's force peaks at 111 N. These are the readouts under the mounts' controls, the transmissibility
-and the start-up.</p>
+and the floor's force peaks at 111 N. These are the readouts under the mounts' controls, under the time plots
+once the speed's point has landed, and on the Floor force tab after the run up.</p>
 
 <h3><a name="try-it"></a>Things to try</h3>
-<p>Each of these sets up the machine, the mounts and the plots (Things to try, top left).</p>
+<p>Each of these sets up the machine and its mounts and sets it going (Things to try, under the mounts).</p>
 <!--TRIALS-->
 <takeaways>
 <li>Transmissibility is the same for force into the floor and motion from it; it falls below 1 only above <m>√2 f<sub>n</sub></m>, whatever the damping.</li>

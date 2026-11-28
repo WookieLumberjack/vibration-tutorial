@@ -1,32 +1,44 @@
-"""Vibration isolation's view model: what the page draws and prints, from its settings (`gui/isolation.py` binds it).
+"""Vibration isolation's view model (#478 Phase 4): its state, and what each panel shows, without Qt.
 
-The page's settings are an `IsolationTrial` (its trials, `practice_state()` and `load_setup` all use one);
-`isolator(trial)` is the machine on its mounts. Each panel has a function from those to what it shows:
+The page's state is an `IsolationTrial` (its trials, `practice_state()` and `load_setup` all use one): the machine
+(its mass, speed and unbalance, an inertia block), its mounts (their kind, sag and damping, the relaxation's
+spring, the intermediate mass), what shakes (`shaking`: the machine's unbalance or the floor), the run-up's time,
+the isolation wanted, the tab showing and whether the theory is drawn over what's measured. `isolator(trial)` is
+the machine on its mounts. The page runs it live (`live_isolation.LiveIsolation`), and each panel has a function
+here:
 
 - `mount_info(iso)`: the mounts' k, c and f<sub>n</sub>, under their boxes.
-- `transmissibility(iso)`: the center: T against f/f<sub>n</sub> with the plain mounts' family behind it, the
-  running point, its readout, and the force on the floor against the speed.
-- `design_note(iso, target)`: the sag an isolation needs, under the Design box ("" when none can give it).
-- `start_up_view(iso, ramp)`: the Start-up tab's run up through resonance (the costly one: drawn only when it shows),
-  with what the machine drawn above it needs (the unbalance's angle and force, the intermediate mass).
-- `let_go_view(iso, x0)`: the same tab after a pluck: the machine, stopped, rings on its mounts.
-- `chart(iso)`: the Design chart tab.
+- `t_view(state, points, theory)`: the **Transmissibility** tab, built by hand: each steady speed's measured T
+  against f/f<sub>n</sub>, the machine's points and the floor's in their own markers (they fall on one curve), points
+  from before a change faded, and the theory (this isolator, and plain mounts at `FAMILY`'s ζ) only when asked
+  for. Its x axis is fixed, `RATIOS`' span, so the points don't move it.
+- `force_view(state, rpm, peaks, theory)`: the **Floor force** tab, built as the speed runs up and down: each whole
+  turn's largest force on the floor against the speed (or, the floor shaking, the machine's motion), beside the
+  unbalance's own force, what a rigid mount would pass (or the floor's motion), with the steady theory on request.
+- `steady_note(iso, T, shaking)`: the readout once a speed's T has landed: the forces (or the motions), T and the
+  isolation in % and dB.
+- `design_note(iso, target)` and `chart(iso)`: the **Design chart** tab, the sag each isolation needs.
+- `key(state)`: what a measured point belongs to: the isolator, its speed and unbalance aside (T doesn't depend on
+  them).
 
-Working on it: keep it free of Qt (see the package's docstring). `tests/test_view_models.py` checks the
-readouts against the numbers the notes and the trials quote, as printed.
+Working on it: keep it free of Qt (see the package's docstring). `tests/test_view_models.py` checks the panels and
+ties the readouts to the numbers the notes quote, as printed.
 """
 
 from __future__ import annotations
 
 import math
+from collections.abc import Sequence
 from dataclasses import dataclass, replace
 
 import numpy as np
 
-from ..core.isolation import G, Isolator, Mount, deflection_for, let_go, start_up
+from ..core.isolation import G, Isolator, Mount, deflection_for
 from ..core.practice import Placement, Prediction
 from ..core.sdof import TWO_PI
+from .live_isolation import FLOOR, FLOOR_AMPLITUDE, MACHINE
 from .plot import Curve
+from .recorder import Point
 from .text import db, fmt
 from .text import number as sig
 
@@ -35,8 +47,11 @@ FAMILY = (0.0, 0.1, 0.3, 0.7)  # the damping ratios drawn behind the isolator's 
 RATIOS = np.geomspace(0.1, 20.0, 1500)
 CHART_SPEEDS = np.geomspace(5.0, 200.0, 200)  # Hz on the design chart
 CHART_LEVELS = (0.5, 0.8, 0.9, 0.95, 0.99)
-TAB_START, TAB_CHART = range(2)
+TAB_T, TAB_FORCE, TAB_CHART = range(3)
 T_RANGE = (-4.0, math.log10(30.0))  # the transmissibility plot's y range, as log10
+START_RUN, START_RUN_UP = range(2)  # a trial's start: at speed from rest, or run up from standstill over `ramp`
+SWEEP_SPAN = (0.4, 5.0)  # × f_n: a sweep's speeds
+SWEEP_POINTS = 12
 
 
 @dataclass(frozen=True)
@@ -50,11 +65,15 @@ class IsolationTrial:
     stage_mass: float = 0.5
     block: float = 0.0
     rpm: float = 1500.0
-    ramp: float = 2.0
-    tab: int = TAB_START
+    ramp: float = 2.0  # s: a run up's or down's time
+    tab: int = TAB_T
     mass: float = 100.0
     unbalance: float = 0.01
-    predict: Prediction | Placement | None = None  # asked before it runs (Things to try)
+    shaking: int = MACHINE  # what shakes: the machine's unbalance or the floor
+    target: float = 90.0  # %: the isolation wanted (the Design chart's)
+    theory: bool = False  # the theory drawn over what's measured
+    start: int | None = None  # how the trial sets it going (`START_RUN`, `START_RUN_UP`), None: at rest
+    predict: Prediction | Placement | None = None  # asked once the reader has played (Things to try)
 
 
 def isolator(t: IsolationTrial) -> Isolator:
@@ -72,149 +91,9 @@ def isolator(t: IsolationTrial) -> Isolator:
     )
 
 
-TRIALS = (
-    IsolationTrial(
-        "Soft mounts",
-        "A 100 kg machine with a 0.01 kg·m unbalance at 1500 rpm (25 Hz) on mounts that sag 5 mm: <m>f<sub>n</sub></m> "
-        "= <m>15.76/√5</m> = 7.05 Hz, so the speed is <m>3.5f<sub>n</sub></m>. The unbalance pulls with 247 N; only 23 N, 9 %, "
-        "reaches the floor (−21 dB): 91 % isolation.",
-        predict=Prediction(
-            "A machine running at 3.5 times its mounts' natural frequency. How much of its unbalance force reaches the floor?",
-            ("All of it", "About a tenth", "More than all of it"),
-            1,
-            why=(
-                'Above √2 f<sub>n</sub> a mount passes less than all of it: at 3.5 f<sub>n</sub>, 1/(r² − 1) ≈ 9 %.',
-                '',
-                "Only below √2 f<sub>n</sub>. At 3.5 f<sub>n</sub> the machine's inertia takes most of the force.",
-            ),
-        ),
-    ),
-    IsolationTrial(
-        "Stiff mounts",
-        "The same machine on mounts that sag only 0.3 mm: <m>f<sub>n</sub></m> = 28.8 Hz, just above the running "
-        "speed. The mounts now amplify: 3.9 times the unbalance's force reaches the floor. Below <m>√2 f<sub>n</sub></m> "
-        "a mount can only make things worse.",
-        deflection_mm=0.3,
-        predict=Placement(
-            "The same machine on mounts sagging only 0.3 mm: their natural frequency is just above the speed. What "
-            "share of the unbalance's force reaches the floor now? Put the line at that transmissibility.",
-            plot="tr_plot",
-            answer=3.86,
-            span=(0.001, 10.0),
-            log=True,
-            low="Below √2 f<sub>n</sub> a mount can only pass more than all of it, and 25 Hz is just under f<sub>n</sub> = 28.8 Hz, "
-            "near resonance: 3.9 times.",
-            high="Near resonance, but not on it: at r = 0.87, with ζ = 0.05, the mounts pass 1/(1 − r²) ≈ 3.9 times "
-            "the force.",
-            tolerance=0.3,
-        ),
-    ),
-    IsolationTrial(
-        "Soft mounts, more damping",
-        "Back on the soft mounts, with <m>ζ</m> = 0.3 instead of 0.05. Above <m>√2 f<sub>n</sub></m> the damper passes force "
-        "to the floor in proportion to the speed: 20 % now reaches it instead of 9 %. Damping only helps at "
-        "resonance, which the machine passes through at start-up.",
-        zeta=0.3,
-        predict=Prediction(
-            "Back on the soft mounts, with ζ = 0.3 instead of 0.05. Does the floor get more or less?",
-            ("Less: damping always helps", "More: about twice as much", "The same"),
-            1,
-            why=(
-                "Only at resonance. Above √2 f<sub>n</sub> the damper's force grows with speed and passes more to the floor: 20 % against 9 %.",
-                '',
-                "Above √2 f<sub>n</sub> the damper's force, cΩX, adds to what the spring passes: more damping, more force on the floor.",
-            ),
-        ),
-    ),
-    IsolationTrial(
-        "Running up through resonance",
-        "A 2 s run up to 1500 rpm on the soft, lightly damped mounts. As the speed passes <m>f<sub>n</sub></m> = 7 Hz "
-        "(420 rpm) the machine and the floor force swell, then settle to the isolated running state. The "
-        "unbalance's force grows as the speed squared, so the resonance is passed at a twelfth of the running "
-        "force, which is what keeps it tolerable.",
-        tab=TAB_START,
-    ),
-    IsolationTrial(
-        "An elastically supported damper",
-        "A relaxation mount at 3000 rpm: the damper sits on a spring 3 times as stiff as the mount's, with "
-        "<m>ζ</m> = 0.3. At resonance it passes a little more than the plain mount of the same <m>ζ</m> (2.1 times against "
-        "2.0), but high above it the spring in series lets the damper float, and the transmissibility falls as "
-        "<m>1/r²</m> again, not <m>1/r</m>: 7.0 % reaches the floor against the plain mount's 8.8 % (at 6000 rpm, 1.9 % "
-        "against 4.3 %).",
-        zeta=0.3,
-        mount=Mount.RELAXATION,
-        rpm=3000.0,
-    ),
-    IsolationTrial(
-        "Two stages",
-        "The machine on mounts on a 50 kg intermediate mass, itself on mounts sagging 5 mm under both. Two resonances, but "
-        "above them the transmissibility falls as <m>1/r⁴</m> (80 dB a decade) instead of <m>1/r²</m>: 3.8 % reaches the "
-        "floor here (one stage: 9 %), and at 3000 rpm the two stages pass 0.2 % against one stage's 2.5 %.",
-        mount=Mount.TWO_STAGE,
-        predict=Prediction(
-            "One stage passes 9 %. Now two stages, a 50 kg mass between them, each on mounts sagging 5 mm. They pass?",
-            ("More than 9 %", "About 4 %", "About 9 %"),
-            1,
-            why=(
-                'Two stages bring two resonances, but well above both the transmissibility falls as 1/r⁴, not 1/r².',
-                '',
-                'The second stage isolates what the first passes, again: 3.8 %.',
-            ),
-        ),
-    ),
-    IsolationTrial(
-        "An inertia block",
-        "The machine bolted to a 300 kg block, the mounts stiffened to sag the same 5 mm. The transmissibility "
-        "doesn't change (<m>f<sub>n</sub></m> depends only on <m>δ</m>), nor does the force on the floor, but the machine "
-        "moves a quarter as much (±27 µm instead of ±109 µm): a block steadies the machine, it doesn't "
-        "isolate better.",
-        block=300.0,
-        predict=Prediction(
-            "Bolt the machine to a 300 kg block, the mounts stiffened to sag the same 5 mm. What changes?",
-            ("Less force reaches the floor", "The machine moves less; the floor's force stays", "Nothing at all"),
-            1,
-            why=(
-                'The transmissibility depends only on f<sub>n</sub>, which the 5 mm sag sets: the same share of the unbalance gets through.',
-                '',
-                "The machine's swing is the unbalance over the whole mass: with 300 kg added it's a quarter as large.",
-            ),
-        ),
-    ),
-)
-
-
-@dataclass(frozen=True)
-class Transmissibility:
-    family: tuple[Curve, ...]  # plain mounts at each of FAMILY's ζ, against f/f_n (NaN where infinite)
-    isolator: Curve  # this isolator, against f/f_n
-    now: Curve  # the running point (empty off the plot)
-    note: str  # the readout under the plot
-    rigid: Curve  # the unbalance's own force against the speed (rpm)
-    floor: Curve  # the force on the floor through these mounts
-    force_now: Curve
-    rpm_range: tuple[float, float]
-
-
-@dataclass(frozen=True)
-class StartUp:
-    speed: Curve  # rpm against time
-    x: Curve  # the machine's displacement
-    floor: Curve  # the force on the floor
-    rigid: Curve  # what a rigid mount would pass (the unbalance's force's amplitude)
-    resonance_rpm: float
-    t_end: float
-    note: str
-    force: Curve  # the unbalance's force along the mount, at each instant (what a rigid mount would pass then)
-    phase: Curve  # the angle the unbalance has turned through (rad, from the top)
-    stage: Curve  # the intermediate mass's displacement (zero but on two stages)
-
-
-@dataclass(frozen=True)
-class Chart:
-    levels: tuple[Curve, ...]  # the sag each of CHART_LEVELS needs against the speed (rpm)
-    now: Curve  # this machine
-    rpm_range: tuple[float, float]
-    note: str
+def key(t: IsolationTrial) -> Isolator:
+    """What a measured point belongs to: the isolator, its speed and unbalance aside."""
+    return replace(isolator(t), rpm=0.0, unbalance=0.0)
 
 
 def mount_info(iso: Isolator) -> str:
@@ -225,42 +104,163 @@ def mount_info(iso: Isolator) -> str:
     )
 
 
-def transmissibility(iso: Isolator) -> Transmissibility:
-    fn = iso.natural_hz
-    family = []
-    for z in FAMILY:
-        T = replace(iso, zeta=z, mount=Mount.VISCOUS, block=0.0).transmissibility(RATIOS * fn)
-        family.append(Curve(RATIOS, np.where(np.isfinite(T), T, np.nan)))
-    f = RATIOS * fn
-    f = f[np.abs(f / fn - 1) > 1e-9] if iso.zeta == 0 else f
-    X, Ff, Tn = iso.at_speed()
-    r = iso.speed_hz / fn
+def _verdict(T: float) -> str:
+    return (
+        f"isolation {sig(100 * (1 - T))} % ({sig(db(T))} dB)"
+        if T < 1
+        else f"amplified {sig(T)} times ({sig(db(T), plus=True)} dB)"
+    )
+
+
+def steady_note(iso: Isolator, T: float, shaking: int = MACHINE) -> str:
+    """The readout at a steady speed whose T was measured (see the module)."""
+    if shaking == FLOOR:
+        return (
+            f"Steady at {iso.rpm:.0f} rpm: the floor moves ±{fmt(FLOOR_AMPLITUDE, 'm')} and the machine "
+            f"±{fmt(T * FLOOR_AMPLITUDE, 'm')}: T = {sig(T)}, {_verdict(T)}."
+        )
     F = float(iso.force_at(iso.speed_hz))
-    verdict = (
-        f"isolation {sig(100 * (1 - Tn))} % ({sig(db(Tn))} dB)"
-        if Tn < 1
-        else f"amplified {sig(Tn)} times ({sig(db(Tn), plus=True)} dB)"
+    X = abs(complex(iso.response(np.array([iso.speed_hz]))[0][0])) * F
+    return (
+        f"At {iso.rpm:.0f} rpm the unbalance pulls with {fmt(F, 'N')}; {fmt(T * F, 'N')} reaches the floor: T = "
+        f"{sig(T)}, {_verdict(T)}. The machine moves ±{fmt(X, 'm')}."
     )
-    note = (
-        f"At {iso.rpm:.0f} rpm the unbalance pulls with {fmt(F, 'N')}; {fmt(Ff, 'N')} reaches the floor: T = "
-        f"{sig(Tn)}, {verdict}. The machine moves ±{fmt(X, 'm')}."
+
+
+# ------------------------------------------------------------------ the Transmissibility tab
+
+
+@dataclass(frozen=True)
+class TView:
+    machine: Curve  # the points measured with the machine shaking: T against f/f_n
+    floor: Curve  # with the floor shaking
+    earlier: Curve  # points from before a change, against their own f/f_n
+    isolator: Curve  # this isolator's theory (empty unless shown)
+    family: tuple[Curve, ...]  # plain mounts at FAMILY's ζ (empty unless shown)
+    speed: float  # the running speed over f_n (the drag line's)
+    note: str
+
+
+def t_view(state: IsolationTrial, points: Sequence[Point], theory: bool) -> TView:
+    """The Transmissibility tab (see the module). `points` are every measured point, each keyed (isolator, shaking)."""
+    iso = isolator(state)
+    fn = iso.natural_hz
+    now = key(state)
+    mine: dict[int, list[Point]] = {MACHINE: [], FLOOR: []}
+    earlier: list[tuple[float, float]] = []
+    for p in points:
+        assert isinstance(p.key, tuple), "a point's key is (the isolator, what shook)"
+        k: Isolator = p.key[0]
+        shaking: int = p.key[1]
+        if k == now:
+            mine[shaking].append(p)
+        else:
+            earlier.append((p.freq_hz / k.natural_hz, abs(p.response)))
+
+    def curve(ps: list[Point]) -> Curve:
+        ps = sorted(ps, key=lambda p: p.freq_hz)
+        return Curve(np.array([p.freq_hz / fn for p in ps]), np.array([abs(p.response) for p in ps]))
+
+    family: tuple[Curve, ...] = ()
+    own = Curve.empty()
+    if theory:
+        f = RATIOS * fn
+        f = f[np.abs(f / fn - 1) > 1e-9] if iso.zeta == 0 else f
+        own = Curve(f / fn, iso.transmissibility(f))
+        family = tuple(
+            Curve(RATIOS, _finite(replace(iso, zeta=z, mount=Mount.VISCOUS, block=0.0).transmissibility(RATIOS * fn)))
+            for z in FAMILY
+        )
+    n = len(mine[MACHINE]) + len(mine[FLOOR])
+    if n == 0:
+        note = (
+            "Run the machine at a steady speed: once the mounts' own ring has died away, its T lands here. "
+            "Sweep steps the speed across the resonance and dwells at each."
+        )
+    else:
+        both = mine[MACHINE] and mine[FLOOR]
+        note = f"{n} speed{'s' if n > 1 else ''} measured on these mounts" + (
+            ": the machine's (●) and the floor's (◆) fall on one curve." if both else "."
+        )
+    if theory:
+        note += " The theory: bold, this isolator; thin, plain mounts at ζ = 0, 0.1, 0.3 and 0.7."
+
+    e = sorted(earlier)
+    return TView(
+        curve(mine[MACHINE]),
+        curve(mine[FLOOR]),
+        Curve(np.array([a for a, _ in e]), np.array([b for _, b in e])),
+        own,
+        family,
+        iso.speed_hz / fn,
+        note,
     )
-    rpm = np.geomspace(max(iso.rpm / 50.0, 1.0), iso.rpm * 3.0, 800)
-    fr = rpm / 60.0
+
+
+def _finite(T: np.ndarray) -> np.ndarray:
+    return np.where(np.isfinite(T), T, np.nan)
+
+
+def sweep_speeds(state: IsolationTrial) -> tuple[float, ...]:
+    """A sweep's speeds (rpm), from SWEEP_SPAN[0] to [1] × f<sub>n</sub>, log-spaced."""
+    fn = isolator(state).natural_hz
+    return tuple(float(60 * f) for f in np.geomspace(SWEEP_SPAN[0] * fn, SWEEP_SPAN[1] * fn, SWEEP_POINTS))
+
+
+# ------------------------------------------------------------------ the Floor force tab
+
+
+@dataclass(frozen=True)
+class ForceView:
+    built: Curve  # each whole turn's largest force on the floor (N) against its speed (rpm), or the machine's motion
+    rigid: Curve  # what a rigid mount would pass (the unbalance's own force), or the floor's motion
+    theory: Curve  # the steady amplitude through these mounts (empty unless shown)
+    rpm_range: tuple[float, float]
+    title: str  # the y axis
+    unit: str
+    names: tuple[str, str]  # the built curve's and the rigid's, for the legend
+    note: str
+
+
+def force_view(state: IsolationTrial, rpm: np.ndarray, peaks: np.ndarray, theory: bool) -> ForceView:
+    """The Floor force tab (see the module): `rpm` and `peaks`, each turn's, from `live_isolation.by_speed`."""
+    iso = isolator(state)
+    top = max(1.25 * iso.rpm, float(rpm.max()) * 1.05 if rpm.size else 0.0, 2.5 * 60 * iso.natural_hz)
+    grid = np.linspace(top / 400, top, 400)
+    fr = grid / 60.0
     if iso.zeta == 0:
-        fr = fr[np.abs(fr / fn - 1) > 1e-6]
-        rpm = fr * 60.0
-    force = iso.force_at(fr)
-    return Transmissibility(
-        family=tuple(family),
-        isolator=Curve(f / fn, iso.transmissibility(f)),
-        now=Curve.point(r, Tn) if RATIOS[0] <= r <= RATIOS[-1] else Curve.empty(),
-        note=note,
-        rigid=Curve(rpm, force),
-        floor=Curve(rpm, iso.transmissibility(fr) * force),
-        force_now=Curve.point(iso.rpm, Ff),
-        rpm_range=(float(rpm[0]), float(rpm[-1])),
+        keep = np.abs(fr / iso.natural_hz - 1) > 1e-6
+        grid, fr = grid[keep], fr[keep]
+    floor = state.shaking == FLOOR
+    rigid = np.full(grid.size, FLOOR_AMPLITUDE) if floor else iso.force_at(fr)
+    steady = Curve(grid, iso.transmissibility(fr) * rigid) if theory else Curve.empty()
+    if rpm.size:
+        i = int(np.argmax(peaks))
+        unit = "m" if floor else "N"
+        note = f"Largest so far: {fmt(float(peaks[i]), unit)} at {rpm[i]:.0f} rpm (f<sub>n</sub> is at {60 * iso.natural_hz:.0f} rpm)."
+    else:
+        note = "Run the machine up (or down) through its mounts' resonance: each turn's largest swing lands here."
+    return ForceView(
+        Curve(rpm, peaks),
+        Curve(grid, rigid),
+        steady,
+        (0.0, top),
+        "Machine's motion" if floor else "Force on the floor",
+        "m" if floor else "N",
+        ("the machine", "the floor's motion") if floor else ("on these mounts", "rigid mount (mₑeΩ²)"),
+        note,
     )
+
+
+# ------------------------------------------------------------------ the Design chart tab
+
+
+@dataclass(frozen=True)
+class Chart:
+    levels: tuple[Curve, ...]  # the sag each of CHART_LEVELS needs against the speed (rpm)
+    now: Curve  # this machine
+    rpm_range: tuple[float, float]
+    note: str
 
 
 def design_note(iso: Isolator, target: float) -> str:
@@ -272,66 +272,6 @@ def design_note(iso: Isolator, target: float) -> str:
     return (
         f"{sig(100 * target, 4)} % at {iso.rpm:.0f} rpm needs f<sub>n</sub> ≤ {sig(math.sqrt(G / d) / TWO_PI)} Hz: a sag "
         f"of {sig(1e3 * d)} mm or more (undamped, one stage)."
-    )
-
-
-def start_up_view(iso: Isolator, ramp: float) -> StartUp:
-    """A run up to speed in `ramp` seconds, held long enough to settle (decimated to ~6000 points)."""
-    hold = max(0.25 * ramp, 1.0, 6.0 / max(iso.zeta * TWO_PI * iso.natural_hz, 1e-3) / 3)
-    hold = min(hold, 4.0 * ramp + 2.0)
-    s = start_up(iso, ramp, hold)
-    k = slice(None, None, max(1, s.t.size // 6000))
-    t = s.t[k]
-    during = s.t <= ramp
-    peak_f = float(np.max(np.abs(s.floor[during]))) if during.any() else 0.0
-    peak_x = float(np.max(np.abs(s.x[during]))) if during.any() else 0.0
-    X, Ff, _ = iso.at_speed()
-    return StartUp(
-        speed=Curve(t, 60.0 * s.speed_hz[k]),
-        x=Curve(t, s.x[k]),
-        floor=Curve(t, s.floor[k]),
-        rigid=Curve(t, iso.force_at(s.speed_hz[k])),
-        resonance_rpm=60.0 * iso.natural_hz,
-        t_end=float(s.t[-1]),
-        note=(
-            f"Through resonance ({60 * iso.natural_hz:.0f} rpm, dotted) the floor force peaks at {fmt(peak_f, 'N')} "
-            f"and the machine at ±{fmt(peak_x, 'm')}; running, {fmt(Ff, 'N')} and ±{fmt(X, 'm')}. Dashed: the "
-            "unbalance's own force."
-        ),
-        force=Curve(t, s.force[k]),
-        phase=Curve(t, s.phase[k]),
-        stage=Curve(t, s.stage[k]),
-    )
-
-
-def let_go_view(iso: Isolator, x0: float) -> StartUp:
-    """The machine, stopped, pulled to x0 (m) and let go: it rings at the mounts' natural frequency."""
-    fn = iso.natural_hz
-    decay = 5.0 / max(iso.zeta * TWO_PI * fn, 1e-3)  # five time constants
-    duration = min(max(decay, 5.0 / fn), 40.0 / fn)
-    s = let_go(iso, x0, duration)
-    k = slice(None, None, max(1, s.t.size // 6000))
-    t = s.t[k]
-    peak_f = float(np.max(np.abs(s.floor)))
-    return StartUp(
-        speed=Curve(t, 60.0 * s.speed_hz[k]),
-        x=Curve(t, s.x[k]),
-        floor=Curve(t, s.floor[k]),
-        rigid=Curve(t, np.zeros(t.size)),
-        resonance_rpm=60.0 * fn,
-        t_end=float(s.t[-1]),
-        note=(
-            f"Pulled to {fmt(x0, 'm')} and let go, stopped: it rings on its mounts and dies away"
-            + (
-                f", at f<sub>n</sub> = {sig(fn)} Hz (a period of {fmt(1.0 / fn, 's')})"
-                if iso.mount is Mount.VISCOUS
-                else f" (one stage of plain mounts would ring at f<sub>n</sub> = {sig(fn)} Hz)"
-            )
-            + f"; the floor force peaks at {fmt(peak_f, 'N')}. A trial, or any box, runs it up again."
-        ),
-        force=Curve(t, np.zeros(t.size)),
-        phase=Curve(t, np.zeros(t.size)),
-        stage=Curve(t, s.stage[k]),
     )
 
 

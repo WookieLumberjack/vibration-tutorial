@@ -323,20 +323,21 @@ def free_body(live: LiveIsolation, scale: ArrowScale | None = None, floor_scale:
     _, g, g_dot = (float(u) for u in live.inputs())
     x, v = live.x, live.v
     k, c = iso.stiffness, iso.damping
+    floor = live.shaking == FLOOR  # the floor's motion, g in the code, is y in the notes
     rows = []
     if iso.mount is Mount.TWO_STAGE:  # the upper mounts, on the intermediate mass
         x2, v2 = float(z[1]), float(z[3])
         rows.append(arrow("spring", "k(x₁ − x₂)", -k * (x - x2), "energy.potential", short="kx"))
         rows.append(arrow("damper", "c(ẋ₁ − ẋ₂)", -c * (v - v2), "energy.dissipated", short="cẋ"))
     else:
-        rows.append(arrow("spring", "k(x − g)" if live.shaking else "kx", -k * (x - g), "energy.potential", short="kx"))
+        rows.append(arrow("spring", "k(x − y)" if floor else "kx", -k * (x - g), "energy.potential", short="kx"))
         if iso.mount is Mount.RELAXATION:
             k1 = iso.stiffness_ratio * k
             arm = -k1 * (x - float(z[2])) if c > 0 else 0.0
-            rows.append(arrow("arm", "Nk(x − y)", arm, "energy.added", short="arm"))
+            rows.append(arrow("arm", "the damper's spring", arm, "energy.added", short="Nk"))
         else:
             rows.append(
-                arrow("damper", "c(ẋ − ġ)" if live.shaking else "cẋ", -c * (v - g_dot), "energy.dissipated", short="cẋ")
+                arrow("damper", "c(ẋ − ẏ)" if floor else "cẋ", -c * (v - g_dot), "energy.dissipated", short="cẋ")
             )
     force = float(live.inputs()[0])
     rows.append(arrow("unbalance", "f", force, "force"))
@@ -347,6 +348,6 @@ def free_body(live: LiveIsolation, scale: ArrowScale | None = None, floor_scale:
     largest = max(abs(r.value) for r in (*rows, net))
     s = scale.update(t, largest) if scale is not None else (1.0 / largest if largest > 0 else 0.0)
     on_floor = live.floor_force()
-    floor = arrow("floor", "on the floor", on_floor, "structure", short="floor")
+    aside = arrow("floor", "on the floor", on_floor, "structure", short="floor")
     a = floor_scale.update(t, abs(on_floor)) if floor_scale is not None else (1.0 / abs(on_floor) if on_floor else 0.0)
-    return FreeBody(tuple(rows), net, s, (floor,), a)
+    return FreeBody(tuple(rows), net, s, (aside,), a)

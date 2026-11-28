@@ -1,398 +1,126 @@
-"""Vibration isolation page: a machine with a rotating unbalance on mounts, and the force that reaches the floor.
+"""Vibration isolation page (#478 Phase 4): a machine with a rotating unbalance on its mounts, live.
 
-Left: the machine, the mounts (by their static deflection and damping, of three kinds), an inertia block,
-and a design target. Center: the transmissibility against frequency (with a family of damping ratios
-behind it) and the force on the floor against the speed. Right: a run up to speed through the mounts'
-resonance, the design chart (static deflection against speed for each isolation), and the Theory. The page
-has its own model (core/isolation.py).
+The machine is stepped as it runs (`view_models/live_isolation.LiveIsolation`: the isolator's state space, exactly),
+not a run worked out in advance and played back. What shakes is the reader's pick: the machine's unbalance, or the
+floor under the mounts; both share the one transmissibility. Left: the machine (its mass, speed, unbalance and an
+inertia block, and Run up / Run down through resonance), what shakes, the mounts (their kind, sag and damping), then
+the Things to try (setups to go back to; their predictions asked once the reader has handled it) and a Challenge.
+Center: the machine on its mounts (`isolation_view.IsolationView`: pull it and let go, or drag the grips on the
+machine, the spring and the damper as it runs), the forces on it beside it (`free_body_view.FreeBodyView`, the
+force on the floor aside), the run's controls, and the time plots, which keep what came before a change with the
+change marked. Right: the Transmissibility the reader measures, a point a steady speed (dwell, or Sweep), the
+Floor force built as the speed runs up and down, the Design chart, and the Theory.
 
-What it draws and prints is worked out in its view model (`view_models/isolation.py`, no Qt), which also holds
-its settings (`IsolationTrial`) and `TRIALS`; this module binds the controls to it and keeps the practice
-problems. Change a readout or a curve there, and its tests in `tests/test_view_models.py`.
+What the page shows is `view_models/isolation.py`'s and `live_isolation.py`'s; its trials, problems, tips and notes
+are `isolation_trials.py`'s (no Qt). The controls are bound to the state (`IsolationTrial`) by `bindings.Bindings`,
+so Defaults round-trips by construction.
 
-The Start-up tab draws the machine on its mounts (`isolation_view.IsolationView`), moving with the run-up
-under a `playback.Playback` (Start, Reset, speed, and a time cursor on the machine's plot), its unbalance
-turning. Pull the machine and let go and the tab's plots show it, stopped, ringing on its mounts
-(`view.let_go_view`) until a trial or a box runs it up again (`self.pulled_to` back to None). A trial starts
-the motion.
+Working on it: `tests/test_isolation_page.py` (the page live: a dwell landing T, both ways, a run up building the
+floor force, the grips, a pull, a change mid-run, predictions after play), `test_live_isolation.py` (the Qt-free
+run), `test_view_models.py` (the panels), `test_readiness.py`.
 """
 
 from __future__ import annotations
 
+import dataclasses
 import math
 
 import numpy as np
 import pyqtgraph as pg
 from PySide6 import QtCore, QtWidgets
 
-from ..core.isolation import G, Isolator, Mount, deflection_for
-from ..core.practice import Problem, Question, at_most, kept, number, pick, rounded
-from ..core.sdof import TWO_PI
+from ..core.isolation import Mount, deflection_for
 from ..view_models import isolation as view
-from ..view_models.isolation import (
-    CHART_LEVELS,
-    FAMILY,
-    MOUNTS,
-    TAB_CHART,
-    TAB_START,
-    TRIALS,
-    IsolationTrial,
-    isolator,
-)
+from ..view_models import live_isolation as li
+from ..view_models import recorder as rec
+from ..view_models.free_body import ArrowScale
+from ..view_models.isolation import CHART_LEVELS, FAMILY, MOUNTS, IsolationTrial, isolator
+from ..view_models.live_isolation import COL, FLOOR, GRIPS, LiveIsolation
+from ..view_models.text import fmt
 from ..view_models.text import number as sig
-from . import coalesce, isolation_figures, settle_plots
+from . import coalesce
+from .bindings import Bindings
 from .challenge import ChallengeBox
 from .drag import DragLine
-from .isolation_view import IsolationView
-from .layouts import ColumnScroll
-from .lesson import (
-    Form,
-    TrialBox,
-    note_label,
-    plot,
-    readout_label,
-    set_quietly,
+from .frame_loop import FrameLoop
+from .free_body_view import FreeBodyView
+from .isolation_trials import (
+    CHART_TIP,
+    FORCE_TIP,
+    FORCES_TIP,
+    NOTES_HTML,
+    PROBLEMS,
+    SPEED_LINE_TIP,
+    STRIP_TIP,
+    TIPS,
+    TR_TIP,
+    TRIALS,
 )
-from .links import load_notes, page_link
+from .isolation_view import IsolationView
+from .layouts import FlowLayout
+from .lesson import ActionToggle, Form, LiveLabel, TrialBox, combo, note_label, plot, set_quietly, three_panes
+from .live_parts import ChangeMarks, run_row
 from .notes_view import NotesBrowser
-from .playback import Playback
+from .plots import decimate
+from .scrub import Scrub
 from .style import colors
 from .theming import add_legend
-from .trials_text import trials_html
+from .transport import Transport
 
-# ------------------------------------------------------------------ practice problems
-# The page's machine: 100 kg with a 0.01 kg·m unbalance (the trials and the problems keep it).
+__all__ = ["NOTES_HTML", "PROBLEMS", "TRIALS", "IsolationPage"]
 
-
-def _mount_frequency(rng: np.random.Generator) -> Question:
-    sag = pick(rng, (0.5, 1, 2, 3, 5, 8, 10, 20))
-    fn = Isolator(deflection=1e-3 * sag).natural_hz
-    return Question(
-        f"A machine sags {sig(sag, 6)} mm on its mounts. What is its natural frequency on them?",
-        fn,
-        f"k = Mg/δ, so ω<sub>n</sub> = √(k/M) = √(g/δ), whatever the machine weighs: f<sub>n</sub> = "
-        f"√(9.81/{number(1e-3 * sag)})/2π = {number(fn)} Hz (15.76/√δ with δ in mm).",
-        unit="Hz",
-        setup=dict(deflection_mm=sag, tab=TAB_START),
-    )
-
-
-def _transmissibility(rng: np.random.Generator) -> Question:
-    sag = pick(rng, (2, 3, 5, 8, 10))
-    rpm = pick(rng, (900, 1200, 1500, 1800, 3000))
-    zeta = pick(rng, (0.02, 0.05, 0.1, 0.2))
-    iso = Isolator(rpm=rpm, deflection=1e-3 * sag, zeta=zeta)
-    r = iso.speed_hz / iso.natural_hz
-    T = iso.at_speed()[2]
-    return Question(
-        f"A machine runs at {sig(rpm, 6)} rpm on mounts that sag {sig(sag, 6)} mm, with ζ = {sig(zeta, 6)}. What percentage of its "
-        "unbalance's force reaches the floor?",
-        100.0 * T,
-        f"f<sub>n</sub> = 15.76/√{sig(sag, 6)} = {number(iso.natural_hz)} Hz and the speed is {number(iso.speed_hz)} Hz, "
-        f"so r = {number(r)}; T = √(1 + (2ζr)²)/√((1 − r²)² + (2ζr)²) = {number(T)}: {number(100.0 * T)} %.",
-        unit="%",
-        tolerance=0.03,
-        setup=dict(deflection_mm=sag, rpm=rpm, zeta=zeta, tab=TAB_START),
-    )
-
-
-def _sag_for(rng: np.random.Generator) -> Question:
-    rpm = pick(rng, (600, 900, 1200, 1500, 1800, 3000))
-    isolation = pick(rng, (0.8, 0.9, 0.95))
-    sag = deflection_for(rpm / 60.0, isolation)
-    T = 1.0 - isolation
-    r = math.sqrt(1.0 + 1.0 / T)
-    return Question(
-        f"Undamped mounts are to isolate {sig(100 * isolation, 6)} % of a machine's unbalance at {sig(rpm, 6)} rpm. How far must "
-        "they sag under it?",
-        1e3 * sag,
-        f"Undamped and above √2 f<sub>n</sub>, T = 1/(r² − 1) = {number(T)}, so r = √(1 + 1/T) = {number(r)}: "
-        f"f<sub>n</sub> = {number(rpm / 60.0)}/{number(r)} = {number(rpm / 60.0 / r)} Hz, and δ = "
-        f"g/(2πf<sub>n</sub>)² = {number(1e3 * sag)} mm.",
-        unit="mm",
-        setup=dict(deflection_mm=rounded(1e3 * sag), rpm=rpm, zeta=0.0, tab=TAB_CHART),
-    )
-
-
-def _stiff_or_soft(rng: np.random.Generator) -> Question:
-    rpm = pick(rng, (900, 1500, 3000))
-    ratio = pick(rng, (0.6, 0.8, 1.1, 2.0, 3.0, 4.0))
-    fn = rpm / 60.0 / ratio
-    sag = rounded(1e3 * G / (TWO_PI * fn) ** 2, 2)
-    iso = Isolator(rpm=rpm, deflection=1e-3 * sag)
-    T = iso.at_speed()[2]
-    r = iso.speed_hz / iso.natural_hz
-    return Question(
-        f"A machine running at {sig(rpm, 6)} rpm is put on mounts that sag {number(sag, 2)} mm (ζ = 0.05). Does more or "
-        "less force reach the floor than if it were bolted down?",
-        0 if T > 1 else 1,
-        f"f<sub>n</sub> = 15.76/√{number(sag, 2)} = {number(iso.natural_hz)} Hz, so the speed is r = {number(r)} "
-        f"times it, {'below' if r < math.sqrt(2.0) else 'above'} √2: T = {number(T)}. Only above √2 f<sub>n</sub> "
-        "does a mount isolate.",
-        choices=("More: the mounts amplify it", "Less: the mounts isolate it", "The same"),
-        why=(
-            "" if T > 1 else f"Mounts amplify only below √2 f<sub>n</sub>, and here r = {number(r)} is above it.",
-            "" if T <= 1 else f"Mounts isolate only above √2 f<sub>n</sub>, and here r = {number(r)} is below it.",
-            f"The force is the same only at r = √2 exactly; here r = {number(r)}.",
-        ),
-        setup=dict(deflection_mm=sag, rpm=rpm, tab=TAB_START),
-        predict=True,
-    )
-
-
-def _damping_above(rng: np.random.Generator) -> Question:
-    zeta = pick(rng, (0.2, 0.3, 0.5))
-    before_, after = (Isolator(zeta=z).at_speed()[2] for z in (0.05, zeta))
-    return Question(
-        f"A machine at 1500 rpm on mounts that sag 5 mm (f<sub>n</sub> = 7 Hz, well below its 25 Hz) has ζ = 0.05. "
-        f"The mounts are changed for ones that sag the same but have ζ = {sig(zeta, 6)}. What happens to the force on "
-        "the floor while it runs?",
-        0,
-        f"It rises: T goes from {number(100 * before_)} % to {number(100 * after)} %. Above √2 f<sub>n</sub> the "
-        "damper pushes on the floor in proportion to the speed; damping only helps near resonance, at start-up.",
-        choices=("It rises", "It falls", "It stays the same"),
-        why=(
-            "",
-            "Damping helps only near resonance, at start-up. Above √2 f<sub>n</sub> the damper's force grows with "
-            "the speed and goes straight to the floor, so more of it lets more through.",
-            "The damper's force adds to the spring's on the floor: above √2 f<sub>n</sub>, more damping lets more "
-            "through.",
-        ),
-        setup=dict(zeta=zeta, tab=TAB_START),
-        predict=True,
-    )
-
-
-def _isolate_spec(rng: np.random.Generator) -> Question:
-    rpm = pick(rng, (900, 1200, 1500, 1800, 3000))
-    isolation = pick(rng, (0.8, 0.9, 0.95))
-    allowed = 100.0 * (1.0 - isolation)
-    need = 1e3 * deflection_for(rpm / 60.0, isolation)  # mm, undamped
-    design = rounded(1.2 * need, 2)
-    most = rounded(design * pick(rng, (1.3, 1.6)), 2)
-    T = 100.0 * Isolator(rpm=rpm, deflection=1e-3 * design).at_speed()[2]
-
-    def goal(t: IsolationTrial):
-        return (
-            kept("The speed", t.rpm, rpm, "rpm"),
-            at_most("The force reaching the floor, T", 100.0 * isolator(t).at_speed()[2], allowed, "%"),
-            at_most("The mounts' sag", t.deflection_mm, most, "mm"),
-        )
-
-    return Question(
-        f"The machine runs at {sig(rpm, 6)} rpm and sits on stiff mounts. Choose mounts so no more than {sig(allowed, 6)} % of "
-        f"its unbalance's force reaches the floor ({sig(100 * isolation, 6)} % isolation), without letting it sag more "
-        f"than {number(most, 2)} mm (any more and its pipes won't line up).",
-        0,
-        f"Undamped, T = 1/(r² − 1) = {sig(1 - isolation, 6)} needs r = {number(math.sqrt(1 + 1 / (1 - isolation)))}, "
-        f"so a sag of at least {number(need)} mm; damping costs a little, so take a little more: {number(design, 2)} "
-        f"mm with ζ = 0.05 lets {number(T)} % through. The Design chart's <i>Use that sag</i> gives the undamped "
-        "sag for an isolation.",
-        setup=dict(rpm=rpm, deflection_mm=rounded(0.3 * need, 2), tab=TAB_CHART),
-        goal=goal,
-        design=dict(rpm=rpm, deflection_mm=design, tab=TAB_CHART),
-    )
-
-
-def _trade_off_spec(rng: np.random.Generator) -> Question:
-    rpm = pick(rng, (1200, 1500, 1800, 3000))
-    sag = pick(rng, (3, 5, 8, 10))
-    zeta = pick(rng, (0.1, 0.15, 0.2, 0.25))
-    iso = Isolator(rpm=rpm, deflection=1e-3 * sag, zeta=zeta)
-    peak = rounded(1.1 * iso.peak_transmissibility(), 2)
-    allowed = rounded(1.15 * 100.0 * iso.at_speed()[2], 2)
-
-    def goal(t: IsolationTrial):
-        now = isolator(t)
-        return (
-            kept("The speed", t.rpm, rpm, "rpm"),
-            at_most("T's peak, at any speed", now.peak_transmissibility(), peak),
-            at_most("T at the running speed", 100.0 * now.at_speed()[2], allowed, "%"),
-            at_most("The mounts' sag", t.deflection_mm, sag, "mm"),
-        )
-
-    return Question(
-        f"The machine runs at {sig(rpm, 6)} rpm on mounts that sag {sig(sag, 6)} mm, with hardly any damping (ζ = 0.02): it "
-        f"shakes the floor as it runs up through their resonance. Tune the mounts so the transmissibility never "
-        f"exceeds {number(peak, 2)} at any speed, while at {sig(rpm, 6)} rpm no more than {number(allowed, 2)} % of the "
-        f"force reaches the floor. The mounts may sag {sig(sag, 6)} mm at most.",
-        0,
-        f"Damping lowers the peak (about 1/2ζ) but raises T at speed (the damper's force grows with the speed), "
-        f"so there's a window: ζ = {sig(zeta, 6)} at {sig(sag, 6)} mm gives a peak of {number(iso.peak_transmissibility())} "
-        f"and {number(100 * iso.at_speed()[2])} % at speed. Less sag (stiffer mounts) only makes T at speed worse.",
-        setup=dict(rpm=rpm, deflection_mm=float(sag), zeta=0.02, tab=TAB_START),
-        goal=goal,
-        design=dict(rpm=rpm, deflection_mm=float(sag), zeta=zeta, tab=TAB_START),
-    )
-
-
-def _block_spec(rng: np.random.Generator) -> Question:
-    rpm = pick(rng, (900, 1200, 1500, 1800))
-    sag = pick(rng, (2, 3, 5))
-    block = pick(rng, (50, 100, 200, 300))
-    iso = Isolator(rpm=rpm, deflection=1e-3 * sag, block=block)
-    most = rounded(1.1 * 1e6 * iso.at_speed()[0], 2)
-    r2 = (iso.speed_hz / iso.natural_hz) ** 2
-    least = 0.01 * r2 / ((r2 - 1.0) * 1e-6 * most) - 100.0
-
-    def goal(t: IsolationTrial):
-        return (
-            kept("The speed", t.rpm, rpm, "rpm"),
-            kept("The machine's mass", t.mass, 100.0, "kg"),
-            kept("Its unbalance", t.unbalance, 0.01, "kg·m"),
-            kept("The mounts' sag", t.deflection_mm, float(sag), "mm"),
-            at_most("The machine's motion", 1e6 * isolator(t).at_speed()[0], most, "µm"),
-        )
-
-    return Question(
-        f"The 100 kg machine (0.01 kg·m of unbalance) runs at {sig(rpm, 6)} rpm on mounts that sag {sig(sag, 6)} mm. It swings "
-        f"too much for the pipes bolted to it: bring its motion down to ±{number(most, 2)} µm, keeping the mounts' "
-        "sag (they're stiffened to suit whatever they carry).",
-        0,
-        f"High above resonance the mounts hardly hold the machine: it swings about its center of mass, X = "
-        f"m<sub>e</sub>e r²/((M + B)(r² − 1)) with r² = {number(r2)} fixed by the sag. So it needs M + B ≥ "
-        f"0.01 × {number(r2)}/({number(r2 - 1)} × {number(most, 2)}×10<sup>−6</sup>): an inertia block of at least "
-        f"{number(max(least, 0.0), 2)} kg. A {sig(block, 6)} kg block gives ±{number(1e6 * iso.at_speed()[0])} µm.",
-        setup=dict(rpm=rpm, deflection_mm=float(sag), tab=TAB_START),
-        goal=goal,
-        design=dict(rpm=rpm, deflection_mm=float(sag), block=float(block), tab=TAB_START),
-    )
-
-
-PROBLEMS = (
-    Problem(
-        "mount-frequency",
-        "Natural frequency from the sag",
-        "isolation_page",
-        f"See {page_link('isolation_page', 'static-deflection', 'Static deflection')}.",
-        _mount_frequency,
-    ),
-    Problem(
-        "transmissibility",
-        "Force on the floor",
-        "isolation_page",
-        f"See {page_link('isolation_page', 'transmissibility', 'Transmissibility')}: first r = f/f<sub>n</sub>.",
-        _transmissibility,
-    ),
-    Problem(
-        "sag-for",
-        "Mounts for an isolation",
-        "isolation_page",
-        f"See {page_link('isolation_page', 'static-deflection', 'Static deflection')}: undamped, T = 1/(r² − 1).",
-        _sag_for,
-    ),
-    Problem(
-        "stiff-or-soft",
-        "Predict: isolate or amplify?",
-        "isolation_page",
-        f"See {page_link('isolation_page', 'transmissibility', 'Transmissibility')}: where does T cross 1?",
-        _stiff_or_soft,
-    ),
-    Problem(
-        "damping-above",
-        "Predict: more damping, running",
-        "isolation_page",
-        f"See {page_link('isolation_page', 'damping-trade-off', 'The damping trade-off')}.",
-        _damping_above,
-    ),
-    Problem(
-        "isolate-spec",
-        "Spec: isolate the machine",
-        "isolation_page",
-        f"See {page_link('isolation_page', 'static-deflection', 'Static deflection')}: the softer the mounts, the "
-        "better they isolate.",
-        _isolate_spec,
-    ),
-    Problem(
-        "trade-off-spec",
-        "Spec: through resonance and at speed",
-        "isolation_page",
-        f"See {page_link('isolation_page', 'damping-trade-off', 'The damping trade-off')}.",
-        _trade_off_spec,
-    ),
-    Problem(
-        "block-spec",
-        "Spec: steady the machine",
-        "isolation_page",
-        f"See {page_link('isolation_page', 'inertia-block', 'An inertia block')}.",
-        _block_spec,
-    ),
-)
-
-TIPS = {
-    "mass": "<p>The machine's mass M.</p>",
-    "rpm": "<p>Its running speed.</p>",
-    "unbalance": "<p>Its unbalance m<sub>e</sub>e: an off-center mass times its radius. Its force is "
-    "m<sub>e</sub>eΩ².</p>",
-    "deflection": "<p>How far the mounts sag under the machine's weight. Since k = Mg/δ, the natural frequency "
-    "is √(g/δ)/2π = 15.76/√δ<sub>mm</sub> Hz, whatever the mass: the softer the mount, the lower.</p>",
-    "zeta": "<p>The mounts' damping ratio.</p>",
-    "mount": "<p><b>Spring + damper:</b> side by side. <b>Relaxation:</b> the damper in series with a spring N "
-    "times the mount's, so it can't stiffen the mount at high frequency. <b>Two stages:</b> the machine on "
-    "mounts on an intermediate mass, itself on mounts.</p>",
-    "ratio": "<p>The relaxation damper's spring, over the mount's (N).</p>",
-    "stage": "<p>The intermediate mass, over the machine's.</p>",
-    "block": "<p>An inertia block bolted to the machine. The mounts are stiffened to keep their sag.</p>",
-    "target": "<p>The isolation wanted at the running speed: the share of the unbalance's force kept off the "
-    "floor.</p>",
-    "ramp": "<p>How long the run up to speed takes.</p>",
-}
-TR_TIP = (
-    "<p>The force on the floor over the machine's force (equally, the motion that reaches an instrument over the "
-    "floor's), against the frequency over f<sub>n</sub>. Thin: plain mounts at ζ = 0, 0.1, 0.3, 0.7; bold: this "
-    "isolator. It crosses 1 at √2 f<sub>n</sub>; the circle is the running speed: drag its line (◀▶) to change the "
-    "speed.</p>"
-)
-SPEED_LINE_TIP = (
-    "<p>The running speed over f<sub>n</sub>. Drag it to run the machine faster or slower: the Speed box, the force "
-    "on the floor and the readout follow. Below √2 the mounts pass on more force than the unbalance makes; well above, less.</p>"
-)
-FORCE_TIP = (
-    "<p>The force reaching the floor against the machine's speed, against the unbalance's own force (the "
-    "dashed line, what a rigid mount would pass). The circle is the running speed.</p>"
-)
-START_TIP = (
-    "<p>The machine run up from rest at a steady acceleration and held at speed: its speed, its displacement and "
-    "the force on the floor, stepped exactly.</p>"
-)
-CHART_TIP = (
-    "<p>The static deflection undamped mounts need, against the running speed, for each isolation. The circle is "
-    "this machine.</p>"
-)
-
-NOTES_HTML = load_notes("isolation", figures=isolation_figures.FIGURES, trials=trials_html(TRIALS))
+STRIP_SECONDS = 8.0  # the time plots' window
+PEAK_SECONDS = 3.0  # the drawing's scale fits the largest swing this recent
+MEASURE_EVERY = 0.2  # s of run between the dwell's looks
+FORCE_EVERY = 0.1  # s of run between the Floor force tab's redraws
+PLAYED_AFTER = 2.0  # s of run after the reader's first change: they've handled it, predictions on
+SYSTEM_FIELDS = ("mass", "unbalance", "block", "mount", "deflection_mm", "zeta", "stiffness_ratio", "stage_mass")
 
 
 class IsolationPage(QtWidgets.QWidget):
-    """Controls on the left, transmissibility and floor force in the center, start-up and design chart on the right."""
+    """The machine's controls on the left, the live machine and its time plots in the center, the tabs on the right."""
 
     follows_chain = False  # MainWindow: this page has its own model, not the chain
 
+    def transport(self) -> Transport:
+        return Transport(self.run_button, self.reset_button, self.speed, self.clock)
+
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)
-        self.iso = Isolator()
-        self.pulled_to: float | None = None  # where a pull let the machine go (m); None: the run-up
-        self.record: view.StartUp | None = None  # what the Start-up tab shows, and the machine moves with
+        self.live = LiveIsolation()
+        self.recorder = rec.Recorder()
+        self.sweep: rec.Sweep | None = None
+        self.running = False
+        self.arrows = ArrowScale(room=1.0)
+        self.floor_arrows = ArrowScale(room=1.0)
+        self._handled_at: float | None = None
+        self._grip_start = 0.0
+        self._measured_at = -1.0
+        self._forced_at = -1.0
+        self._force_since = 0.0  # the Floor force tab's turns start here: the last change of the system or what shakes
+        self.bindings = Bindings(IsolationTrial, self)
 
-        self.trials = TrialBox(
-            [t.name for t in TRIALS],
-            "<p>Each sets up the machine and its mounts to show one idea from the Theory tab. Some ask you to "
-            "predict what you'll see first.</p>",
-            predictions=[t.predict for t in TRIALS],
-        )
-        self.trials.picked.connect(self.load_trial)
-
+        # --- left: the machine, what shakes, the mounts, then the Things to try
         machine = Form("Machine")
         self.mass = machine.number("Mass M:", 0.1, 1e6, 100.0, 1, " kg", TIPS["mass"])
-        self.rpm = machine.number("Speed:", 1.0, 1e5, 1500.0, 0, " rpm", TIPS["rpm"])
+        self.rpm = machine.number("Speed:", 0.0, 1e5, 1500.0, 0, " rpm", TIPS["rpm"])
         self.unbalance = machine.number("Unbalance mₑe:", 0.0, 100.0, 0.01, 5, " kg·m", TIPS["unbalance"])
         self.block = machine.number("Inertia block:", 0.0, 1e6, 0.0, 1, " kg", TIPS["block"])
-        machine.changed.connect(self._on_inputs)
+        self.run_up = QtWidgets.QPushButton("Run up")
+        self.run_up.setToolTip(TIPS["run_up"])
+        self.run_up.clicked.connect(self._on_run_up)
+        self.run_down = QtWidgets.QPushButton("Run down")
+        self.run_down.setToolTip(TIPS["run_down"])
+        self.run_down.clicked.connect(self._on_run_down)
+        self.ramp = machine.number("Run up/down in:", 0.1, 600.0, 2.0, 1, " s", TIPS["ramp"])
+        ramps = FlowLayout()
+        ramps.add(self.run_up, self.run_down)
+        machine.row(ramps)
+        self.shaking = combo(li.SHAKING, TIPS["shaking"])
+        machine.add("What shakes:", self.shaking, TIPS["shaking"])
 
         mounts = Form("Mounts")
-        self.mount = QtWidgets.QComboBox()
-        self.mount.addItems([m.value for m in MOUNTS])
-        self.mount.setSizeAdjustPolicy(QtWidgets.QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
+        self.mount = combo([m.value for m in MOUNTS], TIPS["mount"])
         mounts.add("Kind:", self.mount, TIPS["mount"])
         self.deflection = mounts.number("Static sag δ:", 0.01, 1000.0, 5.0, 2, " mm", TIPS["deflection"])
         self.zeta = mounts.number("Damping ζ:", 0.0, 2.0, 0.05, 3, "", TIPS["zeta"])
@@ -400,9 +128,147 @@ class IsolationPage(QtWidgets.QWidget):
         self.stage_mass = mounts.number("Intermediate mass:", 0.01, 100.0, 0.5, 2, " × M", TIPS["stage"])
         self.mount_info = note_label()
         mounts.row(self.mount_info)
-        mounts.changed.connect(self._on_inputs)
-        self.mount.currentIndexChanged.connect(self._on_inputs)
+        self.mounts_box = mounts
 
+        self.trials = TrialBox(
+            [t.name for t in TRIALS],
+            "<p>Setups to come back to, each showing one idea from the Theory tab. Once you've handled the machine, "
+            "some ask you to predict what you'll see first.</p>",
+            predictions=[t.predict for t in TRIALS],
+            ask_after_play=True,
+        )
+        self.trials.picked.connect(self.load_trial)
+        self.challenge = ChallengeBox(self, PROBLEMS)
+
+        left = QtWidgets.QWidget()
+        lv = QtWidgets.QVBoxLayout(left)
+        for w in (machine, mounts, self.trials, self.challenge):
+            lv.addWidget(w)
+        lv.addStretch(1)
+
+        # --- center: the machine, the run, the time plots
+        self.body = IsolationView()
+        self.body.setMinimumHeight(200)
+        self.body.grabbed.connect(self._on_grabbed)
+        self.body.pulled.connect(self._on_pulled)
+        self.body.released.connect(self._on_let_go)
+        self.body.grip_taken.connect(self._on_grip_taken)
+        self.body.grip_moved.connect(self._on_grip_moved)
+        self.forces = FreeBodyView()
+        row, self.speed, self.run_button, self.reset_button, self.clock = run_row(self)
+        self.run_button.toggled.connect(self._on_run)
+        self.reset_button.setToolTip(
+            "<p>Back to rest at t = 0, at the Speed box's speed; the measured points are kept.</p>"
+        )
+        self.reset_button.clicked.connect(self.reset)
+
+        self.strip = plot("Displacement", "m", "Time", "s", height=120)
+        self.strip.setToolTip(STRIP_TIP)
+        self.strip.setMouseEnabled(x=False, y=False)
+        self.g_item = pg.PlotDataItem(name="the floor")
+        self.x_item = pg.PlotDataItem(name="the machine")
+        for item in (self.g_item, self.x_item):
+            self.strip.addItem(item)
+        self.force_strip = plot("Force", "N", "Time", "s", height=100)
+        self.force_strip.setToolTip(FORCES_TIP)
+        self.force_strip.setMouseEnabled(x=False, y=False)
+        self.force_strip.setXLink(self.strip)
+        add_legend(self.force_strip.getPlotItem(), offset=(10, 5))
+        self.unbalance_item = pg.PlotDataItem(name="unbalance (rigid mount)")
+        self.floor_item = pg.PlotDataItem(name="on the floor")
+        for item in (self.unbalance_item, self.floor_item):
+            self.force_strip.addItem(item)
+        decimate(self.strip, self.force_strip)
+        self.marks = ChangeMarks(self.strip, self.force_strip)
+        self.scrub = Scrub(self.strip, self.force_strip)
+        self.scrub.scrubbed.connect(self._on_scrubbed)
+        self.readout = LiveLabel(wrap=True)
+
+        centre = QtWidgets.QWidget()
+        cv = QtWidgets.QVBoxLayout(centre)
+        cv.setContentsMargins(0, 0, 0, 0)
+        top = QtWidgets.QHBoxLayout()
+        top.addWidget(self.body, 3)
+        top.addWidget(self.forces, 2)
+        cv.addLayout(top, 3)
+        cv.addLayout(row)
+        cv.addWidget(self.strip, 2)
+        cv.addWidget(self.force_strip, 2)
+        cv.addWidget(self.readout)
+
+        # --- right: Transmissibility, Floor force, Design chart, Theory
+        tr = QtWidgets.QWidget()
+        tv = QtWidgets.QVBoxLayout(tr)
+        self.sweep_button = ActionToggle("Sweep", "Sweeping: click to stop")
+        self.sweep_button.setToolTip(
+            "<p>Step the speed across the mounts' resonance, from 0.4 to 5 f<sub>n</sub>, dwelling at each until its "
+            "point lands. Press again to stop.</p>"
+        )
+        self.sweep_button.toggled.connect(self._on_sweep)
+        self.clear_button = QtWidgets.QPushButton("Clear points")
+        self.clear_button.setToolTip("<p>Forget the measured points.</p>")
+        self.clear_button.clicked.connect(self.clear_points)
+        self.theory = QtWidgets.QCheckBox("Show the theory")
+        self.theory.setToolTip(TIPS["theory"])
+        buttons = FlowLayout()
+        buttons.add(self.sweep_button, self.clear_button, self.theory)
+        tv.addLayout(buttons)
+        self.tr_plot = plot("Transmissibility T", None, "Frequency / fₙ", None, log_x=True, log_y=True, height=200)
+        self.tr_plot.setToolTip(TR_TIP)
+        self.tr_plot.setMouseEnabled(x=False, y=False)
+        self.tr_plot.enableAutoRange(x=False, y=False)
+        self.tr_plot.setXRange(math.log10(view.RATIOS[0]), math.log10(view.RATIOS[-1]), padding=0)
+        self.tr_plot.setYRange(*view.T_RANGE, padding=0)
+        add_legend(self.tr_plot.getPlotItem(), offset=(-10, 10))
+        self.family_items = [pg.PlotDataItem() for _ in FAMILY]  # the theory, unnamed: shown only when asked for
+        self.tr_item = pg.PlotDataItem()
+        self.unit_line = pg.InfiniteLine(angle=0, pos=0.0)
+        self.root2_line = pg.InfiniteLine(angle=90, pos=math.log10(math.sqrt(2)))
+        # PlotDataItems, not ScatterPlotItems: only they follow the log axes
+        self.earlier_item = pg.PlotDataItem(pen=None, symbol="o", symbolSize=6)
+        self.machine_points = pg.PlotDataItem(pen=None, symbol="o", symbolSize=9, name="the machine shaking")
+        self.floor_points = pg.PlotDataItem(pen=None, symbol="d", symbolSize=11, name="the floor shaking")
+        for item in (
+            self.unit_line,
+            self.root2_line,
+            *self.family_items,
+            self.tr_item,
+            self.earlier_item,
+            self.machine_points,
+            self.floor_points,
+        ):
+            self.tr_plot.addItem(item)
+        self.speed_line = DragLine(SPEED_LINE_TIP, log=True, bounds=(view.RATIOS[0], view.RATIOS[-1]))
+        self.speed_line.dragged.connect(self._on_speed_dragged)
+        self.tr_plot.addItem(self.speed_line)
+        self.tr_note = note_label()
+        tv.addWidget(self.tr_plot, 1)
+        tv.addWidget(self.tr_note)
+
+        fv_widget = QtWidgets.QWidget()
+        fv = QtWidgets.QVBoxLayout(fv_widget)
+        self.force_plot = plot("Force on the floor", "N", "Speed", "rpm", log_y=True, height=200)
+        self.force_plot.setToolTip(FORCE_TIP)
+        self.force_plot.setMouseEnabled(x=False, y=False)
+        add_legend(self.force_plot.getPlotItem(), offset=(10, 10))
+        self.rigid_item = pg.PlotDataItem(name="rigid mount (mₑeΩ²)")
+        self.steady_item = pg.PlotDataItem()  # the theory, unnamed: shown only when asked for
+        self.built_item = pg.PlotDataItem(name="on these mounts")
+        self.fn_line = pg.InfiniteLine(angle=90)
+        for item in (self.rigid_item, self.steady_item, self.built_item, self.fn_line):
+            self.force_plot.addItem(item)
+        self.theory_too = QtWidgets.QCheckBox("Show the theory")
+        self.theory_too.setToolTip(TIPS["theory"])
+        self.theory_too.toggled.connect(self._on_theory_too)
+        fbuttons = FlowLayout()
+        fbuttons.add(self.theory_too)
+        fv.addLayout(fbuttons)
+        fv.addWidget(self.force_plot, 1)
+        self.force_note = note_label()
+        fv.addWidget(self.force_note)
+
+        chart_widget = QtWidgets.QWidget()
+        chv = QtWidgets.QVBoxLayout(chart_widget)
         design = Form("Design")
         self.target = design.number("Isolation wanted:", 1.0, 99.99, 90.0, 2, " %", TIPS["target"])
         self.design_note = note_label()
@@ -413,124 +279,64 @@ class IsolationPage(QtWidgets.QWidget):
         )
         self.apply_design.clicked.connect(self._on_apply_design)
         design.row(self.apply_design)
-        design.changed.connect(self._show_design)
-
-        left = QtWidgets.QWidget()
-        lv = QtWidgets.QVBoxLayout(left)
-        self.challenge = ChallengeBox(self, PROBLEMS)
-        for w in (self.trials, self.challenge, machine, mounts, design):
-            lv.addWidget(w)
-        lv.addStretch(1)
-
-        # --- center
-        self.tr_plot = plot("Transmissibility T", None, "Frequency / fₙ", None, log_x=True, log_y=True, height=200)
-        self.tr_plot.setToolTip(TR_TIP)
-        self.tr_plot.setMouseEnabled(x=False, y=False)
-        add_legend(self.tr_plot.getPlotItem(), offset=(-10, 10))
-        self.family_items = [pg.PlotDataItem(name=f"ζ = {sig(z, 6)}") for z in FAMILY]
-        self.tr_item = pg.PlotDataItem(name="this isolator")
-        self.unit_line = pg.InfiniteLine(angle=0, pos=0.0)
-        self.root2_line = pg.InfiniteLine(angle=90, pos=math.log10(math.sqrt(2)))
-        self.tr_now = pg.PlotDataItem(pen=None, symbol="o", symbolSize=12)
-        for item in (self.unit_line, self.root2_line, *self.family_items, self.tr_item, self.tr_now):
-            self.tr_plot.addItem(item)
-        # The running speed as a frequency ratio: dragged, it sets the Speed box (rpm = r f_n × 60).
-        self.speed_line = DragLine(SPEED_LINE_TIP, log=True, bounds=(view.RATIOS[0], view.RATIOS[-1]))
-        self.speed_line.dragged.connect(self._on_speed_dragged)
-        self.tr_plot.addItem(self.speed_line)
-        self.tr_note = readout_label()
-        self.force_plot = plot("Force on the floor", "N", "Speed", "rpm", log_y=True, height=150)
-        self.force_plot.setToolTip(FORCE_TIP)
-        self.force_plot.setMouseEnabled(x=False, y=False)
-        add_legend(self.force_plot.getPlotItem(), offset=(10, 10))
-        self.rigid_item = pg.PlotDataItem(name="rigid mount (mₑeΩ²)")
-        self.floor_item = pg.PlotDataItem(name="on these mounts")
-        self.force_now = pg.PlotDataItem(pen=None, symbol="o", symbolSize=12)
-        for item in (self.rigid_item, self.floor_item, self.force_now):
-            self.force_plot.addItem(item)
-
-        center = QtWidgets.QWidget()
-        cv = QtWidgets.QVBoxLayout(center)
-        cv.setContentsMargins(0, 0, 0, 0)
-        cv.addWidget(self.tr_plot, 3)
-        cv.addWidget(self.tr_note)
-        cv.addWidget(self.force_plot, 2)
-
-        # --- right
-        start = QtWidgets.QWidget()
-        sv = QtWidgets.QVBoxLayout(start)
-        row = Form("Run up")
-        self.ramp = row.number("Run up in:", 0.1, 600.0, 2.0, 1, " s", TIPS["ramp"])
-        row.changed.connect(self._on_ramp)
-        self.body = IsolationView()
-        self.body.setFixedHeight(132)
-        self.body.grabbed.connect(self._on_grabbed)
-        self.body.pulled.connect(self._on_pulled)
-        self.body.released.connect(self._on_let_go)
-        self.playback = Playback(self, "Vibration isolation")
-        self.playback.moved.connect(self._place)
-        row.row(self.playback.bar())
-        sv.addWidget(row)
-        sv.addWidget(self.body)
-        self.speed_plot = plot("Speed", "rpm", "Time", "s", height=80)
-        self.x_plot = plot("Machine x", "m", "Time", "s", height=95)
-        self.floor_plot = plot("Floor force", "N", "Time", "s", height=95)  # 95: the window fits 720 px on macOS
-        for p in (self.x_plot, self.floor_plot):
-            p.setXLink(self.speed_plot)
-        for p in (self.speed_plot, self.x_plot):
-            p.getAxis("bottom").showLabel(False)  # the time axis is named once, under the floor force
-        for p in (self.speed_plot, self.x_plot, self.floor_plot):
-            p.setToolTip(START_TIP)
-            sv.addWidget(p, 1)
-        self.speed_item = pg.PlotDataItem()
-        self.res_line = pg.InfiniteLine(angle=0)
-        self.speed_plot.addItem(self.speed_item)
-        self.speed_plot.addItem(self.res_line)
-        self.sx_item = pg.PlotDataItem()
-        self.x_plot.addItem(self.sx_item)
-        self.sf_item = pg.PlotDataItem()
-        self.sf_rigid = pg.PlotDataItem()
-        self.floor_plot.addItem(self.sf_rigid)
-        self.floor_plot.addItem(self.sf_item)
-        self.x_cursor = self.playback.add_cursor(self.x_plot)
-        self.start_note = note_label()
-        sv.addWidget(self.start_note)
-
-        chart = QtWidgets.QWidget()
-        chv = QtWidgets.QVBoxLayout(chart)
-        self.chart_plot = plot("Static deflection", "mm", "Running speed", "rpm", log_x=True, log_y=True, height=200)
+        self.chart_plot = plot("Static deflection", "mm", "Speed", "rpm", log_x=True, log_y=True, height=200)
         self.chart_plot.setToolTip(CHART_TIP)
         self.chart_plot.setMouseEnabled(x=False, y=False)
         add_legend(self.chart_plot.getPlotItem(), offset=(-10, 10))
-        self.chart_items = [pg.PlotDataItem(name=f"{sig(100 * level, 6)} %") for level in CHART_LEVELS]
-        for item in self.chart_items:
-            self.chart_plot.addItem(item)
+        self.chart_items = [pg.PlotDataItem(name=f"{sig(100 * lv_, 4)} %") for lv_ in CHART_LEVELS]
         self.chart_now = pg.PlotDataItem(pen=None, symbol="o", symbolSize=12)
-        self.chart_plot.addItem(self.chart_now)
-        chv.addWidget(self.chart_plot, 1)
+        for item in (*self.chart_items, self.chart_now):
+            self.chart_plot.addItem(item)
         self.chart_note = note_label()
+        chv.addWidget(design)
+        chv.addWidget(self.chart_plot, 1)
         chv.addWidget(self.chart_note)
 
         self.notes = NotesBrowser()
         self.notes.setHtml(NOTES_HTML)
         self.tabs = QtWidgets.QTabWidget()
-        self.tabs.addTab(start, "Start-up")
-        self.tabs.addTab(chart, "Design chart")
+        self.tabs.addTab(tr, "Transmissibility")
+        self.tabs.addTab(fv_widget, "Floor force")
+        self.tabs.addTab(chart_widget, "Design chart")
         self.tabs.addTab(self.notes, "Theory")
         self.tabs.currentChanged.connect(self._draw_tab)
 
-        splitter = QtWidgets.QSplitter(QtCore.Qt.Orientation.Horizontal)
-        splitter.addWidget(ColumnScroll(left))
-        splitter.addWidget(center)
-        splitter.addWidget(self.tabs)
-        splitter.setSizes([320, 760, 560])
-        layout = QtWidgets.QHBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.addWidget(splitter)
+        three_panes(self, left, centre, self.tabs, sizes=(320, 760, 560))
 
+        self.bindings.bind("mount", self.mount, choices=tuple(MOUNTS))
+        for field, widget in (
+            ("mass", self.mass),
+            ("rpm", self.rpm),
+            ("unbalance", self.unbalance),
+            ("block", self.block),
+            ("ramp", self.ramp),
+            ("shaking", self.shaking),
+            ("deflection_mm", self.deflection),
+            ("zeta", self.zeta),
+            ("stiffness_ratio", self.stiffness_ratio),
+            ("stage_mass", self.stage_mass),
+            ("target", self.target),
+            ("theory", self.theory),
+            ("tab", self.tabs),
+        ):
+            self.bindings.bind(field, widget)
+        self.bindings.write(IsolationTrial("", ""))
+        self.bindings.changed.connect(self._on_field)
+
+        self.loop = FrameLoop(self, "Vibration isolation", self._tick, self._runs, self._sim_t)
         self.apply_theme()
+        self._push_system()
+        self.reset()
 
-    # ------------------------------------------------------------- inputs
+    # ------------------------------------------------------------- the state
+    def practice_state(self) -> IsolationTrial:
+        """The page's settings, as a trial: what a practice spec checks, and Defaults puts back."""
+        return self.bindings.read(IsolationTrial("", ""))
+
+    @property
+    def iso(self):
+        return isolator(self.practice_state())
+
     def load_trial(self, index: int) -> None:
         self.apply_trial(TRIALS[index])
 
@@ -539,171 +345,409 @@ class IsolationPage(QtWidgets.QWidget):
         self.apply_trial(IsolationTrial("", "", **setup))
 
     def apply_trial(self, t: IsolationTrial) -> None:
-        for box, value in (
-            (self.mass, t.mass),
-            (self.rpm, t.rpm),
-            (self.unbalance, t.unbalance),
-            (self.block, t.block),
-            (self.mount, MOUNTS.index(t.mount)),
-            (self.deflection, t.deflection_mm),
-            (self.zeta, t.zeta),
-            (self.stiffness_ratio, t.stiffness_ratio),
-            (self.stage_mass, t.stage_mass),
-            (self.ramp, t.ramp),
-        ):
-            set_quietly(box, value)
+        """A setup: the machine and its mounts as it says, the run from rest, then set going as `start` says."""
+        self.bindings.write(t)
+        set_quietly(self.theory_too, t.theory)
+        self.recorder.clear()
+        self._stop_sweep()
+        self.live.set_shaking(t.shaking)
+        self._push_system()
+        self.reset()
+        self._handled_at = None
         self.trials.show_note(t.note)
-        self.tabs.setCurrentIndex(t.tab)
-        self._on_inputs()
-        self.playback.play()  # a trial starts the motion
-
-    def practice_state(self) -> IsolationTrial:
-        """The page's settings, as a trial: what a practice spec checks."""
-        return IsolationTrial(
-            "",
-            "",
-            deflection_mm=self.deflection.value(),
-            zeta=self.zeta.value(),
-            mount=MOUNTS[self.mount.currentIndex()],
-            stiffness_ratio=self.stiffness_ratio.value(),
-            stage_mass=self.stage_mass.value(),
-            block=self.block.value(),
-            rpm=self.rpm.value(),
-            ramp=self.ramp.value(),
-            tab=self.tabs.currentIndex(),
-            mass=self.mass.value(),
-            unbalance=self.unbalance.value(),
-        )
-
-    def _on_inputs(self) -> None:
-        self.iso = isolator(self.practice_state())
-        mount = self.iso.mount
-        self.stiffness_ratio.setEnabled(mount is Mount.RELAXATION)
-        self.stage_mass.setEnabled(mount is Mount.TWO_STAGE)
-        self.pulled_to = None  # run up again
-        self.redraw()
-
-    def _on_ramp(self) -> None:
-        self.pulled_to = None
+        if t.start == view.START_RUN_UP:
+            self.live.set_speed(0.0)
+            self.live.set_speed(t.rpm, t.ramp)
+            self.live.edits.clear()
+            self.live.changed_at = t.ramp
+        if t.start is not None:
+            self._run(True)
         self._draw_tab()
-        settle_plots(self)
+
+    # ------------------------------------------------------------- what the reader changes
+    def _on_field(self, field: str) -> None:
+        if field in SYSTEM_FIELDS:
+            self._handled()
+            self._push_system()
+        elif field == "rpm":
+            self._handled()
+            if self.sweep is not None and not self._sweeping_now:
+                self.sweep_button.setChecked(False)  # the reader took the speed over
+            self.live.set_speed(self.rpm.value())
+            self._draw_speed()
+        elif field == "shaking":
+            self._handled()
+            self.live.set_shaking(self.shaking.currentIndex())
+            self._force_since = self.live.t
+            self._draw_live()
+            self._draw_tab()
+        elif field == "theory":
+            set_quietly(self.theory_too, self.theory.isChecked())
+            self._draw_tab()
+        elif field == "target":
+            self._draw_chart()
+        elif field == "tab":
+            self._draw_tab()
+
+    _sweeping_now = False  # the sweep, not the reader, is moving the speed
+
+    def _handled(self) -> None:
+        if self._handled_at is None:
+            self._handled_at = self.live.t
+
+    def _on_theory_too(self, on: bool) -> None:
+        self.theory.setChecked(on)
+
+    def _push_system(self) -> None:
+        """The live machine to the controls: a live change by `isolation.carry`'s rules."""
+        state = self.practice_state()
+        iso = isolator(state)
+        for widget, shown in (
+            (self.stiffness_ratio, iso.mount is Mount.RELAXATION),
+            (self.stage_mass, iso.mount is Mount.TWO_STAGE),
+        ):
+            widget.setVisible(shown)
+            label = self.mounts_box.label(widget)
+            if label is not None:
+                label.setVisible(shown)
+        if self.live.iso.mount is not iso.mount or self.live.iso.block != iso.block:
+            self.body.set_layout(iso.mount, iso.block > 0)
+        self.live.set_isolator(iso)
+        self._force_since = self.live.t
+        self.body.set_values(iso.total, state.deflection_mm, state.zeta)
+        self.mount_info.setText(view.mount_info(iso))
+        self._draw_speed()
+        self._draw_chart()
+        if not self.running:
+            self._draw_live()
+            self._draw_tab()
+
+    def _on_run_up(self) -> None:
+        self._handled()
+        self.live.set_speed(self.rpm.value(), self.ramp.value())
+        if not self.running:
+            self._run(True)
+
+    def _on_run_down(self) -> None:
+        self._handled()
+        self._stop_sweep()
+        self.live.set_speed(0.0, self.ramp.value())
+        if not self.running:
+            self._run(True)
+
+    def _on_speed_dragged(self, ratio: float) -> None:
+        self.rpm.setValue(round(60.0 * ratio * self.iso.natural_hz))
 
     def _on_apply_design(self) -> None:
-        self.deflection.setValue(round(1e3 * deflection_for(self.iso.speed_hz, self.target.value() / 100.0), 2))
+        s = self.practice_state()
+        try:
+            d = deflection_for(self.iso.speed_hz, s.target / 100.0)
+        except ValueError:
+            return
+        self.deflection.setValue(round(1e3 * d, 2))
+
+    # ------------------------------------------------------------- the hand
+    def _on_grabbed(self) -> None:
+        self.scrub.hide()
+        self._handled()
+        self.live.hold(self.live.x)
+
+    def _on_pulled(self, x: float) -> None:
+        self.live.hold(x)
+        self._draw_body()
+
+    def _on_let_go(self) -> None:
+        self.live.let_go()
+        if not self.running:
+            self._run(True)  # a pluck sets it going
+
+    def _grip_box(self, name: str) -> QtWidgets.QDoubleSpinBox:
+        return {"mass": self.mass, "deflection_mm": self.deflection, "zeta": self.zeta}[name]
+
+    def _on_grip_taken(self, name: str) -> None:
+        self._grip_start = self._grip_box(name).value()
+
+    def _on_grip_moved(self, name: str, distance: float) -> None:
+        set_quietly(self._grip_box(name), GRIPS[name].dragged(self._grip_start, distance))
+        self._handled()
+        self._push_system()
+
+    # ------------------------------------------------------------- the run
+    def _on_run(self, on: bool) -> None:
+        self.running = on
+        if on:
+            self.scrub.hide()
+            self.loop.start()
+        else:
+            self._show_scrub()
+
+    def _run(self, on: bool) -> None:
+        self.run_button.set_running(on)
+        self._on_run(on)
+
+    def _runs(self) -> bool:
+        return self.running
+
+    def _sim_t(self) -> float:
+        return self.live.t
+
+    def reset(self) -> None:
+        """Back to rest at t = 0, at the Speed box's speed, waiting for Start; the measured points kept."""
+        self.live.reset()
+        self.live.set_speed(self.rpm.value())
+        self.live.edits.clear()
+        self.live.changed_at = 0.0
+        self.arrows.reset()
+        self.floor_arrows.reset()
+        self._measured_at = self._forced_at = -1.0
+        self._force_since = 0.0
+        self.scrub.hide()
+        self.running = False
+        self.run_button.rest()
+        if self.sweep is not None:
+            self.sweep = rec.Sweep(self.sweep.freqs)
+            self._set_sweep_speed()
+        self._draw_live()
+        self._draw_tab()
+
+    def _tick(self, dt: float) -> None:
+        self.live.advance(dt * float(self.speed.currentData()))
+        self._measure()
+        if self._handled_at is not None and self.live.t - self._handled_at >= PLAYED_AFTER:
+            self.trials.set_played()
+        self._draw_live(frame=True)
+
+    def step(self, duration: float) -> None:
+        """Run on by `duration` s of simulated time at once (tests), measuring and drawing as the frames would."""
+        end = self.live.t + duration
+        while self.live.t < end - 1e-9 and self.live.held_at is None:
+            self.live.advance(min(0.05, end - self.live.t) + 1e-12)
+            self._measure()
+        if self._handled_at is not None and self.live.t - self._handled_at >= PLAYED_AFTER:
+            self.trials.set_played()
+        self._draw_live()
+        self._draw_tab()
+
+    # ------------------------------------------------------------- the dwell
+    def _point_key(self) -> tuple:
+        return (view.key(self.practice_state()), self.live.shaking)
+
+    def _measure(self) -> None:
+        """Land a point if the speed is steady and the swing settled (every MEASURE_EVERY s), and step a sweep on."""
+        live = self.live
+        if live.t - self._measured_at < MEASURE_EVERY:
+            return
+        self._measured_at = live.t
+        m = li.dwell(live)
+        if m is None or self.recorder.land(m, self._point_key()) is None:
+            return
+        self._draw_tr()
+        if self.sweep is not None:
+            if self.sweep.landed() is None:
+                self._stop_sweep()
+            else:
+                self._set_sweep_speed()
+
+    def _on_sweep(self, on: bool) -> None:
+        if not on:
+            self.sweep = None
+            return
+        self._handled()
+        self.sweep = rec.Sweep(view.sweep_speeds(self.practice_state()))
+        self._set_sweep_speed()
+        if not self.running:
+            self._run(True)
+
+    def _set_sweep_speed(self) -> None:
+        assert self.sweep is not None, "a sweep sets the speed"
+        rpm = self.sweep.frequency  # the sweep's steps are speeds (rpm) here
+        if rpm is None:
+            return
+        self._sweeping_now = True
+        self.rpm.setValue(round(rpm, 1))
+        self._sweeping_now = False
+
+    def _stop_sweep(self) -> None:
+        self.sweep = None
+        set_quietly(self.sweep_button, False)
+
+    def clear_points(self) -> None:
+        self.recorder.clear()
+        self._draw_tr()
+
+    # ------------------------------------------------------------- scrubbing
+    def _show_scrub(self) -> None:
+        r = self.live.record
+        if r.size > 1:
+            end = float(r.t[r.size - 1])
+            self.scrub.show(end, max(float(r.t[0]), end - STRIP_SECONDS))
+
+    def _on_scrubbed(self, t: float) -> None:
+        r = self.live.record
+        ts = r.t[: r.size]
+        at = {
+            c: float(np.interp(t, ts, r.y[: r.size, COL[c]]))
+            for c in ("x", "stage", "phase", "floor", "unbalance", "g")
+        }
+        phase = at["phase"] if self.live.shaking != FLOOR else 0.0
+        self.body.set_state(at["x"], at["stage"], phase, at["floor"], at["unbalance"], at["g"])
+        self.clock.setText(f"t = {sig(t, 4)} s (paused at {sig(self.live.t, 4)} s)")
 
     # ------------------------------------------------------------- drawing
     def apply_theme(self) -> None:
         c = colors
-        greys = (c.faint, c.grey, c.muted, c.structure)
-        for item, g in zip(self.family_items, greys):
-            item.setPen(pg.mkPen(g, width=1))
+        self.body.apply_theme()
+        self.forces.apply_theme()
+        self.scrub.apply_theme()
+        self.marks.apply_theme()
+        self.speed_line.apply_theme()
+        dash = QtCore.Qt.PenStyle.DashLine
+        self.x_item.setPen(pg.mkPen(c.mass[0], width=2))
+        self.g_item.setPen(pg.mkPen(c.grey, width=1.5))
+        self.floor_item.setPen(pg.mkPen(c.force, width=2))
+        self.unbalance_item.setPen(pg.mkPen(c.grey, width=1))
+        for item, z in zip(self.family_items, FAMILY):
+            item.setPen(pg.mkPen(c.grey if z else c.faint, width=1))
         self.tr_item.setPen(pg.mkPen(c.mass[0], width=2.5))
         self.unit_line.setPen(pg.mkPen(c.faint, width=1))
-        self.root2_line.setPen(pg.mkPen(c.fit, width=1, style=QtCore.Qt.PenStyle.DotLine))
-        for item in (self.tr_now, self.force_now, self.chart_now):
-            item.setSymbolPen(pg.mkPen(c.force, width=2))
-            item.setSymbolBrush(None)
-        self.rigid_item.setPen(pg.mkPen(c.grey, width=1.5, style=QtCore.Qt.PenStyle.DashLine))
-        self.floor_item.setPen(pg.mkPen(c.mass[0], width=2))
-        self.speed_item.setPen(pg.mkPen(c.strong, width=1.5))
-        self.res_line.setPen(pg.mkPen(c.fit, width=1, style=QtCore.Qt.PenStyle.DotLine))
-        self.sx_item.setPen(pg.mkPen(c.mass[0], width=1))
-        self.sf_item.setPen(pg.mkPen(c.force, width=1))
-        self.sf_rigid.setPen(pg.mkPen(c.grey, width=1, style=QtCore.Qt.PenStyle.DashLine))
-        for item, color in zip(self.chart_items, (c.mode[0], c.mode[1], c.mode[2], c.mode[3], c.mass[4])):
+        self.root2_line.setPen(pg.mkPen(c.faint, width=1, style=QtCore.Qt.PenStyle.DotLine))
+        self.machine_points.setSymbolBrush(pg.mkBrush(c.mass[0]))
+        self.machine_points.setSymbolPen(pg.mkPen(c.structure, width=1))
+        self.floor_points.setSymbolBrush(pg.mkBrush(c.mass[1]))
+        self.floor_points.setSymbolPen(pg.mkPen(c.structure, width=1))
+        self.earlier_item.setSymbolBrush(pg.mkBrush(c.faint))
+        self.earlier_item.setSymbolPen(pg.mkPen(c.faint))
+        self.rigid_item.setPen(pg.mkPen(c.grey, width=1.5, style=dash))
+        self.steady_item.setPen(pg.mkPen(c.mass[0], width=1.5))
+        self.built_item.setPen(pg.mkPen(c.force, width=2.5))
+        self.fn_line.setPen(pg.mkPen(c.faint, width=1, style=QtCore.Qt.PenStyle.DotLine))
+        for item, color in zip(self.chart_items, c.mass * 2):
             item.setPen(pg.mkPen(color, width=2))
-        self.speed_line.apply_theme()
-        self.body.apply_theme()
-        self.playback.apply_theme()
-        self.redraw()
-
-    def _on_speed_dragged(self, ratio: float) -> None:
-        self.rpm.setValue(round(ratio * self.iso.natural_hz * 60.0))  # redraws, the line with it
-
-    def redraw(self) -> None:
-        self.mount_info.setText(view.mount_info(self.iso))
-        self._draw_transmissibility()
-        self._show_design()
+        self.chart_now.setSymbolBrush(pg.mkBrush(c.strong))
+        self._draw_live()
         self._draw_tab()
-        settle_plots(self)
 
-    def _draw_transmissibility(self) -> None:
-        v = view.transmissibility(self.iso)
-        for item, curve in zip(self.family_items, v.family):
-            item.setData(*curve, connect="finite")
-        self.tr_item.setData(*v.isolator, connect="finite")
-        self.tr_now.setData(*v.now)
-        self.speed_line.set_value(self.iso.speed_hz / self.iso.natural_hz)
-        self.tr_plot.setXRange(math.log10(view.RATIOS[0]), math.log10(view.RATIOS[-1]), padding=0)
-        self.tr_plot.setYRange(*view.T_RANGE, padding=0)
-        self.tr_note.setText(v.note)
-        self.rigid_item.setData(*v.rigid)
-        self.floor_item.setData(*v.floor, connect="finite")
-        self.force_now.setData(*v.force_now)
-        self.force_plot.setXRange(*v.rpm_range, padding=0)
-
-    def _show_design(self) -> None:
-        self.design_note.setText(view.design_note(self.iso, self.target.value() / 100.0))
-        if self.tabs.currentIndex() == TAB_CHART:
-            self._draw_chart()
+    def _draw_speed(self) -> None:
+        self.speed_line.set_value(min(max(self.iso.speed_hz / self.iso.natural_hz, view.RATIOS[0]), view.RATIOS[-1]))
 
     @coalesce.coalesced
-    def _draw_tab(self) -> None:
+    def _draw_live(self, frame: bool = False) -> None:
+        """What moves: the machine and its forces, the time plots, the readout (and, as a `frame` of the run, the
+        Floor force tab at its own rate)."""
+        live = self.live
+        t, y = live.record.window(STRIP_SECONDS)
+        end = live.t
+        floor_shakes = live.shaking == FLOOR
+        self.x_item.setData(t, y[:, COL["x"]])
+        self.g_item.setVisible(floor_shakes)
+        if floor_shakes:
+            self.g_item.setData(t, y[:, COL["g"]])
+        self.floor_item.setData(t, y[:, COL["floor"]])
+        if floor_shakes:  # stopped: (emptied, not hidden, so its legend's entry stays as it is)
+            self.unbalance_item.setData([], [])
+        else:
+            self.unbalance_item.setData(t, y[:, COL["unbalance"]])
+        self.strip.setXRange(max(0.0, end - STRIP_SECONDS), max(end, STRIP_SECONDS), padding=0)
+        self.marks.draw(live.edits, end - STRIP_SECONDS)
+        recent = t >= end - PEAK_SECONDS
+        swing = float(np.abs(y[recent, COL["x"]]).max()) if recent.any() else 0.0
+        if floor_shakes:
+            swing = max(swing, li.FLOOR_AMPLITUDE)
+        if live.held_at is not None:
+            swing = max(swing, abs(live.held_at))
+        forces = float(np.abs(y[recent][:, [COL["floor"], COL["unbalance"]]]).max()) if recent.any() else 0.0
+        self.body.set_scale(max(swing, 1e-6), max(forces, 1e-6))
+        self._draw_body()
+        self.clock.setText(f"t = {sig(end, 4)} s, {60 * live.speed_hz:.0f} rpm")
+        self._show_readout()
+        self.run_up.setEnabled(live.target < TWO_PI_RPM * self.rpm.value() * (1 - 1e-9))
+        self.run_down.setEnabled(live.target > 0)
+        if frame and self.tabs.currentIndex() == view.TAB_FORCE and end - self._forced_at >= FORCE_EVERY:
+            self._draw_force()
+
+    def _draw_body(self) -> None:
+        live = self.live
+        stage = float(live.z[1]) if live.iso.mount is Mount.TWO_STAGE else 0.0
+        f, g, _ = (float(u) for u in live.inputs())
+        phase = live.phase if live.shaking != FLOOR else 0.0  # the floor shaking, the unbalance is stopped
+        self.body.set_state(live.x, stage, phase, live.floor_force(), f, g)
+        self.forces.show(li.free_body(live, self.arrows, self.floor_arrows))
+
+    def _show_readout(self) -> None:
+        live = self.live
+        if live.held_at is not None:
+            self.readout.setText(
+                f"Held at x = {fmt(live.held_at, 'm', largest='')}: let go and it rings on its mounts."
+            )
+            return
+        rpm = 60 * live.speed_hz
+        if live.ramping:
+            way = "up" if live.target > live.omega else "down"
+            self.readout.setText(f"Running {way}: {rpm:.0f} rpm.")
+            return
+        if rpm <= 0:
+            self.readout.setText("Stopped. Pull the machine and let go, or Run up.")
+            return
+        f = live.speed_hz
+        points = [p for p in self.recorder.current(self._point_key()) if abs(p.freq_hz - f) <= 1e-6 * f]
+        if points:
+            iso = dataclasses.replace(self.iso, rpm=rpm)
+            self.readout.setText(view.steady_note(iso, abs(points[-1].response), live.shaking))
+        else:
+            self.readout.setText(f"At {rpm:.0f} rpm: waiting for the mounts' own ring to die away…")
+
+    @coalesce.coalesced
+    def _draw_tab(self, *_: object) -> None:
         i = self.tabs.currentIndex()
-        if i == TAB_START:
-            self._draw_start()
-        elif i == TAB_CHART:
+        if i == view.TAB_T:
+            self._draw_tr()
+        elif i == view.TAB_FORCE:
+            self._draw_force()
+        elif i == view.TAB_CHART:
             self._draw_chart()
 
-    def _draw_start(self) -> None:
-        iso = self.iso
-        if self.pulled_to is None:
-            v = view.start_up_view(iso, self.ramp.value())
-        else:
-            v = view.let_go_view(iso, self.pulled_to)
-        self.record = v
-        self.body.set_layout(iso.mount, iso.block > 0)
-        peak_force = max(float(np.max(np.abs(v.force.y))), float(np.max(np.abs(v.floor.y))))
-        self.body.set_scale(float(np.max(np.abs(v.x.y))), peak_force)
-        self.playback.set_span(v.t_end)  # places the machine
-        self.speed_item.setData(*v.speed)
-        self.res_line.setPos(v.resonance_rpm)
-        self.sx_item.setData(*v.x)
-        self.sf_item.setData(*v.floor)
-        self.sf_rigid.setData(*v.rigid)
-        self.speed_plot.setXRange(0, v.t_end, padding=0)
-        self.start_note.setText(v.note)
+    def _draw_tr(self) -> None:
+        state = self.practice_state()
+        v = view.t_view(state, self.recorder.points, state.theory)
+        self.machine_points.setData(*v.machine)
+        self.floor_points.setData(*v.floor)
+        self.earlier_item.setData(*v.earlier)
+        self.tr_item.setData(*v.isolator)
+        for item, curve in zip(self.family_items, v.family or [None] * len(FAMILY)):
+            if curve is None:
+                item.setData([], [])
+            else:
+                item.setData(*curve)
+        self.tr_note.setText(v.note)
 
-    def _place(self, t: float) -> None:
-        v = self.record
-        if v is None or self.body.held:  # not drawn yet, or under the hand
-            return
+    def _force_turns(self) -> tuple[np.ndarray, np.ndarray]:
+        r = self.live.record
+        t, y = r.t[: r.size], r.y[: r.size]
+        i = int(np.searchsorted(t, self._force_since))
+        out = "x" if self.live.shaking == FLOOR else "floor"
+        return li.by_speed(t[i:], y[i:, COL["speed"]], y[i:, COL["phase"]], y[i:, COL[out]])
 
-        def at(curve) -> float:
-            return float(np.interp(t, curve.x, curve.y))
-
-        self.body.set_state(at(v.x), at(v.stage), at(v.phase), at(v.floor), at(v.force))
-
-    def _on_grabbed(self) -> None:
-        self.playback.pause()
-
-    def _on_pulled(self, x: float) -> None:
-        self.pulled_to = x
-        _, _, phase, _, _ = self.body.state
-        self.body.set_state(x, self.iso.held_stage(x), phase, 0.0, 0.0)
-
-    def _on_let_go(self) -> None:
-        if self.pulled_to is not None and abs(self.pulled_to) < 1e-9:  # let go where it rests: run up again
-            self.pulled_to = None
-        self.tabs.setCurrentIndex(TAB_START)  # (it shows: the machine is on it)
-        self._draw_start()
-        settle_plots(self)
-        self.playback.play()
+    def _draw_force(self) -> None:
+        self._forced_at = self.live.t
+        state = dataclasses.replace(self.practice_state(), shaking=self.live.shaking)
+        rpm, peaks = self._force_turns()
+        v = view.force_view(state, rpm, peaks, state.theory)
+        self.force_plot.setLabel("left", v.title, units=v.unit)
+        self.built_item.setData(*v.built)
+        self.rigid_item.setData(*v.rigid)
+        self.steady_item.setData(*v.theory)
+        self.fn_line.setValue(60 * self.iso.natural_hz)
+        self.force_plot.setXRange(*v.rpm_range, padding=0)
+        self.force_note.setText(v.note)
 
     def _draw_chart(self) -> None:
-        v = view.chart(self.iso)
-        for item, curve in zip(self.chart_items, v.levels):
+        iso = self.iso
+        self.design_note.setText(view.design_note(iso, self.target.value() / 100.0))
+        ch = view.chart(iso)
+        for item, curve in zip(self.chart_items, ch.levels):
             item.setData(*curve)
-        self.chart_now.setData(*v.now)
-        self.chart_plot.setXRange(*(math.log10(x) for x in v.rpm_range), padding=0)
-        self.chart_note.setText(v.note)
+        self.chart_now.setData(*ch.now)
+        self.chart_note.setText(ch.note)
+
+
+TWO_PI_RPM = 2 * math.pi / 60.0  # rad/s a rpm

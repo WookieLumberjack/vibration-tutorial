@@ -83,9 +83,9 @@ takes it back to t = 0, and the time cursor on the plot it follows can be dragge
 sideways and let go to pluck it: it vibrates freely from where you let go. Pendulums does the same with
 the pendulum (a bob, a rod, a disk on its wire seen from above, an inverted arm), swinging beside a faint
 ghost of the linearized swing: turn it about its pivot and let go to start it from that angle, either side.
-Vibration isolation's *Start-up* tab draws
-the machine on its mounts, running up with its unbalance turning: pull it and let go and, stopped, it rings
-on its mounts.
+Vibration isolation runs
+the machine on its mounts live, its unbalance turning: pull it and let go and it rings on its mounts, or drag
+its grips as it runs.
 
 ## Themes
 

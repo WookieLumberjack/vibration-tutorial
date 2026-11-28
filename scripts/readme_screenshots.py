@@ -1048,7 +1048,31 @@ def single_oscillator_damping():
 
 
 def vibration_isolation():
-    lesson("isolation_page", 3, "vibration_isolation", at=0.8)  # through resonance, the machine at its largest swing
+    """The live machine on soft mounts after a sweep has measured its transmissibility, the theory shown over the
+    points, then the floor shaking at the running speed: its point lands on the machine's."""
+    from PySide6 import QtWidgets
+
+    from vib_tutorial.gui import isolation
+    from vib_tutorial.view_models.live_isolation import FLOOR
+
+    w = window()
+    page = w.isolation_page
+    w.pages.setCurrentWidget(page)
+    page.loop.enabled = False
+    page.load_trial(next(i for i, t in enumerate(isolation.TRIALS) if t.name == "Soft mounts"))
+    page.sweep_button.setChecked(True)
+    while page.sweep is not None and page.live.t < 300.0:
+        page.step(2.0)
+    page.rpm.setValue(1500.0)
+    page.shaking.setCurrentIndex(FLOOR)
+    page.step(8.0)
+    page.theory.setChecked(True)
+    page._run(False)
+    settle()
+    for label in page.findChildren(QtWidgets.QLabel):
+        if label.isVisible() and len(label.text()) > 40:
+            print(" ", label.text())
+    save(w, "vibration_isolation")
 
 
 def signals_spectra():

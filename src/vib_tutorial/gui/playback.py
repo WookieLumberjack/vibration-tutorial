@@ -16,8 +16,8 @@ Its `FrameLoop` runs only while the page shows and the motion runs (CLAUDE.md's 
 `apply_theme()` from its own.
 
 Working on it: `tests/test_playback.py` checks the clock, the end, the scrub and the rewind, and each page's body
-following it and plucked (Single oscillator, Pendulums, Vibration isolation); those pages are in
-`test_lesson_pages_trials_and_tabs` and the run-state tests.
+following it (the Quarter-car's; the One oscillator pages that played back are live now, #478); those pages are
+in `test_lesson_pages_trials_and_tabs` and the run-state tests.
 """
 
 from __future__ import annotations

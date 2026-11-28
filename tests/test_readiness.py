@@ -48,34 +48,41 @@ class Ready:
 
 
 def _isolation_views(state):
+    import numpy as np
+
     from vib_tutorial.view_models import isolation as v
+    from vib_tutorial.view_models import live_isolation as li
+    from vib_tutorial.view_models.recorder import Point
 
     iso = v.isolator(state)
+    measured = [Point(25.0, complex(0.09, -0.01), (v.key(state), li.MACHINE))]  # a point the dwell landed
+    live = li.LiveIsolation(iso, state.shaking)
+    live.advance(0.2)
+    rpm, peaks = np.array([400.0, 500.0]), np.array([20.0, 60.0])
     return (
         v.mount_info(iso),
-        v.transmissibility(iso),
+        v.t_view(state, measured, True),
+        v.t_view(state, [], False),
+        v.force_view(state, rpm, peaks, True),
+        v.steady_note(iso, 0.0916, state.shaking),
         v.design_note(iso, 0.9),
         v.chart(iso),
-        v.start_up_view(iso, state.ramp),
-        v.let_go_view(iso, 0.005),
+        li.free_body(live),
     )
 
 
 def _isolation() -> Ready:
-    from vib_tutorial.view_models.isolation import TRIALS, IsolationTrial
-
-    def problems():
-        from vib_tutorial.gui.isolation import PROBLEMS
-
-        return PROBLEMS
+    from vib_tutorial.gui import isolation_trials
+    from vib_tutorial.view_models.isolation import IsolationTrial
 
     return Ready(
         "isolation_page",
         lambda: IsolationTrial("", ""),
         lambda setup: IsolationTrial("", "", **setup),
         _isolation_views,
-        lambda: TRIALS,
-        problems,
+        lambda: isolation_trials.TRIALS,
+        lambda: isolation_trials.PROBLEMS,
+        qt_free_notes=True,
     )
 
 
