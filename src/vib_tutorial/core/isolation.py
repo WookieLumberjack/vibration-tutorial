@@ -15,10 +15,17 @@ runs the machine up to speed through the mount's resonance by the exact first-or
 unbalance's force including its tangential part as the speed changes; `let_go` releases it, stopped, from a
 pull, to ring at the mounts' natural frequency.
 
+Live (#478, the page rebuilt to run as it's handled), the isolator is stepped as a state space with three inputs,
+u = [f, g, ġ]: the unbalance's force on the machine and the floor's motion and velocity under the mounts
+(`live_system`, which also gives the force the mounts put on the floor, D z + E u, and where the machine's
+velocity is in z). A change while it runs (the mounts, the mass, the kind) keeps the machine's place and carries
+its momentum by `carry`'s rules, and a hand holds it with everything else settled round it (`held`).
+
 Working on it
 -------------
 Isolation sizes the mounts by their sag (k = Mg/δ), and `start_up`'s steady state is the transmissibility (a
-test checks).
+test checks). `live_system` is the same isolator driven both ways, and gives the same T from its state
+space (`tests/test_live_isolation.py`).
 """
 
 from __future__ import annotations
@@ -250,3 +257,89 @@ def deflection_for(speed_hz: float, isolation: float) -> float:
         raise ValueError("the isolation must be between 0 and 1")
     fn = speed_hz / math.sqrt(1.0 + 1.0 / T)
     return G / (TWO_PI * fn) ** 2
+
+
+# ------------------------------------------------------------------ live: stepped as it runs
+
+
+@dataclass(frozen=True)
+class LiveSystem:
+    """z' = A z + B u with u = [f, g, ġ] (the unbalance's force, the floor's motion and velocity); the force the
+    mounts put on the floor is D z + E u (N, + along x, the machine's up). The machine's displacement is z[0] and
+    its velocity z[`velocity`]; on two stages the intermediate mass's is z[1]."""
+
+    A: np.ndarray
+    B: np.ndarray
+    D: np.ndarray
+    E: np.ndarray
+    velocity: int
+
+
+def live_system(iso: Isolator) -> LiveSystem:
+    """The isolator as a state space driven by its unbalance and its floor (see `LiveSystem`): z = [x, v]
+    (spring + damper), [x, v, y] (relaxation: y the damper's end on its spring Nk) or [x₁, x₂, v₁, v₂] (two
+    stages)."""
+    k, c, m = iso.stiffness, iso.damping, iso.total
+    if iso.mount is Mount.VISCOUS:
+        # m ẍ = −k(x − g) − c(ẋ − ġ) + f; on the floor k(x − g) + c(ẋ − ġ)
+        A = np.array([[0.0, 1.0], [-k / m, -c / m]])
+        B = np.array([[0.0, 0.0, 0.0], [1.0 / m, k / m, c / m]])
+        return LiveSystem(A, B, np.array([k, c]), np.array([0.0, -k, -c]), 1)
+    if iso.mount is Mount.RELAXATION:
+        k1 = iso.stiffness_ratio * k
+        if c == 0:  # no damper: the spring Nk hangs free and passes nothing
+            A = np.array([[0.0, 1.0, 0.0], [-k / m, 0.0, 0.0], [0.0, 0.0, 0.0]])
+            B = np.array([[0.0, 0.0, 0.0], [1.0 / m, k / m, 0.0], [0.0, 0.0, 0.0]])
+            return LiveSystem(A, B, np.array([k, 0.0, 0.0]), np.array([0.0, -k, 0.0]), 1)
+        # m ẍ = −k(x − g) − k₁(x − y) + f; c(ẏ − ġ) = k₁(x − y); on the floor k(x − g) + k₁(x − y)
+        A = np.array([[0.0, 1.0, 0.0], [-(k + k1) / m, 0.0, k1 / m], [k1 / c, 0.0, -k1 / c]])
+        B = np.array([[0.0, 0.0, 0.0], [1.0 / m, k / m, 0.0], [0.0, 0.0, 1.0]])
+        return LiveSystem(A, B, np.array([k + k1, 0.0, -k1]), np.array([0.0, -k, 0.0]), 1)
+    M, C, K = iso._two_stage()
+    k2, c2 = K[1, 1] - K[0, 0], C[1, 1] - C[0, 0]
+    Minv = np.linalg.inv(M)
+    A = np.block([[np.zeros((2, 2)), np.eye(2)], [-Minv @ K, -Minv @ C]])
+    inputs = np.array([[1.0, 0.0, 0.0], [0.0, k2, c2]])  # the force on each mass from f, g and ġ
+    B = np.vstack([np.zeros((2, 3)), Minv @ inputs])
+    return LiveSystem(A, B, np.array([0.0, k2, 0.0, c2]), np.array([0.0, -k2, -c2]), 2)
+
+
+def _settled_stage(iso: Isolator, x: float, g: float) -> float:
+    """Where the intermediate mass's springs balance, the machine at x and the floor at g."""
+    K = iso._two_stage()[2]
+    k2 = K[1, 1] + K[1, 0]
+    return float((k2 * g - K[1, 0] * x) / K[1, 1])
+
+
+def held(iso: Isolator, x: float, g: float = 0.0) -> np.ndarray:
+    """The state with the machine held still at x over the floor at g, long enough for the rest to settle: the
+    relaxation damper relaxed (its spring unstretched, y = x), the intermediate mass where its springs balance."""
+    if iso.mount is Mount.VISCOUS:
+        return np.array([x, 0.0])
+    if iso.mount is Mount.RELAXATION:
+        return np.array([x, 0.0, x])
+    return np.array([x, _settled_stage(iso, x, g), 0.0, 0.0])
+
+
+def carry(old: Isolator, new: Isolator, z: np.ndarray, g: float = 0.0) -> np.ndarray:
+    """The state after a change from `old` to `new` while it runs, at a step's boundary (#478 item 4, as
+    `Simulator.set_system`): the machine keeps its place; a heavier machine (or block) captures its extra at rest,
+    keeping the momentum, and a lighter one drops a piece at its speed. A relaxation damper kept keeps its spring's
+    stretch; one put in starts unstretched. An intermediate mass kept keeps its place, and its momentum as the
+    machine's; one put in starts at rest where its springs balance."""
+    lo, hi = live_system(old).velocity, live_system(new).velocity
+    x, v = float(z[0]), float(z[lo])
+    if new.total > old.total:
+        v *= old.total / new.total
+    if new.mount is Mount.VISCOUS:
+        return np.array([x, v])
+    if new.mount is Mount.RELAXATION:
+        y = float(z[2]) if old.mount is Mount.RELAXATION else x
+        return np.array([x, v, y])
+    if old.mount is Mount.TWO_STAGE:
+        x2, v2 = float(z[1]), float(z[hi + 1])
+        m_old, m_new = old.stage_mass * old.total, new.stage_mass * new.total
+        if m_new > m_old:
+            v2 *= m_old / m_new
+        return np.array([x, x2, v, v2])
+    return np.array([x, _settled_stage(new, x, g), v, 0.0])
