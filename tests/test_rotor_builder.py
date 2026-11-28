@@ -318,7 +318,7 @@ def test_trials():
     assert 4.730041**2 / (2 * math.pi) * math.sqrt(s.ei / (STEEL.rho * s.area)) == pytest.approx(230.2, abs=0.05)
     _, m = at(name)
     assert m.hz[0] == pytest.approx(0.19, abs=0.005) and m.whirl[0] > 0.99
-    assert 1.5 * 0.05**2 == pytest.approx(0.00375)
+    assert 1.5 * 0.05**2 == pytest.approx(quoted("rotor_builder", "0.00375"))  # the notes' nutation too (audit A4)
 
     name = "Soft bearings, stiffer across"
     _, m = at(name, 0.0)

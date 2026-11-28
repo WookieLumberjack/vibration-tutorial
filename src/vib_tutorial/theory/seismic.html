@@ -47,7 +47,11 @@ floors' displacements <m>φ<sub>r</sub></m> times that, and its base shear
 <m>M<sub>eff,r</sub>S<sub>a</sub>(T<sub>r</sub>)</m>, with</p>
 <eq>M_{\text{eff},r} = \frac{(\varphi_r^{\mathsf{T}} M \mathbf{1})^2}{\varphi_r^{\mathsf{T}} M \varphi_r}</eq>
 <p>the <b>effective modal mass</b>. The effective masses add up to the building's
-mass, so their running sum says how many modes are enough: codes ask for 90 %.</p>
+mass, so their running sum says how many modes are enough: codes ask for 90 %. Written this way, both hold
+whatever the shapes' scale (the page's are 1 at the roof). With <m>φ<sub>r</sub></m> mass-normalized,
+<m>φ<sub>r</sub><sup>T</sup>Mφ<sub>r</sub> = 1</m> as on the <a href="page:sim_page">Simulation page</a>, the
+participation factor is that page's <m>φ<sub>r</sub><sup>T</sup>M1</m> and the effective mass is
+<m>Γ<sub>r</sub><sup>2</sup></m>; at any other scale <m>Γ<sub>r</sub><sup>2</sup></m> isn't.</p>
 
 <h3><a name="combination"></a>Combining the modes</h3>
 <p>The spectrum gives each mode's peak <m>R<sub>r</sub></m>, not when it happens. Adding them (<b>ABS</b>) assumes

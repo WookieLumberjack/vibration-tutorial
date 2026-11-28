@@ -217,8 +217,9 @@ never lands one. Points from before a change of <m>m</m>, <m>k</m> or <m>c</m> s
 belonged to has moved. <i>Show the theory</i> draws the curve the points lie on.</p>
 
 <h3><a name="half-power"></a>The half-power bandwidth</h3>
-<p>The power a damper takes is proportional to <m>|X|²</m>, so the points where <m>|X|</m> falls to
-<m>1/√2</m> of its peak are the <b>half-power points</b>. They lie at
+<p>The power a damper takes is <m>½cΩ²|X|²</m>, and across a narrow peak, where <m>Ω</m> hardly changes,
+that goes as <m>|X|²</m>: so the points where <m>|X|</m> falls to <m>1/√2</m> of its peak are the
+<b>half-power points</b>. They lie at
 <m>r² = 1 − 2ζ² ± 2ζ√(1 − ζ²)</m>, about <m>2ζf<sub>n</sub></m> apart, so</p>
 <eq>\zeta \approx \frac{f_2 - f_1}{2f_n} = \frac{1}{2Q}</eq>
 <p>A lightly damped peak is tall and narrow. This is how damping is read off a measured frequency response,
@@ -299,9 +300,9 @@ they differ: the hysteretic loss is the same at every frequency. Its frequency r
 <p>peaks exactly at <m>f<sub>n</sub></m>, at <m>1/ηk</m>; the viscous one peaks a little lower, at
 <m>f<sub>n</sub>√(1 − 2ζ²)</m>, and a little higher, <m>1/(2ζk√(1 − ζ²))</m>. It works for steady harmonic
 motion (and in frequency-domain analysis, where it is standard: the <a href="page:mounts_page">Rigid body on
-mounts</a> page, later, puts it in its mounts), but it has no honest time-domain form: a constant
-<m>K″</m> at every frequency, negative ones included, would make the mass respond before it is struck
-(<cite>crandall</cite>). So in time the page runs its <b>stand-in</b>: a viscous damper with the same loss at
+mounts</a> page, later, puts it in its mounts), but it has no honest time-domain form: for a real force to give a real
+response, <m>K″</m> must change sign with the frequency, <m>k(1 + iη sgn Ω)</m>, and that stiffness makes the
+mass respond before it is struck (<cite>crandall</cite>). So in time the page runs its <b>stand-in</b>: a viscous damper with the same loss at
 the frequency it runs at, <m>c = ηk/Ω</m>, the drive's while it drives (a change of the drive's frequency changes
 it, live) and <m>f<sub>n</sub></m>'s when it rings free. Swept, its points land on the hysteretic curve, as it is
 matched at each frequency in turn; what it can't do is respond to two frequencies at once with two losses.</p>

@@ -690,7 +690,7 @@ SYMBOLS = (
     Symbol(
         "Gamma_r",
         "Γ<sub>r</sub>, Γ<sub>r</sub>²",
-        "mode r's participation factor φ<sub>r</sub><sup>T</sup>M1: how strongly a base motion drives it; its effective mass (all the modes' add up to the total)",
+        "mode r's participation factor φ<sub>r</sub><sup>T</sup>M1, φ<sub>r</sub> mass-normalized (at another scale, over φ<sub>r</sub><sup>T</sup>Mφ<sub>r</sub>): how strongly a base motion drives it; its effective mass, Γ<sub>r</sub>² when mass-normalized (all the modes' add up to the total)",
         "√kg, kg",
         "sim_page",
         "sweeps-and-ground-motion",
